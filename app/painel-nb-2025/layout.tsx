@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import AdminProviders from "./providers";
 
 export const metadata: Metadata = {
   title: "Painel Admin | IRPF NSB",
@@ -11,8 +12,10 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white">
-      {children}
-    </div>
+    <AdminProviders>
+      <div className="min-h-screen bg-[#0A0A0A] text-white">
+        {children}
+      </div>
+    </AdminProviders>
   );
 }

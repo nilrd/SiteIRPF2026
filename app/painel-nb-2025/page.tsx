@@ -1,8 +1,8 @@
 "use client";
 
-import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -10,11 +10,23 @@ export default function LoginPage() {
   const [error, setError]       = useState("");
   const [loading, setLoading]   = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { status } = useSession();
+
+  // Se já está autenticado, vai direto ao dashboard
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/painel-nb-2025/dashboard");
+    }
+  }, [status, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    const callbackUrl =
+      searchParams.get("callbackUrl") || "/painel-nb-2025/dashboard";
 
     const res = await signIn("credentials", {
       username,
@@ -26,7 +38,12 @@ export default function LoginPage() {
       setError("Credenciais invalidas");
       setLoading(false);
     } else {
-      router.push("/painel-nb-2025/dashboard");
+      // Garante navegação limpa sem loop
+      router.replace(
+        callbackUrl.startsWith("/painel-nb-2025/")
+          ? callbackUrl
+          : "/painel-nb-2025/dashboard"
+      );
     }
   }
 

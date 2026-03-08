@@ -1,7 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { prisma } from "./prisma";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,27 +13,16 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        try {
-          const user = await prisma.adminUser.findUnique({
-            where: { username: credentials.username, active: true },
-          });
+        const adminUsername = process.env.ADMIN_USERNAME;
+        const adminHash = process.env.ADMIN_PASSWORD_HASH;
 
-          if (!user) return null;
+        if (!adminUsername || !adminHash) return null;
+        if (credentials.username !== adminUsername) return null;
 
-          const isValidPassword = await bcrypt.compare(
-            credentials.password,
-            user.passwordHash
-          );
-          if (!isValidPassword) return null;
+        const isValid = await bcrypt.compare(credentials.password, adminHash);
+        if (!isValid) return null;
 
-          return {
-            id: user.id,
-            name: user.name,
-            email: user.email ?? undefined,
-          };
-        } catch {
-          return null;
-        }
+        return { id: "1", name: "Admin NSB", email: "nilson.brites@gmail.com" };
       },
     }),
   ],

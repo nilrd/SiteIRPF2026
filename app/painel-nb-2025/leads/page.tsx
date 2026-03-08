@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import LeadsActions from "./LeadsActions";
 
+export const dynamic = "force-dynamic";
+
 async function getLeads() {
   try {
     return await prisma.lead.findMany({ orderBy: { createdAt: "desc" }, take: 200 });

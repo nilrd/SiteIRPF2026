@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/resend";
 
+export const dynamic = "force-dynamic";
+
 const schema = z.object({
   nome: z.string().min(2).max(200),
   email: z.string().email().max(200),

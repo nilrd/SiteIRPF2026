@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { calcularIR } from "@/lib/ir-calculations";
 
+export const dynamic = "force-dynamic";
+
 const schema = z.object({
   rendaBrutaAnual: z.number().min(0),
   numeroDependentes: z.number().int().min(0).default(0),

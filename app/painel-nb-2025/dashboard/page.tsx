@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
+export const dynamic = "force-dynamic";
+
 async function getMetrics() {
   try {
     const [leads, contatos, posts, postsPublished] = await Promise.all([

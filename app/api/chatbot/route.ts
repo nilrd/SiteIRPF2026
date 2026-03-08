@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { gpt4o, MODELS } from "@/lib/llm-providers";
 import { CHATBOT_SYSTEM_PROMPT } from "@/lib/chatbot-prompt";
 
+export const dynamic = "force-dynamic";
+
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
 
 function checkRateLimit(ip: string): boolean {

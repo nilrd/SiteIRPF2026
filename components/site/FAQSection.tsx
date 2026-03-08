@@ -7,12 +7,12 @@ import { JsonLdFAQ } from "@/components/seo/JsonLd";
 
 const faqs = [
   {
-    q: "Quem e obrigado a declarar o IRPF em 2025?",
-    a: "Deve declarar quem recebeu rendimentos tributaveis acima de R$ 33.888 em 2024, rendimentos isentos acima de R$ 200.000, teve bens acima de R$ 800.000, operou na bolsa acima de R$ 40.000, entre outros criterios definidos pela Receita Federal.",
+    q: "Quem e obrigado a declarar o IRPF em 2026?",
+    a: "As regras completas (prazo e limite de renda) serao anunciadas pela Receita Federal em 16/03/2026. Os criterios gerais que sempre se aplicam: ganho de capital na alienacao de bens, operacoes em bolsa, atividade rural acima do limite, ter passado a ser residente no Brasil em 2025, ou ter bens acima de R$ 800.000 em 31/12/2025. Para saber se voce esta obrigado, fale conosco pelo WhatsApp.",
   },
   {
-    q: "Qual o prazo para entregar a declaracao?",
-    a: "O prazo de entrega da declaracao do IRPF 2025 (ano-calendario 2024) vai de 17 de marco a 30 de maio de 2025. Declaracoes atrasadas estao sujeitas a multa minima de R$ 165,74.",
+    q: "Qual o prazo para entregar a declaracao IRPF 2026?",
+    a: "As declaracoes do IRPF 2026 (renda de 2025) abrem em 16/03/2026. O prazo de encerramento sera confirmado pela Receita Federal nessa data. Acompanhe aqui ou fale conosco no WhatsApp para ser avisado assim que o prazo for divulgado. Declaracoes de anos anteriores ja atrasados podem ser entregues a qualquer momento.",
   },
   {
     q: "Como funciona o servico 100% online?",
@@ -24,11 +24,11 @@ const faqs = [
   },
   {
     q: "Como posso maximizar minha restituicao?",
-    a: "Atraves da analise detalhada de todas as suas deducoes legais: despesas medicas, educacao, dependentes, previdencia privada (PGBL) e outras. Nosso consultor identifica todas as oportunidades dentro da lei.",
+    a: "Atraves da analise detalhada de todas as suas deducoes legais: despesas medicas sem limite, educacao ate R$ 3.561,50 por pessoa, dependentes (R$ 2.275,08 cada), previdencia privada PGBL (ate 12% da renda) e outras. Nosso consultor identifica todas as oportunidades dentro da lei.",
   },
   {
     q: "O que acontece se eu nao declarar?",
-    a: "A falta de declaracao gera multa de 1% ao mes sobre o imposto devido (minimo R$ 165,74, maximo R$ 6.275,00), alem de CPF irregular que impede emprestimos, concursos publicos e viagens ao exterior.",
+    a: "A falta de declaracao gera multa de 1% ao mes sobre o imposto devido (minimo R$ 165,74, maximo 20% do imposto devido), alem de CPF irregular que impede emprestimos, financiamentos, concursos publicos e viagens ao exterior. O risco aumenta a cada mes de atraso.",
   },
   {
     q: "Posso retificar uma declaracao ja enviada?",

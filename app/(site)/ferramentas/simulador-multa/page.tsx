@@ -4,7 +4,8 @@ import { useState } from "react";
 import type { Metadata } from "next";
 
 const MULTA_MINIMA = 165.74;
-const MULTA_MAXIMA = 6275.0;
+// Nao existe teto fixo em reais — maximo e 20% do IR devido
+const MULTA_PERCENTUAL_MAX = 0.2;
 
 function formatCurrency(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -15,9 +16,9 @@ function calcularMulta(impostoDevido: number, mesesAtraso: number) {
     return { multa: MULTA_MINIMA, meses: mesesAtraso };
   }
   const multaBruta = impostoDevido * 0.01 * mesesAtraso;
-  const multa20pct = impostoDevido * 0.2;
-  const multaLimitada = Math.min(multaBruta, multa20pct);
-  const multa = Math.max(Math.min(multaLimitada, MULTA_MAXIMA), MULTA_MINIMA);
+  const multa20pct = impostoDevido * MULTA_PERCENTUAL_MAX;
+  // Limita ao maximo de 20% do IR devido, minimo de R$165,74
+  const multa = Math.max(Math.min(multaBruta, multa20pct), MULTA_MINIMA);
   return { multa, meses: mesesAtraso };
 }
 
@@ -63,8 +64,8 @@ export default function SimuladorMultaPage() {
               </h2>
               <p className="opacity-70 mb-12">
                 A multa por atraso e de 1% ao mes sobre o imposto devido, com
-                minimo de R$ 165,74 e maximo de R$ 6.275,00 (limitada a 20% do
-                imposto).
+                minimo de R$ 165,74 e maximo de 20% do imposto devido (sem teto
+                fixo em reais). Quanto maior o IR, maior a multa maxima possivel.
               </p>
 
               <div className="space-y-8">

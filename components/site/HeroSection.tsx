@@ -8,7 +8,7 @@ const dataItems = [
   { label: "Experiencia", value: "10+ anos" },
   { label: "Atendimento", value: "Todo Brasil" },
   { label: "Formato", value: "100% Online" },
-  { label: "Prazo IRPF 2025", value: "30 Mai" },
+  { label: "IRPF 2026", value: "16/03 Abertura" },
 ];
 
 export default function HeroSection() {

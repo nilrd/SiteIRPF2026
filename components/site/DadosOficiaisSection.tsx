@@ -14,7 +14,7 @@ const tabelaIRPF = [
 
 const multas = [
   { label: "Multa minima", value: "R$ 165,74" },
-  { label: "Multa maxima", value: "R$ 6.275,00" },
+  { label: "Multa maxima", value: "20% do IR devido" },
   { label: "Calculo mensal", value: "1% sobre IR devido" },
 ];
 
@@ -31,9 +31,12 @@ export default function DadosOficiaisSection() {
           <span className="text-[10px] uppercase tracking-widest text-white/40 mb-4 block">
             Dados Oficiais — IRPF 2026 (renda de 2025)
           </span>
-          <h2 className="font-serif text-4xl md:text-5xl mb-16">
+          <h2 className="font-serif text-4xl md:text-5xl mb-4">
             Tabela Progressiva do IR
           </h2>
+          <p className="text-sm text-white/50 mb-12">
+            Declaracoes do IRPF 2026 (renda de 2025) abrem em 16/03/2026. Prazo e limite de obrigatoriedade serao confirmados pela Receita Federal.
+          </p>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-12">

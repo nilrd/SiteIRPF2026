@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String
+  telefone  String?
+  tipoDecl  String?
+  origem    String   @default("organico")
+  status    String   @default("novo")
+  mensagem  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+model BlogPost {
+  id         String   @id @default(cuid())
+  title      String
+  slug       String   @unique
+  summary    String?
+  content    String
+  faqsJson   String   @default("[]")
+  tags       String[]
+  coverImage String?
+  published  Boolean  @default(false)
+  metaTitle  String?
+  metaDesc   String?
+  keywords   String[]
+  views      Int      @default(0)
+  readTime   Int      @default(5)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([slug])
+  @@index([published, createdAt])
+  @@map("blog_posts")
+}
+
+model Contato {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String
+  telefone  String?
+  assunto   String?
+  mensagem  String
+  lido      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("contatos")
+}
+
+model EbookDownload {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String
+  whatsapp  String?
+  emailSeq  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("ebook_downloads")
+}

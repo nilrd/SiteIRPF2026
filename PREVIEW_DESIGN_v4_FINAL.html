@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax & Strategy | Consultoria Especializada IRPF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #F9F7F2;
+            --text-main: #1A1A1A;
+            --accent: #2D4033; /* Verde Floresta Profundo */
+            --border: #D1CD00; /* Um toque de ouro sutil para linhas */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            scroll-behavior: smooth;
+        }
+        h1, h2, h3, .serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .editorial-border {
+            border-bottom: 1px solid rgba(26, 26, 26, 0.1);
+        }
+        .btn-premium {
+            transition: all 0.3s ease;
+            border: 1px solid var(--text-main);
+        }
+        .btn-premium:hover {
+            background-color: var(--text-main);
+            color: white;
+        }
+        .calc-input {
+            background: transparent;
+            border-bottom: 1px solid var(--text-main);
+            padding: 8px 0;
+            width: 100%;
+            outline: none;
+        }
+        .chat-window {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background: #ccc; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header Minimalista -->
+    <header class="fixed w-full top-0 z-50 bg-[#F9F7F2]/80 backdrop-blur-md editorial-border">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-xl font-bold tracking-tighter serif uppercase">Tax & Strategy</div>
+            <nav class="hidden md:flex space-x-10 text-xs font-semibold uppercase tracking-widest">
+                <a href="#calculadora" class="hover:opacity-50 transition">Calculadora</a>
+                <a href="#servicos" class="hover:opacity-50 transition">Serviços</a>
+                <a href="#blog" class="hover:opacity-50 transition">Insights</a>
+                <a href="#contato" class="hover:opacity-50 transition border-b border-black">Declarar Agora</a>
+            </nav>
+            <button class="md:hidden">MENU</button>
+        </div>
+    </header>
+
+    <main class="pt-32">
+        <!-- Hero Section - Layout Editorial -->
+        <section class="max-w-7xl mx-auto px-6 mb-32">
+            <div class="grid md:grid-cols-12 gap-8 items-end">
+                <div class="md:col-span-8">
+                    <span class="block text-sm uppercase tracking-[0.3em] mb-6 opacity-60">Consultoria Boutique de IRPF</span>
+                    <h1 class="text-6xl md:text-8xl leading-none font-normal mb-8">
+                        A precisão que o seu patrimônio <span class="italic font-light text-gray-500">exige.</span>
+                    </h1>
+                </div>
+                <div class="md:col-span-4 pb-4">
+                    <p class="text-lg leading-relaxed opacity-80 mb-8 border-l-2 border-black pl-6">
+                        Transcendemos a entrega do formulário. Estruturamos sua conformidade fiscal com inteligência estratégica e discrição absoluta.
+                    </p>
+                    <a href="#calculadora" class="btn-premium px-8 py-4 inline-block uppercase text-xs tracking-widest font-bold">Simular Restituição</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Calculadora Profissional -->
+        <section id="calculadora" class="bg-white py-24 editorial-border">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="grid md:grid-cols-2 gap-20">
+                    <div>
+                        <h2 class="text-4xl mb-6">Calculadora de Impacto Fiscal</h2>
+                        <p class="opacity-70 mb-12">Uma estimativa técnica baseada nas tabelas vigentes da Receita Federal para o exercício atual.</p>
+                        
+                        <div class="space-y-8">
+                            <div>
+                                <label class="text-xs uppercase tracking-widest opacity-60">Rendimentos Tributáveis Anuais (R$)</label>
+                                <input type="number" id="rendimentos" class="calc-input text-2xl" placeholder="0,00">
+                            </div>
+                            <div>
+                                <label class="text-xs uppercase tracking-widest opacity-60">Deduções Totais (Saúde, Educação, Dependentes) (R$)</label>
+                                <input type="number" id="deducoes" class="calc-input text-2xl" placeholder="0,00">
+                            </div>
+                            <button onclick="calcularImposto()" class="w-full bg-[#1A1A1A] text-white py-5 uppercase text-xs tracking-[0.2em] font-bold hover:bg-[#333] transition">Processar Análise</button>
+                        </div>
+                    </div>
+
+                    <div id="resultado-calc" class="bg-[#F9F7F2] p-12 flex flex-col justify-center items-center text-center border border-gray-100">
+                        <div class="serif italic text-xl mb-4 text-gray-400">Estimativa Final</div>
+                        <div id="res-valor" class="text-5xl font-light mb-2">R$ 0,00</div>
+                        <div id="res-label" class="text-xs uppercase tracking-widest opacity-50">Aguardando dados...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Blog Editorial -->
+        <section id="blog" class="py-24 max-w-7xl mx-auto px-6">
+            <div class="flex justify-between items-end mb-16">
+                <h2 class="text-5xl">Perspectivas Técnicas</h2>
+                <a href="#" class="text-xs uppercase border-b border-black pb-1 hover:opacity-50">Ver todos os artigos</a>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-12">
+                <article class="group cursor-pointer">
+                    <div class="overflow-hidden mb-6 aspect-[4/5] bg-gray-200">
+                        <div class="w-full h-full bg-cover bg-center transition duration-700 group-hover:scale-105" style="background-image: url('https://images.unsplash.com/photo-1554224155-1696413565d3?auto=format&fit=crop&q=80&w=800')"></div>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-widest opacity-50">Tributação Exterior</span>
+                    <h3 class="text-2xl mt-2 group-hover:italic transition-all">Novas regras para ativos digitais e offshores em 2024.</h3>
+                </article>
+
+                <article class="group cursor-pointer">
+                    <div class="overflow-hidden mb-6 aspect-[4/5] bg-gray-200">
+                        <div class="w-full h-full bg-cover bg-center transition duration-700 group-hover:scale-105" style="background-image: url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800')"></div>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-widest opacity-50">Planejamento</span>
+                    <h3 class="text-2xl mt-2 group-hover:italic transition-all">Como otimizar a dedução por previdência privada (PGBL).</h3>
+                </article>
+
+                <article class="group cursor-pointer">
+                    <div class="overflow-hidden mb-6 aspect-[4/5] bg-gray-200">
+                        <div class="w-full h-full bg-cover bg-center transition duration-700 group-hover:scale-105" style="background-image: url('https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=800')"></div>
+                    </div>
+                    <span class="text-[10px] uppercase tracking-widest opacity-50">Malha Fina</span>
+                    <h3 class="text-2xl mt-2 group-hover:italic transition-all">Os 5 erros mais comuns que levam à retenção de declaração.</h3>
+                </article>
+            </div>
+        </section>
+
+        <!-- Formulário de Contato Profissional -->
+        <section id="contato" class="bg-[#2D4033] text-white py-24">
+            <div class="max-w-4xl mx-auto px-6 text-center">
+                <h2 class="text-5xl mb-8">Inicie seu Processo</h2>
+                <p class="opacity-80 mb-12 text-lg">Preencha os dados básicos abaixo para que um consultor sênior entre em contato e avalie seu caso.</p>
+                
+                <form class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                    <div class="flex flex-col">
+                        <label class="text-[10px] uppercase tracking-widest opacity-50 mb-2">Nome Completo</label>
+                        <input type="text" class="bg-transparent border-b border-white/30 py-3 outline-none focus:border-white">
+                    </div>
+                    <div class="flex flex-col">
+                        <label class="text-[10px] uppercase tracking-widest opacity-50 mb-2">E-mail Corporativo</label>
+                        <input type="email" class="bg-transparent border-b border-white/30 py-3 outline-none focus:border-white">
+                    </div>
+                    <div class="flex flex-col md:col-span-2">
+                        <label class="text-[10px] uppercase tracking-widest opacity-50 mb-2">Breve Resumo da Complexidade Fiscal</label>
+                        <textarea class="bg-transparent border-b border-white/30 py-3 outline-none focus:border-white h-24 resize-none"></textarea>
+                    </div>
+                    <button class="md:col-span-2 bg-white text-[#2D4033] py-5 uppercase text-xs tracking-widest font-bold hover:bg-opacity-90 transition">Solicitar Diagnóstico</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="py-12 bg-white text-center">
+        <div class="text-xs uppercase tracking-widest opacity-40">Tax & Strategy &copy; 2024 | Consultoria Tributária de Alto Padrão</div>
+    </footer>
+
+    <!-- Chatbot Discreto -->
+    <div id="chat-container" class="fixed bottom-8 right-8 z-[100]">
+        <div id="chat-bubble" onclick="toggleChat()" class="w-16 h-16 bg-[#1A1A1A] text-white flex items-center justify-center cursor-pointer shadow-2xl hover:scale-110 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+        </div>
+
+        <div id="chat-window" class="hidden absolute bottom-20 right-0 w-80 bg-white chat-window flex flex-col overflow-hidden">
+            <div class="bg-[#1A1A1A] text-white p-4 text-xs uppercase tracking-widest font-bold">
+                Consultor Virtual
+            </div>
+            <div id="chat-messages" class="h-64 overflow-y-auto p-4 space-y-4 text-sm leading-relaxed">
+                <div class="bg-gray-100 p-3 self-start mr-8">
+                    Olá. Como posso auxiliar em sua estratégia fiscal hoje?
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-100">
+                <input type="text" id="chat-input" placeholder="Digite sua dúvida..." class="w-full text-sm outline-none">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Lógica da Calculadora Simplificada IRPF
+        function calcularImposto() {
+            const rendimentos = parseFloat(document.getElementById('rendimentos').value) || 0;
+            const deducoes = parseFloat(document.getElementById('deducoes').value) || 0;
+            const baseCalculo = rendimentos - deducoes;
+            
+            let imposto = 0;
+            let label = "Imposto a Pagar";
+
+            // Lógica de Tabela Progressiva Simplificada (Exemplo)
+            if (baseCalculo <= 24511.92) {
+                imposto = 0;
+            } else if (baseCalculo <= 33919.80) {
+                imposto = (baseCalculo * 0.075) - 1838.39;
+            } else if (baseCalculo <= 45012.60) {
+                imposto = (baseCalculo * 0.15) - 4382.38;
+            } else if (baseCalculo <= 55976.16) {
+                imposto = (baseCalculo * 0.225) - 7758.32;
+            } else {
+                imposto = (baseCalculo * 0.275) - 10557.13;
+            }
+
+            const resValor = document.getElementById('res-valor');
+            const resLabel = document.getElementById('res-label');
+            const resContainer = document.getElementById('resultado-calc');
+
+            if (imposto < 0) {
+                resValor.innerText = "R$ " + Math.abs(imposto).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                resLabel.innerText = "Restituição Estimada";
+                resContainer.classList.remove('bg-[#F9F7F2]');
+                resContainer.classList.add('bg-green-50');
+            } else {
+                resValor.innerText = "R$ " + imposto.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                resLabel.innerText = "Imposto Estimado";
+                resContainer.classList.remove('bg-green-50');
+                resContainer.classList.add('bg-[#F9F7F2]');
+            }
+        }
+
+        // Lógica do Chatbot
+        function toggleChat() {
+            const window = document.getElementById('chat-window');
+            window.classList.toggle('hidden');
+        }
+
+        const chatInput = document.getElementById('chat-input');
+        chatInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && this.value.trim() !== "") {
+                const msg = this.value;
+                const container = document.getElementById('chat-messages');
+                
+                // User message
+                const userDiv = document.createElement('div');
+                userDiv.className = "bg-[#2D4033] text-white p-3 self-end ml-8 text-right";
+                userDiv.innerText = msg;
+                container.appendChild(userDiv);
+                
+                this.value = "";
+                
+                // Simple Bot Response
+                setTimeout(() => {
+                    const botDiv = document.createElement('div');
+                    botDiv.className = "bg-gray-100 p-3 self-start mr-8";
+                    botDiv.innerText = "Entendido. Um de nossos especialistas em IRPF pode analisar seu caso detalhadamente. Deseja agendar uma breve reunião?";
+                    container.appendChild(botDiv);
+                    container.scrollTop = container.scrollHeight;
+                }, 1000);
+                
+                container.scrollTop = container.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>

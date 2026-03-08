@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-base: #F9F7F2;
+  --text-main: #1A1A1A;
+  --accent: #2D4033;
+  --ouro: #C9A84C;
+  --ouro-claro: #E8C97A;
+  --linha: rgba(0, 0, 0, 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Editorial border */
+.editorial-border {
+  border-bottom: 1px solid var(--linha);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+/* Calc input style */
+.calc-input {
+  background: transparent;
+  border-bottom: 1px solid var(--text-main);
+  padding: 8px 0;
+  width: 100%;
+  outline: none;
+  font-family: var(--font-playfair);
+  font-size: 26px;
+}
+.calc-input:focus {
+  border-bottom-color: var(--ouro);
+}
+
+/* Prose for blog posts */
+.prose-irpf h2 {
+  font-family: var(--font-playfair);
+  font-size: 2rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+.prose-irpf h3 {
+  font-family: var(--font-playfair);
+  font-size: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+.prose-irpf p {
+  margin-bottom: 1.25rem;
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+.prose-irpf ul,
+.prose-irpf ol {
+  margin-bottom: 1.25rem;
+  padding-left: 1.5rem;
+}
+.prose-irpf li {
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
+}
+.prose-irpf table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+.prose-irpf th,
+.prose-irpf td {
+  border: 1px solid var(--linha);
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+.prose-irpf th {
+  background-color: #f0ede7;
+  font-weight: 600;
+}
+.prose-irpf blockquote {
+  border-left: 3px solid var(--ouro);
+  padding-left: 1.5rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+/* Button premium */
+.btn-premium {
+  transition: all 0.3s ease;
+  border: 1px solid var(--text-main);
+}
+.btn-premium:hover {
+  background-color: var(--text-main);
+  color: white;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--ouro);
+  color: white;
+}

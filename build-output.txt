@@ -1,0 +1,144 @@
+  ▲ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/28) ...
+   Generating static pages (7/28) 
+Blog cron error: B [Error]: Dynamic server usage: Route /api/cron/blog-auto couldn't be rendered statically because it used `request.url`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at V (E:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:21778)
+    at Object.get (E:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:29465)
+    at d (E:\Meus Documentos Imp\IRPF-SITE\.next\server\app\api\cron\blog-auto\route.js:1:695)
+    at E:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:38417
+    at E:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\server\lib\trace\tracer.js:140:36
+    at NoopContextManager.with (E:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:7062)
+    at ContextAPI.with (E:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:518)
+    at NoopTracer.startActiveSpan (E:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18093)
+    at ProxyTracer.startActiveSpan (E:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18854)
+    at E:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\server\lib\trace\tracer.js:122:103 {
+  description: "Route /api/cron/blog-auto couldn't be rendered statically because it used `request.url`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+   Generating static pages (14/28) 
+   Generating static pages (21/28) 
+prisma:error 
+Invalid `prisma.lead.count()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.contato.count()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.blogPost.count()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.blogPost.count()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.lead.count()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.contato.count()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.blogPost.count()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.blogPost.count()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.lead.findMany()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.contato.findMany()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.lead.findMany()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.contato.findMany()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.blogPost.findMany()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.blogPost.findMany()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+prisma:error 
+Invalid `prisma.blogPost.findMany()` invocation:
+
+
+Error querying the database: FATAL: Tenant or user not found
+ ✓ Generating static pages (28/28)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    7.61 kB         154 kB
+├ ○ /_not-found                          153 B          87.5 kB
+├ ƒ /api/admin/chat                      0 B                0 B
+├ ƒ /api/auth/[...nextauth]              0 B                0 B
+├ ƒ /api/blog/generate                   0 B                0 B
+├ ƒ /api/calculadora                     0 B                0 B
+├ ƒ /api/chatbot                         0 B                0 B
+├ ƒ /api/contato                         0 B                0 B
+├ ƒ /api/cron/blog-auto                  0 B                0 B
+├ ƒ /api/ebook                           0 B                0 B
+├ ƒ /api/leads                           0 B                0 B
+├ ○ /blog                                188 B           101 kB
+├ ƒ /blog/[slug]                         188 B           101 kB
+├ ○ /como-funciona                       2.36 kB         135 kB
+├ ○ /contato                             2.97 kB         135 kB
+├ ○ /ebook                               153 B          87.5 kB
+├ ○ /ferramentas/calculadora-ir          1.53 kB         128 kB
+├ ○ /ferramentas/consulta-situacao       153 B          87.5 kB
+├ ○ /ferramentas/simulador-multa         1.42 kB        88.7 kB
+├ ○ /painel-nb-2025                      10.6 kB        97.9 kB
+├ ○ /painel-nb-2025/blog                 1.26 kB        97.3 kB
+├ ○ /painel-nb-2025/campanhas            1.81 kB        97.8 kB
+├ ○ /painel-nb-2025/chat-ia              1.59 kB        97.6 kB
+├ ○ /painel-nb-2025/dashboard            181 B          96.2 kB
+├ ○ /painel-nb-2025/leads                181 B          96.2 kB
+├ ○ /servicos                            153 B          87.5 kB
+├ ○ /sitemap.xml                         0 B                0 B
+└ ○ /sobre                               294 B          92.8 kB
++ First Load JS shared by all            87.3 kB
+  ├ chunks/117-8927ab50fe01d31c.js       31.7 kB
+  ├ chunks/fd9d1056-a7129889b45a2c4a.js  53.6 kB
+  └ other shared chunks (total)          1.95 kB
+
+
+ƒ Middleware                             49.4 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

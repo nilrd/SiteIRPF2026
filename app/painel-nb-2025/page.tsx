@@ -27,21 +27,32 @@ function LoginForm() {
     const callbackUrl =
       searchParams.get("callbackUrl") || "/painel-nb-2025/dashboard";
 
-    const res = await signIn("credentials", {
-      username,
-      password,
-      redirect: false,
-    });
+    try {
+      const res = await signIn("credentials", {
+        username,
+        password,
+        redirect: false,
+      });
 
-    if (res?.error) {
-      setError("Credenciais invalidas");
+      if (!res) {
+        setError("Erro de conexão. Tente novamente.");
+        setLoading(false);
+        return;
+      }
+
+      if (res.error) {
+        setError("Usuario ou senha incorretos.");
+        setLoading(false);
+      } else {
+        router.replace(
+          callbackUrl.startsWith("/painel-nb-2025/")
+            ? callbackUrl
+            : "/painel-nb-2025/dashboard"
+        );
+      }
+    } catch {
+      setError("Erro ao conectar. Verifique sua conexão.");
       setLoading(false);
-    } else {
-      router.replace(
-        callbackUrl.startsWith("/painel-nb-2025/")
-          ? callbackUrl
-          : "/painel-nb-2025/dashboard"
-      );
     }
   }
 

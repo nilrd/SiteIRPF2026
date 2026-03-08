@@ -8,3 +8,4 @@ next-env.d.ts
 E:\npm-cache 
 E:\npmtemp 
 .envprisma/admin_seed.sql
+prisma/reset_admin_pass.sql

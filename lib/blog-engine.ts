@@ -89,6 +89,66 @@ export const KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "informacional",
   },
+  {
+    primary: "CPF irregular imposto de renda como regularizar",
+    secondary: ["CPF bloqueado Receita Federal", "regularizar CPF pendente"],
+    volume: "alta",
+    intent: "transacional",
+  },
+  {
+    primary: "declarar aluguel imposto de renda",
+    secondary: ["inquilino IRPF", "proprietario aluguel IR", "livro caixa aluguel"],
+    volume: "media",
+    intent: "informacional",
+  },
+  {
+    primary: "autônomo profissional liberal como declarar IR",
+    secondary: ["carnê-leão MEI IR", "profissional liberal IRPF", "calculo IR mensal autonomo"],
+    volume: "media",
+    intent: "transacional",
+  },
+  {
+    primary: "aposentado INSS precisa declarar imposto de renda",
+    secondary: ["IR aposentado", "isencao IRPF doenca grave", "INSS e IRPF"],
+    volume: "alta",
+    intent: "informacional",
+  },
+  {
+    primary: "previdencia privada PGBL imposto de renda",
+    secondary: ["PGBL deducao IR", "VGBL diferenca IR", "PGBL 12 por cento renda"],
+    volume: "media",
+    intent: "informacional",
+  },
+  {
+    primary: "heranca e doacao IRPF como declarar",
+    secondary: ["receber heranca IR", "doacao bens ITCMD IRPF", "declarar imovel herdado"],
+    volume: "media",
+    intent: "informacional",
+  },
+  {
+    primary: "rendimentos recebidos acumuladamente RRA imposto de renda",
+    secondary: ["calculo RRA", "rescisao trabalhista IR", "acao trabalhista IRPF"],
+    volume: "media",
+    intent: "informacional",
+  },
+  {
+    primary: "renda fixa CDB LCI LCA imposto de renda",
+    secondary: ["IR rendimentos bancarios", "isencao LCI LCA IR", "declarar CDB IRPF"],
+    volume: "media",
+    intent: "informacional",
+  },
+  {
+    primary: "pensao alimenticia imposto de renda",
+    secondary: ["pensao alimenticia e tributavel", "declarar pensao IRPF", "pensionista deducao IR"],
+    volume: "media",
+    intent: "informacional",
+  },
+  {
+    primary: "simplificado x completo IRPF qual e melhor",
+    secondary: ["desconto padrao IR", "declaracao completa vantagens", "calcular melhor modelo IRPF"],
+    volume: "media",
+    intent: "transacional",
+  },
 ];
 
 /* ---- System prompt para blog ---- */
@@ -107,21 +167,29 @@ REGRAS:
 3. Inclua pelo menos 1 calculo numerico detalhado como exemplo
 4. Taxa Selic atual: ${selicAtual}% a.a.
 5. Inclua exatamente 6 FAQs no final no formato JSON
-6. Inclua CTA para WhatsApp da consultoria
+6. Inclua CTA para WhatsApp da consultoria (+55 11 94082-5120)
 7. Nunca ensine a declarar sozinho — sempre direcione para consultor
 8. Apenas IRPF Pessoa Fisica — nunca PJ, CNPJ, empresa
 9. Zero emojis
 10. Tom: profissional, autoritativo, acessivel
 
+OTIMIZACAO SEO E AEO (Answer Engine Optimization):
+- Primeiro paragrafo: responda diretamente a pergunta principal em 1-2 frases (featured snippet)
+- Cada H2 deve ser uma pergunta ou afirmacao clara que antecipa o que o leitor busca
+- Use a keyword principal no title, no primeiro paragrafo e no last H2
+- Inclua dados numericos concretos (valores, percentuais, prazos, exemplos calculados)
+- Linguagem clara para voz: frases curtas, sujeito-verbo-objeto
+- FAQs devem ser perguntas reais que usuarios digitam no Google sobre o tema
+
 FORMATO DE SAIDA (JSON):
 {
-  "title": "titulo SEO do artigo",
-  "slug": "slug-do-artigo",
-  "summary": "resumo em 160 caracteres para meta description",
-  "content": "conteudo HTML completo do artigo com h2, h3, p, ul, li, table, strong",
-  "tags": ["tag1", "tag2"],
-  "keywords": ["keyword1", "keyword2", "keyword3"],
-  "faqs": [{"question": "pergunta", "answer": "resposta"}]
+  "title": "titulo SEO com keyword principal, max 65 caracteres",
+  "slug": "slug-do-artigo-com-keywords",
+  "summary": "resposta direta a pergunta do titulo em 150-160 caracteres, incluindo dado numerico",
+  "content": "conteudo HTML completo com h2, h3, p, ul, li, table, strong — minimo 1800 palavras",
+  "tags": ["tag1", "tag2", "tag3"],
+  "keywords": ["keyword-principal", "keyword-secundaria-1", "keyword-secundaria-2"],
+  "faqs": [{"question": "pergunta real de usuario", "answer": "resposta direta e completa em 50-100 palavras"}]
 }`;
 }
 
@@ -179,7 +247,7 @@ export async function saveBlogPost(post: Awaited<ReturnType<typeof generateBlogP
       tags: post.tags,
       keywords: post.keywords,
       faqsJson: JSON.stringify(post.faqs),
-      published: false, // admin must review & publish
+      published: true, // auto-publicado — blog zero-intervencao
     },
   });
 }

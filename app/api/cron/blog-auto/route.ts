@@ -36,12 +36,13 @@ export async function GET(request: Request) {
       await resend.emails.send({
         from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
         to: process.env.ADMIN_EMAIL,
-        subject: "2 novos posts do blog gerados para revisao",
+        subject: `2 novos posts publicados automaticamente — ${new Date().toLocaleDateString("pt-BR")}`,
         html: `
-          <h2>Posts gerados automaticamente</h2>
+          <h2>Posts publicados automaticamente no blog</h2>
           <p><strong>1.</strong> ${saved1.title}</p>
           <p><strong>2.</strong> ${saved2.title}</p>
-          <p>Acesse o painel para revisar e publicar.</p>
+          <p>Os artigos ja estao disponiveis em <a href="https://irpf.qaplay.com.br/blog">irpf.qaplay.com.br/blog</a>.</p>
+          <p>Se precisar editar ou despublicar algum, acesse o painel administrativo.</p>
         `,
       });
     }

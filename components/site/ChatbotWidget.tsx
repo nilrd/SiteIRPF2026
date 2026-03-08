@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
@@ -29,7 +30,7 @@ export default function ChatbotWidget() {
         {
           role: "assistant",
           content:
-            "Ola! Sou o Assistente NSB, especialista em declaracao de Imposto de Renda.\n\nPosso te ajudar com duvidas sobre IRPF, IR atrasado, restituicao e muito mais.\n\nComo posso te ajudar hoje?",
+            "Ola! Sou o Bot Nilson, assistente virtual da Consultoria IRPF NSB.\n\nSou uma IA treinada para tirar duvidas sobre Imposto de Renda. Para contratar o servico ou atendimento humano, encaminho voce pelo WhatsApp.\n\nComo posso te ajudar com seu IR hoje?",
         },
       ]);
     }
@@ -142,10 +143,14 @@ export default function ChatbotWidget() {
             onClick={() => setIsOpen(true)}
             className="fixed bottom-6 left-6 z-50 flex items-center gap-3 bg-[#1A1A1A] text-white px-5 py-3.5 shadow-2xl hover:bg-[#333] transition-colors group"
           >
-            <span className="relative flex h-8 w-8 items-center justify-center">
-              <span className="font-serif text-[#C9A84C] text-sm font-bold">
-                NB
-              </span>
+            <span className="relative flex h-8 w-8 items-center justify-center flex-shrink-0">
+              <Image
+                src="/Eu_Avatar.png"
+                alt="Bot Nilson"
+                width={32}
+                height={32}
+                className="rounded-full object-cover w-8 h-8"
+              />
               <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
             </span>
             <span className="flex flex-col items-start">
@@ -171,16 +176,18 @@ export default function ChatbotWidget() {
             {/* Header */}
             <div className="bg-[#1A1A1A] text-white px-5 py-4 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-[#2D4033] flex items-center justify-center">
-                  <span className="font-serif text-[#C9A84C] text-sm font-bold">
-                    NB
-                  </span>
-                </div>
+                <Image
+                  src="/Eu_Avatar.png"
+                  alt="Bot Nilson"
+                  width={36}
+                  height={36}
+                  className="rounded-full object-cover w-9 h-9 flex-shrink-0"
+                />
                 <div>
-                  <div className="text-sm font-semibold">Assistente NSB</div>
+                  <div className="text-sm font-semibold">Bot Nilson</div>
                   <div className="text-[10px] text-green-400 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
-                    Online agora
+                    Assistente Virtual · NSB
                   </div>
                 </div>
               </div>

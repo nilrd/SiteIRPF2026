@@ -9,6 +9,32 @@ interface Message {
   content: string;
 }
 
+/** Renderiza texto do bot convertendo [texto](url) em links clicaveis */
+function BotMessageContent({ content }: { content: string }) {
+  const parts = content.split(/(\[[^\]]+\]\([^)]+\))/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+        if (match) {
+          return (
+            <a
+              key={i}
+              href={match[2]}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline text-[#C9A84C] hover:text-[#a8872e] font-semibold"
+            >
+              {match[1]}
+            </a>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+}
+
 // ---- Audio helpers ----
 
 /** Remove markdown e normaliza texto para leitura natural em voz */
@@ -141,7 +167,7 @@ export default function ChatbotWidget() {
         {
           role: "assistant",
           content:
-            "Ola! Sou o Bot Nilson, assistente virtual da Consultoria IRPF NSB.\n\nSou uma IA treinada para tirar duvidas sobre Imposto de Renda. Para contratar o servico ou atendimento humano, encaminho voce pelo WhatsApp.\n\nComo posso te ajudar com seu IR hoje?",
+            "Ola! Sou o Bot Nilson, assistente da Consultoria IRPF NSB. Aqui voce tira duvidas sobre Imposto de Renda com quem entende do assunto.\n\nDiga qual a sua situacao e vejo como posso te ajudar. Pode ser por texto ou voz, como preferir!",
         },
       ]);
     }
@@ -376,7 +402,11 @@ export default function ChatbotWidget() {
                           : "bg-white border border-gray-100 text-[#1A1A1A]"
                       }`}
                     >
-                      {msg.content}
+                      {msg.role === "assistant" ? (
+                        <BotMessageContent content={msg.content} />
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                     {/* Speaker button on bot messages */}
                     {msg.role === "assistant" && msg.content && (

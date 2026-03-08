@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       model: "tts-1-hd",
       voice: "onyx",
       input: text.trim(),
-      speed: 1.0,
+      speed: 1.08,
     });
 
     const buffer = Buffer.from(await mp3.arrayBuffer());

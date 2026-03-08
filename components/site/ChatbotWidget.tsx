@@ -9,30 +9,22 @@ interface Message {
   content: string;
 }
 
-/** Renderiza texto do bot convertendo [texto](url) em links clicaveis */
-function BotMessageContent({ content }: { content: string }) {
-  const parts = content.split(/(\[[^\]]+\]\([^)]+\))/g);
-  return (
-    <>
-      {parts.map((part, i) => {
-        const match = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-        if (match) {
-          return (
-            <a
-              key={i}
-              href={match[2]}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline text-[#C9A84C] hover:text-[#a8872e] font-semibold"
-            >
-              {match[1]}
-            </a>
-          );
-        }
-        return <span key={i}>{part}</span>;
-      })}
-    </>
-  );
+const WA_DEFAULT_URL = "https://wa.me/5511940825120?text=Ol%C3%A1%2C+quero+ajuda+com+meu+IRPF.";
+
+/** Detecta URL do WhatsApp na mensagem (link markdown ou mencao textual) */
+function detectWAUrl(content: string): string | null {
+  const mdMatch = content.match(/\[([^\]]+)\]\((https:\/\/wa\.me\/[^)]+)\)/);
+  if (mdMatch) return mdMatch[2];
+  if (/\bwhatsapp\b|fale conosco pelo whatsapp/i.test(content)) return WA_DEFAULT_URL;
+  return null;
+}
+
+/** Remove linha de link markdown do WhatsApp para exibicao limpa */
+function cleanBotContent(content: string): string {
+  return content
+    .replace(/\[[^\]]+\]\(https:\/\/wa\.me\/[^)]+\)\n?/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 // ---- Audio helpers ----
@@ -78,7 +70,11 @@ async function transcribeAudio(blob: Blob): Promise<string> {
   return data.text ?? "";
 }
 
-async function speakText(text: string, audioEl: HTMLAudioElement) {
+async function speakText(
+  text: string,
+  audioEl: HTMLAudioElement,
+  onBlocked?: (url: string) => void
+) {
   const cleaned = cleanForTTS(text);
   if (!cleaned) return;
   const res = await fetch("/api/chatbot/speak", {
@@ -90,7 +86,12 @@ async function speakText(text: string, audioEl: HTMLAudioElement) {
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   audioEl.src = url;
-  audioEl.play();
+  try {
+    await audioEl.play();
+  } catch {
+    // Autoplay bloqueado pelo navegador — exibe botao de play manual
+    onBlocked?.(url);
+  }
 }
 
 const QUICK_QUESTIONS = [
@@ -109,6 +110,8 @@ export default function ChatbotWidget() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true); // voz ativa por padrão
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [audioBlocked, setAudioBlocked] = useState(false);
+  const pendingAudioUrlRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -396,16 +399,28 @@ export default function ChatbotWidget() {
                     msg.role === "user" ? "" : "flex items-end gap-1"
                   }`}>
                     <div
-                      className={`px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                      className={`px-4 py-2.5 text-sm leading-relaxed ${
                         msg.role === "user"
                           ? "bg-[#1A1A1A] text-white"
                           : "bg-white border border-gray-100 text-[#1A1A1A]"
                       }`}
                     >
                       {msg.role === "assistant" ? (
-                        <BotMessageContent content={msg.content} />
+                        <>
+                          <p className="whitespace-pre-wrap m-0">{cleanBotContent(msg.content)}</p>
+                          {detectWAUrl(msg.content) && (
+                            <a
+                              href={detectWAUrl(msg.content)!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 flex items-center justify-center gap-2 w-full bg-[#25D366] hover:bg-[#1ead59] text-white text-xs font-bold py-2.5 px-3 transition"
+                            >
+                              Fale conosco pelo WhatsApp
+                            </a>
+                          )}
+                        </>
                       ) : (
-                        msg.content
+                        <span className="whitespace-pre-wrap">{msg.content}</span>
                       )}
                     </div>
                     {/* Speaker button on bot messages */}
@@ -468,6 +483,22 @@ export default function ChatbotWidget() {
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   Reproduzindo resposta...
                 </div>
+              )}
+              {audioBlocked && !isSpeaking && (
+                <button
+                  onClick={() => {
+                    if (pendingAudioUrlRef.current && audioElRef.current) {
+                      audioElRef.current.src = pendingAudioUrlRef.current;
+                      audioElRef.current.play()
+                        .then(() => setAudioBlocked(false))
+                        .catch(() => {});
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-[#C9A84C] border-b border-amber-100 bg-amber-50 hover:bg-amber-100 transition w-full"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  Toque para ouvir a resposta em voz
+                </button>
               )}
               <div className="flex items-center gap-2 px-4 py-3">
                 <input

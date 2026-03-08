@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { generateBlogPost, saveBlogPost, KEYWORD_CLUSTERS } from "@/lib/blog-engine";
 import { Resend } from "resend";
 
+export const dynamic = "force-dynamic";
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function GET(request: Request) {

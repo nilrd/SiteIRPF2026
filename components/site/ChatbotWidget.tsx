@@ -10,6 +10,39 @@ interface Message {
 }
 
 // ---- Audio helpers ----
+
+/** Remove markdown e normaliza texto para leitura natural em voz */
+function cleanForTTS(text: string): string {
+  return text
+    // Remove headers markdown
+    .replace(/^#{1,6}\s+/gm, "")
+    // Remove negrito e italico
+    .replace(/\*{1,3}([^*]+)\*{1,3}/g, "$1")
+    .replace(/_{1,2}([^_]+)_{1,2}/g, "$1")
+    // Remove backticks inline
+    .replace(/`([^`]+)`/g, "$1")
+    // Remove blocos de codigo
+    .replace(/```[\s\S]*?```/g, "")
+    // Converte R$ para leitura natural
+    .replace(/R\$\s?([\d.,]+)/g, (_, v) => `${v.replace(/\./g, "").replace(",", " reais e ")} reais`)
+    // Converte % para leitura
+    .replace(/(\d+)%/g, "$1 por cento")
+    // Remove bullets e hifens de lista
+    .replace(/^[-*•]\s+/gm, "")
+    // Remove numeracao de listas
+    .replace(/^\d+\.\s+/gm, "")
+    // Remove links markdown
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    // Espaceja siglas comuns para pronuncia correta
+    .replace(/\bIRPF\b/g, "I R P F")
+    .replace(/\bCPF\b/g, "C P F")
+    .replace(/\bCNPJ\b/g, "C N P J")
+    // Remove multiplos espacos/linhas em branco
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
 async function transcribeAudio(blob: Blob): Promise<string> {
   const form = new FormData();
   form.append("audio", blob, "recording.webm");
@@ -20,10 +53,12 @@ async function transcribeAudio(blob: Blob): Promise<string> {
 }
 
 async function speakText(text: string, audioEl: HTMLAudioElement) {
+  const cleaned = cleanForTTS(text);
+  if (!cleaned) return;
   const res = await fetch("/api/chatbot/speak", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text: cleaned }),
   });
   if (!res.ok) return;
   const blob = await res.blob();

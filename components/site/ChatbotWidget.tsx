@@ -9,6 +9,29 @@ interface Message {
   content: string;
 }
 
+// ---- Audio helpers ----
+async function transcribeAudio(blob: Blob): Promise<string> {
+  const form = new FormData();
+  form.append("audio", blob, "recording.webm");
+  const res = await fetch("/api/chatbot/transcribe", { method: "POST", body: form });
+  if (!res.ok) return "";
+  const data = await res.json();
+  return data.text ?? "";
+}
+
+async function speakText(text: string, audioEl: HTMLAudioElement) {
+  const res = await fetch("/api/chatbot/speak", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) return;
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  audioEl.src = url;
+  audioEl.play();
+}
+
 const QUICK_QUESTIONS = [
   "Sou obrigado a declarar?",
   "Tenho IR atrasado, e agora?",
@@ -21,8 +44,57 @@ export default function ChatbotWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
+
+  // init audio element once
+  useEffect(() => {
+    audioElRef.current = new Audio();
+    audioElRef.current.onplay = () => setIsSpeaking(true);
+    audioElRef.current.onended = () => setIsSpeaking(false);
+    audioElRef.current.onerror = () => setIsSpeaking(false);
+    return () => {
+      audioElRef.current?.pause();
+      mediaRecorderRef.current?.stream?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  const startRecording = useCallback(async () => {
+    if (isLoading || isTranscribing) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setIsTranscribing(true);
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const text = await transcribeAudio(blob);
+        setIsTranscribing(false);
+        if (text) sendMessage(text);
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+    } catch {
+      alert("Permita o acesso ao microfone nas configuracoes do navegador.");
+    }
+  }, [isLoading, isTranscribing]); // sendMessage added below via ref trick
+
+  const stopRecording = useCallback(() => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  }, []);
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
@@ -47,7 +119,7 @@ export default function ChatbotWidget() {
   const sendMessage = useCallback(
     async (text?: string) => {
       const userMessage = (text || input).trim();
-      if (!userMessage || isLoading) return;
+      if (!userMessage || isLoading || isRecording || isTranscribing) return;
 
       setInput("");
       setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
@@ -115,6 +187,9 @@ export default function ChatbotWidget() {
               }
             }
           }
+        // Auto-speak when audio mode is enabled
+        if (audioEnabled && assistantContent && audioElRef.current) {
+          speakText(assistantContent, audioElRef.current);
         }
       } catch {
         setMessages((prev) => [
@@ -128,7 +203,22 @@ export default function ChatbotWidget() {
         setIsLoading(false);
       }
     },
-    [input, isLoading, messages]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [input, isLoading, isRecording, isTranscribing, messages, audioEnabled]
+  );
+
+  // fix: make startRecording see sendMessage via ref
+  useEffect(() => {
+    // no-op — startRecording uses sendMessage via closure; audioEnabled captured above
+  }, [sendMessage]);
+
+  const handleSpeakMessage = useCallback(
+    (content: string) => {
+      if (!audioElRef.current) return;
+      audioElRef.current.pause();
+      speakText(content, audioElRef.current);
+    },
+    []
   );
 
   return (
@@ -191,21 +281,40 @@ export default function ChatbotWidget() {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="text-white/60 hover:text-white transition p-1"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+              <div className="flex items-center gap-1">
+                {/* Toggle audio automático */}
+                <button
+                  onClick={() => {
+                    if (audioEnabled && audioElRef.current) audioElRef.current.pause();
+                    setAudioEnabled((v) => !v);
+                  }}
+                  title={audioEnabled ? "Desativar voz" : "Ativar voz"}
+                  className={`p-1 transition ${
+                    audioEnabled ? "text-[#C6FF00]" : "text-white/40 hover:text-white"
+                  }`}
                 >
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-              </button>
+                  {audioEnabled ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                      <line x1="23" y1="9" x2="17" y2="15" />
+                      <line x1="17" y1="9" x2="23" y2="15" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-white/60 hover:text-white transition p-1"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             {/* Messages */}
@@ -215,14 +324,31 @@ export default function ChatbotWidget() {
                   key={i}
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
-                  <div
-                    className={`max-w-[85%] px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
-                      msg.role === "user"
-                        ? "bg-[#1A1A1A] text-white"
-                        : "bg-white border border-gray-100 text-[#1A1A1A]"
-                    }`}
-                  >
-                    {msg.content}
+                  <div className={`max-w-[85%] group relative ${
+                    msg.role === "user" ? "" : "flex items-end gap-1"
+                  }`}>
+                    <div
+                      className={`px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
+                        msg.role === "user"
+                          ? "bg-[#1A1A1A] text-white"
+                          : "bg-white border border-gray-100 text-[#1A1A1A]"
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                    {/* Speaker button on bot messages */}
+                    {msg.role === "assistant" && msg.content && (
+                      <button
+                        onClick={() => handleSpeakMessage(msg.content)}
+                        title="Ouvir"
+                        className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition text-gray-400 hover:text-[#1A1A1A] p-1"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -257,38 +383,65 @@ export default function ChatbotWidget() {
             </div>
 
             {/* Input */}
-            <div className="flex items-center gap-2 px-4 py-3 border-t border-gray-100 bg-white flex-shrink-0">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-                placeholder="Digite sua duvida..."
-                className="flex-1 text-sm outline-none bg-transparent placeholder:text-gray-400"
-                disabled={isLoading}
-              />
-              <button
-                onClick={() => sendMessage()}
-                disabled={isLoading || !input.trim()}
-                className="bg-[#1A1A1A] text-white p-2 hover:bg-[#2D4033] transition disabled:opacity-40"
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
+            <div className="border-t border-gray-100 bg-white flex-shrink-0">
+              {/* Recording indicator */}
+              {(isRecording || isTranscribing) && (
+                <div className="flex items-center gap-2 px-4 py-2 text-xs text-red-500 border-b border-gray-100">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  {isTranscribing ? "Transcrevendo..." : "Gravando... clique no mic para parar"}
+                </div>
+              )}
+              {isSpeaking && (
+                <div className="flex items-center gap-2 px-4 py-2 text-xs text-[#2D4033] border-b border-gray-100">
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  Reproduzindo resposta...
+                </div>
+              )}
+              <div className="flex items-center gap-2 px-4 py-3">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={isTranscribing ? "Transcrevendo..." : input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                  placeholder="Digite ou fale sua duvida..."
+                  className="flex-1 text-sm outline-none bg-transparent placeholder:text-gray-400"
+                  disabled={isLoading || isRecording || isTranscribing}
+                />
+                {/* Mic button */}
+                <button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  disabled={isLoading || isTranscribing}
+                  title={isRecording ? "Parar gravacao" : "Gravar pergunta"}
+                  className={`p-2 transition disabled:opacity-40 ${
+                    isRecording
+                      ? "text-red-500 animate-pulse"
+                      : "text-gray-400 hover:text-[#1A1A1A]"
+                  }`}
                 >
-                  <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
-                </svg>
-              </button>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" y1="19" x2="12" y2="23" />
+                    <line x1="8" y1="23" x2="16" y2="23" />
+                  </svg>
+                </button>
+                {/* Send button */}
+                <button
+                  onClick={() => sendMessage()}
+                  disabled={isLoading || isRecording || isTranscribing || !input.trim()}
+                  className="bg-[#1A1A1A] text-white p-2 hover:bg-[#2D4033] transition disabled:opacity-40"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

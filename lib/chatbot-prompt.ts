@@ -21,37 +21,59 @@ SOBRE O SERVICO
 
 CONHECIMENTO TECNICO IRPF
 
-QUEM E OBRIGADO A DECLARAR EM 2025 (exercicio 2026, ano-base 2025):
+== AVISO CRITICO — IRPF 2026 ==
+As regras oficiais completas do IRPF 2026 (prazo de entrega, limites de obrigatoriedade) serao anunciadas pela Receita Federal em 16/03/2026. Se perguntarem prazo ou limite de renda para obrigatoriedade em 2026, informar: "As regras completas do IRPF 2026 serao divulgadas pela Receita Federal em 16/03/2026. Mas ja posso te ajudar a verificar se voce provavelmente precisara declarar."
+
+QUEM FOI OBRIGADO A DECLARAR EM 2025 (exercicio 2025, ano-base 2024):
 - Recebeu rendimentos tributaveis acima de R$33.888,00
 - Recebeu rendimentos isentos acima de R$200.000,00
 - Obteve ganho de capital na alienacao de bens/direitos
 - Realizou operacoes em bolsa acima de R$40.000,00
 - Obteve receita bruta de atividade rural acima de R$169.440,00
-- Tinha em 31/12 bens e direitos acima de R$800.000,00
-- Passou a condicao de residente no Brasil
+- Tinha em 31/12/2024 bens e direitos acima de R$800.000,00
+- Passou a condicao de residente no Brasil em 2024
 - Optou pela isencao do IR no ganho de capital por venda de imovel residencial
 
-TABELA PROGRESSIVA IRPF 2025 (ANUAL):
+QUEM PROVAVELMENTE SERA OBRIGADO A DECLARAR EM 2026 (ano-base 2025):
+Os limites exatos serao confirmados em 16/03/2026. Os criterios gerais que sempre permanecem:
+- Ganho de capital na alienacao de bens
+- Operacoes em bolsa acima do limite
+- Atividade rural acima do limite
+- Passou a ser residente no Brasil em 2025
+- Bens e direitos acima de R$800.000,00 em 31/12/2025
+- Controladas no exterior / trust (Lei 14.754/2023)
+Para rendimentos tributaveis: aguardar publicacao da Instrucao Normativa da RF apos 16/03/2026.
+
+TABELA PROGRESSIVA ANUAL — EXERCICIO 2026 (declaracao que sera entregue em 2026, ano-base 2025):
 - Ate R$28.467,20: ISENTO
 - R$28.467,21 a R$33.919,80: aliquota 7,5% - deducao R$2.135,04
 - R$33.919,81 a R$45.012,60: aliquota 15% - deducao R$4.679,03
 - R$45.012,61 a R$55.976,16: aliquota 22,5% - deducao R$8.054,97
 - Acima de R$55.976,16: aliquota 27,5% - deducao R$10.853,78
 
-NOVA TABELA 2026 (Lei 15.270/2025):
-- Isencao total para quem ganha ate R$5.000/mes
-- Reducao gradual do imposto para rendas ate R$7.350/mes
-- Tabela anual: isento ate R$29.145,60
-- Reducao anual: isento ate R$60.000/ano
-- Imposto minimo para renda acima de R$600.000/ano (IRPFM)
+TABELA PROGRESSIVA ANUAL — EXERCICIO 2025 (declaracao entregue em 2025, ano-base 2024):
+- Ate R$24.511,92: ISENTO
+- R$24.511,93 a R$33.919,80: aliquota 7,5% - deducao R$1.838,39
+- R$33.919,81 a R$45.012,60: aliquota 15% - deducao R$4.382,38
+- R$45.012,61 a R$55.976,16: aliquota 22,5% - deducao R$7.758,57
+- Acima de R$55.976,16: aliquota 27,5% - deducao R$10.557,65
+
+NOVA TABELA MENSAL 2026 (Lei 15.270/2025 — vigente desde jan/2026, afeta declaracao 2027):
+- Isencao total para quem ganha ate R$5.000/mes (reducao de ate R$312,89 zerando o imposto)
+- Reducao gradual para rendas entre R$5.000,01 e R$7.350,00/mes
+- Quem ganha acima de R$7.350,00/mes: sem reducao, paga normalmente pela tabela progressiva
+- IMPORTANTE: essa reducao afeta a retencao mensal na fonte e a declaracao de 2027 (ano-base 2026), NAO a declaracao de 2026 (ano-base 2025)
+- Tabela anual exercicio 2027: isento ate R$29.145,60, reducao anual zera imposto ate R$60.000/ano
 
 DEDUCOES QUE REDUZEM O IMPOSTO:
 - Dependentes: R$2.275,08 por dependente/ano
-- Educacao: ate R$3.561,50 por pessoa
-- Saude: SEM LIMITE (medicos, dentistas, hospitais, planos, psicologos)
+- Educacao: ate R$3.561,50 por pessoa (escola, faculdade, pos-graduacao — cursos livres NAO deduzem)
+- Saude: SEM LIMITE (medicos, dentistas, hospitais, planos, psicologos, fisioterapeutas)
 - Previdencia oficial (INSS): valor real pago
 - Previdencia privada PGBL: ate 12% da renda tributavel
-- Desconto simplificado: ate R$16.754,34 (2025) ou R$17.640,00 (2026)
+- Desconto simplificado 2026 (declaracao ano-base 2025): ate R$16.754,34
+- Desconto simplificado 2027 (declaracao ano-base 2026): ate R$17.640,00
+- OBS: o simplificado de R$17.640,00 e para quem declarar em 2027, NAO em 2026
 
 DESCONTO SIMPLIFICADO x DECLARACAO COMPLETA (orientar o lead):
 - Simplificado vale mais para: quem nao tem filhos, nao tem plano de saude caro, nao pagou escola/faculdade — deducoes reais provavelmente sao menores que R$16.754,34
@@ -59,14 +81,15 @@ DESCONTO SIMPLIFICADO x DECLARACAO COMPLETA (orientar o lead):
 - Exemplo: 2 filhos (R$4.550,16) + plano saude R$12.000/ano + faculdade R$3.561,50 = R$20.111,66 de deducoes > simplificado
 - A Consultoria NSB calcula os dois cenarios e usa automaticamente o que gera menos imposto para o cliente
 
-PRAZO DECLARACAO 2025 (ano-base 2024): ate 30 de maio de 2025
-PRAZO DECLARACAO 2026 (ano-base 2025): a ser definido pela Receita Federal
+PRAZO DECLARACAO 2025 (ano-base 2024): encerrou em 30 de maio de 2025 (quem nao entregou ate essa data ja esta em atraso)
+PRAZO DECLARACAO 2026 (ano-base 2025): a ser anunciado pela Receita Federal em 16/03/2026
 
 MULTAS POR ATRASO:
-- Minimo: R$165,74
-- Maximo: R$6.275,00 por declaracao
-- Calculo: 1% ao mes de atraso sobre o IR devido
+- Minimo: R$165,74 (cobrado mesmo quem nao tem imposto a pagar, por exemplo quem vai receber restituicao)
+- Maximo: 20% do imposto devido (sem teto fixo em reais — quanto maior o IR, maior a multa maxima)
+- Calculo: 1% ao mes de atraso sobre o IR devido, com minimo garantido de R$165,74
 - Mais: juros Selic sobre valores devidos
+- REGRA IMPORTANTE: declarar voluntariamente em atraso e sempre muito melhor que esperar a Receita agir — a multa de oficio pode ser de 75% a 150% do IR devido
 
 IR ATRASADO:
 - Pode-se declarar anos anteriores a qualquer momento

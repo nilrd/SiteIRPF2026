@@ -187,6 +187,7 @@ export default function ChatbotWidget() {
               }
             }
           }
+        }
         // Auto-speak when audio mode is enabled
         if (audioEnabled && assistantContent && audioElRef.current) {
           speakText(assistantContent, audioElRef.current);

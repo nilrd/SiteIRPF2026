@@ -42,8 +42,72 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Sanitize: reject messages with non-string content or oversized payloads
+    const sanitized = messages.filter(
+      (m) =>
+        m &&
+        typeof m.role === "string" &&
+        typeof m.content === "string" &&
+        m.content.length <= 2000 &&
+        ["user", "assistant"].includes(m.role)
+    );
+
+    if (sanitized.length === 0) {
+      return NextResponse.json({ error: "Mensagens invalidas." }, { status: 400 });
+    }
+
+    // Off-topic guard: detect obvious jailbreak / social-engineering patterns
+    const lastUserMsg = sanitized
+      .filter((m) => m.role === "user")
+      .at(-1)?.content?.toLowerCase() ?? "";
+
+    const BLOCKED_PATTERNS = [
+      // Hypothetical framing
+      /vamos supor/,
+      /imagine que/,
+      /finja que/,
+      /fingir que/,
+      /simule que/,
+      /como se fosse/,
+      /suponha que/,
+      /hipoteticamente/,
+      /em um mundo onde/,
+      // Role / persona hijack
+      /você (é|sera|vai ser) um/,
+      /seu novo (papel|personagem|modo)/,
+      /ignore (suas|as) instruç/,
+      /esqueça (suas|as) instruç/,
+      /novo prompt/,
+      /system prompt/,
+      /prompt injection/,
+      /ignore previous/,
+      /override/,
+      /jailbreak/,
+      /dan mode/,
+      // Clearly off-topic domains
+      /erro 4\d{2}/,
+      /status code/,
+      /html.*css/,
+      /javascript.*code/,
+      /programaç/,
+      /hackear/,
+      /senha.*wifi/,
+      /como invadir/,
+    ];
+
+    const isBlocked = BLOCKED_PATTERNS.some((p) => p.test(lastUserMsg));
+    if (isBlocked) {
+      return NextResponse.json(
+        {
+          error:
+            "Isso esta fora da minha area. Posso te ajudar apenas com questoes sobre Imposto de Renda.",
+        },
+        { status: 200 }
+      );
+    }
+
     // Keep only last 10 messages for context
-    const recentMessages = messages.slice(-10);
+    const recentMessages = sanitized.slice(-10);
 
     const stream = await gpt4o.chat.completions.create({
       model: MODELS.chatbot,
@@ -51,7 +115,7 @@ export async function POST(req: NextRequest) {
         { role: "system", content: CHATBOT_SYSTEM_PROMPT },
         ...recentMessages,
       ],
-      max_tokens: 500,
+      max_tokens: 400,
       temperature: 0.7,
       stream: true,
     });

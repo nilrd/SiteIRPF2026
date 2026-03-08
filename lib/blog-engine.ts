@@ -15,6 +15,25 @@ export async function getSelicAtual(): Promise<number> {
   }
 }
 
+/* ---- Imagens de capa rotativas (Unsplash curado — finanças/documentos) ---- */
+const COVER_IMAGES = [
+  "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1590283603385-17ffb3aa346b?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1434626881859-194d67b2b86f?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1579621970563-ebec7cc1e1c5?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1554224154-22dec7ec8818?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&q=75",
+];
+function getRandomCoverImage(): string {
+  return COVER_IMAGES[Math.floor(Math.random() * COVER_IMAGES.length)];
+}
+
 /* ---- Keyword clusters para SEO ---- */
 export const KEYWORD_CLUSTERS = [
   {
@@ -151,27 +170,98 @@ export const KEYWORD_CLUSTERS = [
   },
 ];
 
+/* ---- Clusters de finanças pessoais (tráfego amplo, sempre relacionado a finanças) ---- */
+export const FINANCE_CLUSTERS = [
+  {
+    primary: "nova lei isencao imposto de renda 2026 lei 15270",
+    secondary: ["isencao IR salario 5000", "quem nao paga imposto de renda 2026"],
+    volume: "alta",
+    intent: "informacional",
+  },
+  {
+    primary: "planejamento financeiro pessoal 2026",
+    secondary: ["como organizar financas pessoais", "metas financeiras ano novo"],
+    volume: "alta",
+    intent: "informacional",
+  },
+  {
+    primary: "investimentos renda fixa 2026 melhores opcoes selic",
+    secondary: ["CDB LCI LCA rendimento 2026", "onde investir com selic alta"],
+    volume: "alta",
+    intent: "informacional",
+  },
+  {
+    primary: "FGTS saque regras 2026",
+    secondary: ["FGTS aniversario saque antecipado", "FGTS demissao sem justa causa calculo"],
+    volume: "alta",
+    intent: "informacional",
+  },
+  {
+    primary: "aposentadoria INSS regras pontuacao 2026",
+    secondary: ["tempo de contribuicao aposentadoria", "calculo beneficio INSS 2026"],
+    volume: "alta",
+    intent: "informacional",
+  },
+  {
+    primary: "MEI simples nacional imposto 2026 limite faturamento",
+    secondary: ["MEI quanto paga de imposto mensal", "limite MEI 2026 microempreendedor"],
+    volume: "alta",
+    intent: "informacional",
+  },
+  {
+    primary: "salario minimo 2026 reajuste impacto",
+    secondary: ["novo salario minimo valor 2026", "impacto salario minimo beneficios sociais"],
+    volume: "alta",
+    intent: "informacional",
+  },
+  {
+    primary: "como sair das dividas planejamento financeiro 2026",
+    secondary: ["renegociacao divida bancaria", "educacao financeira para iniciantes"],
+    volume: "alta",
+    intent: "informacional",
+  },
+  {
+    primary: "inflacao IPCA 2026 impacto poder de compra",
+    secondary: ["IPCA acumulado 2025 resultado", "correcao salarial inflacao meta"],
+    volume: "media",
+    intent: "informacional",
+  },
+  {
+    primary: "previdencia privada PGBL VGBL vale a pena 2026",
+    secondary: ["diferenca PGBL VGBL imposto renda", "previdencia privada vantagens desvantagens"],
+    volume: "media",
+    intent: "informacional",
+  },
+];
+
+/* ---- Pool unificado para rotacao automatica ---- */
+export const ALL_CLUSTERS = [...KEYWORD_CLUSTERS, ...FINANCE_CLUSTERS];
+
 /* ---- System prompt para blog ---- */
 function blogSystemPrompt(selicAtual: number) {
-  return `Voce e um redator especialista em IRPF (Imposto de Renda Pessoa Fisica) no Brasil.
-Escreva artigos longos, tecnicos e uteis para o blog da Consultoria IRPF NSB.
+  const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  return `Voce e um redator especialista em financas pessoais, IRPF e tributacao no Brasil.
+Escreva artigos longos, educativos e uteis para o blog da Consultoria IRPF NSB.
+Data de publicacao: ${hoje}.
 
-REGRAS:
-1. Artigo com no minimo 1.800 palavras
-2. Use a tabela IRPF 2026 oficial:
-   - Ate R$ 2.428,80 mensal: isento
-   - R$ 2.428,81 a R$ 2.826,65: 7,5% deducao R$ 182,16
-   - R$ 2.826,66 a R$ 3.751,05: 15% deducao R$ 394,16
-   - R$ 3.751,06 a R$ 4.664,68: 22,5% deducao R$ 675,49
-   - Acima de R$ 4.664,68: 27,5% deducao R$ 908,73
-3. Inclua pelo menos 1 calculo numerico detalhado como exemplo
-4. Taxa Selic atual: ${selicAtual}% a.a.
-5. Inclua exatamente 6 FAQs no final no formato JSON
-6. Inclua CTA para WhatsApp da consultoria (+55 11 94082-5120)
-7. Nunca ensine a declarar sozinho — sempre direcione para consultor
-8. Apenas IRPF Pessoa Fisica — nunca PJ, CNPJ, empresa
-9. Zero emojis
-10. Tom: profissional, autoritativo, acessivel
+REGRAS INEGOCIAVEIS:
+1. NUNCA invente dados, noticias, leis ou percentuais. Use APENAS informacoes verificaveis de fontes oficiais.
+2. Para cada dado numerico ou legal citado, informe a fonte: Receita Federal (gov.br/receitafederal), BCB (bcb.gov.br), Previdencia (gov.br/previdencia), Planalto (planalto.gov.br), IBGE (ibge.gov.br).
+3. Se nao tiver certeza de uma data exata de evento recente, use "conforme legislacao vigente" — nunca invente datas.
+4. Artigo com no minimo 1.800 palavras em HTML semantico.
+5. Inclua pelo menos 1 exemplo numerico calculado passo a passo.
+6. Taxa Selic atual: ${selicAtual}% a.a. (Fonte: Banco Central do Brasil, ${hoje}).
+7. Tabela IRPF 2026 oficial (Fonte: Receita Federal / Lei 15.270/2025):
+   - Ate R$ 2.428,80/mes: isento
+   - R$ 2.428,81 a R$ 2.826,65: 7,5% (deducao R$ 182,16)
+   - R$ 2.826,66 a R$ 3.751,05: 15% (deducao R$ 394,16)
+   - R$ 3.751,06 a R$ 4.664,68: 22,5% (deducao R$ 675,49)
+   - Acima de R$ 4.664,68: 27,5% (deducao R$ 908,73)
+8. Inclua exatamente 6 FAQs reais no final.
+9. Inclua CTA para WhatsApp (+55 11 94082-5120) no meio e no final do artigo.
+10. Inclua secao "Fontes" ao final com URLs reais de orgaos oficiais citados no texto.
+11. Adicione nota de rodape: "Conteudo de carater educativo. Para analise do seu caso especifico, consulte o especialista Nilson Brites — Consultoria IRPF NSB."
+12. Zero emojis. Tom: profissional, autoritativo, acessivel ao publico geral.
 
 OTIMIZACAO SEO E AEO (Answer Engine Optimization):
 - Primeiro paragrafo: responda diretamente a pergunta principal em 1-2 frases (featured snippet)
@@ -200,7 +290,7 @@ export async function generateBlogPost(
 ) {
   const selicAtual = await getSelicAtual();
   const cluster = clusterIndex !== undefined
-    ? KEYWORD_CLUSTERS[clusterIndex % KEYWORD_CLUSTERS.length]
+    ? ALL_CLUSTERS[clusterIndex % ALL_CLUSTERS.length]
     : null;
 
   const keyword = customKeyword || cluster?.primary || "IRPF 2026";
@@ -218,36 +308,55 @@ export async function generateBlogPost(
       },
     ],
     temperature: 0.7,
-    max_tokens: 4096,
+    max_tokens: 8000,
     response_format: { type: "json_object" },
   });
 
   const raw = completion.choices[0]?.message?.content || "{}";
   const parsed = JSON.parse(raw);
 
+  // Slug sanitizado: remove acentos e caracteres especiais
+  const baseSlug = (parsed.slug || keyword)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+
   return {
     title: parsed.title || keyword,
-    slug: parsed.slug || keyword.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+    slug: baseSlug,
     summary: parsed.summary || "",
     content: parsed.content || "",
-    tags: parsed.tags || [],
-    keywords: parsed.keywords || [],
-    faqs: parsed.faqs || [],
+    tags: Array.isArray(parsed.tags) ? parsed.tags : [],
+    keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+    faqs: Array.isArray(parsed.faqs) ? parsed.faqs : [],
+    coverImage: getRandomCoverImage(),
   };
 }
 
 /* ---- Save post to DB ---- */
 export async function saveBlogPost(post: Awaited<ReturnType<typeof generateBlogPost>>) {
+  // Deduplicação de slug: se já existe, adiciona sufixo de timestamp
+  let slug = post.slug;
+  const exists = await prisma.blogPost.findFirst({ where: { slug }, select: { id: true } });
+  if (exists) {
+    slug = `${slug}-${Date.now().toString(36)}`;
+  }
+
   return prisma.blogPost.create({
     data: {
       title: post.title,
-      slug: post.slug,
+      slug,
       summary: post.summary,
       content: post.content,
       tags: post.tags,
       keywords: post.keywords,
       faqsJson: JSON.stringify(post.faqs),
-      published: true, // auto-publicado — blog zero-intervencao
+      coverImage: post.coverImage,
+      published: true,
     },
   });
 }

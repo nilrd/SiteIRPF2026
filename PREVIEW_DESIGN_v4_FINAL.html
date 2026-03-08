@@ -1,278 +1,1096 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tax & Strategy | Consultoria Especializada IRPF</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-base: #F9F7F2;
-            --text-main: #1A1A1A;
-            --accent: #2D4033; /* Verde Floresta Profundo */
-            --border: #D1CD00; /* Um toque de ouro sutil para linhas */
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-base);
-            color: var(--text-main);
-            scroll-behavior: smooth;
-        }
-        h1, h2, h3, .serif {
-            font-family: 'Playfair Display', serif;
-        }
-        .editorial-border {
-            border-bottom: 1px solid rgba(26, 26, 26, 0.1);
-        }
-        .btn-premium {
-            transition: all 0.3s ease;
-            border: 1px solid var(--text-main);
-        }
-        .btn-premium:hover {
-            background-color: var(--text-main);
-            color: white;
-        }
-        .calc-input {
-            background: transparent;
-            border-bottom: 1px solid var(--text-main);
-            padding: 8px 0;
-            width: 100%;
-            outline: none;
-        }
-        .chat-window {
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            border: 1px solid rgba(0,0,0,0.05);
-        }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-base); }
-        ::-webkit-scrollbar-thumb { background: #ccc; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consultoria IRPF NSB — Declaração de Imposto de Renda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:      #F9F7F2;
+  --branco:  #FFFFFF;
+  --preto:   #1A1A1A;
+  --verde:   #2D4033;
+  --verde2:  #3A5240;
+  --ouro:    #C9A84C;
+  --linha:   rgba(26,26,26,0.1);
+  --cinza:   #6B6860;
+}
+
+html{scroll-behavior:smooth}
+
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--preto);
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* Grain sutil */
+body::after{
+  content:'';position:fixed;inset:0;
+  pointer-events:none;z-index:9998;opacity:.022;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:128px;
+}
+
+::selection{background:var(--ouro);color:var(--preto)}
+
+h1,h2,h3,.serif{font-family:'Playfair Display',Georgia,serif}
+
+/* ─ HEADER ───────────────────────────────────── */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(249,247,242,.88);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--linha);
+}
+.hdr{
+  max-width:1380px;margin:0 auto;
+  padding:0 52px;height:64px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{
+  font-family:'Playfair Display',serif;font-size:15px;
+  font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--preto);text-decoration:none;
+  display:flex;align-items:center;gap:8px;
+}
+.logo-dot{
+  width:7px;height:7px;background:var(--ouro);
+  border-radius:50%;flex-shrink:0;
+}
+nav{display:flex;align-items:center;gap:44px}
+nav a{
+  font-size:10px;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:var(--cinza);text-decoration:none;
+  transition:color .2s;
+}
+nav a:hover{color:var(--preto)}
+.nav-primary{
+  border-bottom:1px solid var(--preto) !important;
+  color:var(--preto) !important;padding-bottom:1px;
+}
+
+/* ─ HERO ─────────────────────────────────────── */
+.hero{
+  max-width:1380px;margin:0 auto;
+  padding:148px 52px 0;
+}
+
+/* Meta bar acima do título */
+.hero-meta{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  border-bottom:1px solid var(--linha);padding-bottom:32px;
+  margin-bottom:56px;
+}
+.hero-meta-tag{
+  font-size:10px;font-weight:600;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--cinza);
+}
+.hero-stats{
+  display:flex;gap:48px;
+}
+.hs{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.hs strong{
+  font-family:'Playfair Display',serif;font-size:24px;
+  font-weight:700;color:var(--preto);letter-spacing:-.02em;
+}
+.hs span{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--cinza)}
+
+/* Grid principal */
+.hero-grid{
+  display:grid;grid-template-columns:7fr 5fr;
+  gap:80px;align-items:end;
+  padding-bottom:80px;border-bottom:1px solid var(--linha);
+}
+.hero-title{
+  font-size:clamp(52px,5.6vw,84px);
+  font-weight:400;line-height:1.04;letter-spacing:-.025em;
+  color:var(--preto);margin-bottom:0;
+}
+.hero-title em{color:#999;font-weight:300}
+
+.hero-right{display:flex;flex-direction:column;gap:32px;padding-bottom:8px}
+.hero-desc{
+  font-size:15px;font-weight:300;line-height:1.85;color:var(--cinza);
+  border-left:2px solid var(--ouro);padding-left:20px;
+}
+.hero-actions{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.btn-dark{
+  background:var(--preto);color:#fff;
+  padding:15px 32px;font-size:10px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;
+  text-decoration:none;transition:background .2s;
+  display:inline-block;white-space:nowrap;
+}
+.btn-dark:hover{background:var(--verde)}
+.btn-ghost{
+  font-size:10px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--preto);
+  text-decoration:none;border-bottom:1px solid var(--preto);
+  padding-bottom:2px;transition:opacity .2s;
+}
+.btn-ghost:hover{opacity:.4}
+
+/* Barra de dados abaixo do hero */
+.hero-data-bar{
+  display:grid;grid-template-columns:repeat(4,1fr);
+}
+.hd-item{
+  padding:28px 0;
+  border-right:1px solid var(--linha);
+  padding-right:40px;
+}
+.hd-item:last-child{border-right:none}
+.hd-num{
+  font-family:'Playfair Display',serif;
+  font-size:32px;font-weight:700;letter-spacing:-.02em;
+  color:var(--preto);display:block;margin-bottom:4px;
+}
+.hd-label{font-size:11px;color:var(--cinza);font-weight:300}
+
+/* ─ MARQUEE ──────────────────────────────────── */
+.marquee-wrap{
+  background:var(--verde);
+  padding:15px 0;overflow:hidden;white-space:nowrap;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.marquee-track{display:inline-flex;animation:scroll 30s linear infinite}
+.marquee-item{
+  display:inline-flex;align-items:center;gap:28px;
+  padding-right:56px;
+  font-size:10px;font-weight:700;letter-spacing:.22em;
+  text-transform:uppercase;color:rgba(255,255,255,.32);
+}
+.marquee-item b{color:rgba(255,255,255,.82);font-weight:700}
+.marquee-sep{color:var(--ouro);font-size:12px;opacity:.7}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ─ SERVICOS ─────────────────────────────────── */
+.s-wrap{max-width:1380px;margin:0 auto;padding:96px 52px}
+.s-header{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  border-bottom:1px solid var(--linha);padding-bottom:40px;margin-bottom:0;
+}
+.eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--ouro);margin-bottom:12px;display:block;
+}
+.s-header h2{
+  font-size:clamp(32px,3.2vw,48px);font-weight:400;
+  letter-spacing:-.02em;line-height:1.1;
+}
+.s-header-note{
+  font-size:12px;color:var(--cinza);font-weight:300;
+  font-style:italic;max-width:240px;text-align:right;line-height:1.7;
+}
+
+/* Linhas de serviço */
+.srv-line{
+  display:grid;grid-template-columns:52px 1fr 220px 140px;
+  align-items:center;gap:48px;
+  padding:30px 0;border-bottom:1px solid var(--linha);
+  transition:padding-left .25s;cursor:default;position:relative;
+}
+.srv-line:hover{padding-left:14px}
+.srv-line:hover .arr{transform:translateY(-50%) rotate(-45deg)}
+.srv-n{
+  font-family:'Playfair Display',serif;
+  font-size:12px;color:var(--cinza);font-style:italic;
+}
+.srv-name{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(20px,2vw,28px);font-weight:400;
+  letter-spacing:-.01em;
+}
+.srv-desc{font-size:12px;color:var(--cinza);line-height:1.7;font-weight:300}
+.srv-tag{
+  font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  padding:6px 14px;border:1px solid var(--preto);color:var(--preto);
+  display:inline-block;
+}
+.srv-tag.filled{background:var(--verde);border-color:var(--verde);color:#fff}
+.srv-tag.gold{background:var(--ouro);border-color:var(--ouro);color:var(--preto)}
+.arr{
+  position:absolute;right:0;top:50%;transform:translateY(-50%);
+  font-size:16px;color:var(--cinza);transition:transform .2s;
+}
+
+/* ─ FOTO SPLIT ───────────────────────────────── */
+.split-wrap{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--linha)}
+
+.split-photo{
+  position:relative;overflow:hidden;
+  background:var(--preto);
+  min-height:620px;
+}
+.split-photo img{
+  width:100%;height:100%;object-fit:cover;
+  object-position:top center;
+  filter:grayscale(18%);opacity:.9;
+  transition:transform .9s ease;
+}
+.split-photo:hover img{transform:scale(1.04)}
+
+.photo-badge{
+  position:absolute;bottom:40px;left:40px;
+  background:#fff;padding:18px 24px;
+  border-left:3px solid var(--ouro);
+}
+.badge-n{
+  font-family:'Playfair Display',serif;font-size:48px;
+  font-weight:700;color:var(--verde);line-height:1;display:block;
+}
+.badge-l{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--cinza)}
+
+.split-content{
+  background:#fff;padding:72px 64px;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.split-content h2{
+  font-size:clamp(30px,2.8vw,44px);font-weight:400;
+  letter-spacing:-.02em;line-height:1.12;margin-bottom:24px;
+}
+.split-content h2 em{font-style:italic;color:var(--cinza)}
+.split-content p{
+  font-size:14px;color:var(--cinza);line-height:1.9;
+  font-weight:300;margin-bottom:16px;
+}
+.split-content p strong{color:var(--preto);font-weight:600}
+.split-hr{border:none;border-top:1px solid var(--linha);margin:28px 0}
+.split-links{display:flex;gap:28px;flex-wrap:wrap}
+.split-links a{
+  font-size:11px;font-weight:500;letter-spacing:.06em;
+  color:var(--cinza);text-decoration:none;transition:color .2s;
+}
+.split-links a:hover{color:var(--preto)}
+
+/* ─ DADOS OFICIAIS ───────────────────────────── */
+.dados-wrap{background:var(--verde);padding:96px 0}
+.dados-inner{max-width:1380px;margin:0 auto;padding:0 52px}
+.dados-inner .eyebrow{color:rgba(201,168,76,.7)}
+.dados-inner h2{
+  font-size:clamp(34px,3.4vw,54px);font-weight:400;
+  color:#fff;letter-spacing:-.02em;line-height:1.06;
+  margin-bottom:56px;max-width:580px;
+}
+.dados-inner h2 em{font-style:italic;color:rgba(255,255,255,.5)}
+
+.dados-grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:rgba(255,255,255,.07)}
+.dados-card{background:rgba(255,255,255,.035);padding:44px 40px;transition:background .2s}
+.dados-card:hover{background:rgba(255,255,255,.07)}
+.dados-card .eyebrow{color:rgba(201,168,76,.75);margin-bottom:24px}
+
+/* Tabela */
+.tbl{width:100%;border-collapse:collapse}
+.tbl tr{border-bottom:1px solid rgba(255,255,255,.07)}
+.tbl td{padding:13px 0;font-size:12px;color:rgba(255,255,255,.5);font-weight:300}
+.tbl td:first-child{color:rgba(255,255,255,.75)}
+.tbl td:last-child{
+  text-align:right;font-family:'Playfair Display',serif;
+  font-size:15px;font-weight:700;color:var(--ouro);
+}
+.tbl tr.isento td:last-child{color:#82D4A0}
+
+/* Multas */
+.multa-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07);
+}
+.multa-row .ml{font-size:12px;color:rgba(255,255,255,.45);font-weight:300}
+.multa-row .mv{
+  font-family:'Playfair Display',serif;font-size:18px;font-weight:700;
+}
+.mv.red{color:#E88080}
+.mv.neutral{color:rgba(255,255,255,.6);font-size:14px;font-weight:400}
+
+.dados-cta-bar{
+  grid-column:1/-1;background:var(--ouro);
+  padding:32px 40px;
+  display:flex;justify-content:space-between;align-items:center;
+  gap:32px;
+}
+.dados-cta-bar p{
+  font-family:'Playfair Display',serif;font-size:18px;
+  color:var(--preto);font-weight:500;
+}
+.dados-cta-bar p em{font-style:italic;font-weight:400}
+.dados-cta-bar a{
+  background:var(--preto);color:#fff;padding:13px 28px;
+  font-size:10px;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;text-decoration:none;
+  white-space:nowrap;transition:opacity .2s;flex-shrink:0;
+}
+.dados-cta-bar a:hover{opacity:.75}
+
+/* ─ CALCULADORA ──────────────────────────────── */
+.calc-section{background:#fff;padding:96px 0;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha)}
+.calc-inner{max-width:1380px;margin:0 auto;padding:0 52px;display:grid;grid-template-columns:1fr 1fr;gap:100px;align-items:start}
+.calc-left .eyebrow{margin-bottom:14px}
+.calc-left h2{font-size:clamp(30px,2.8vw,44px);font-weight:400;letter-spacing:-.02em;margin-bottom:10px}
+.calc-left>p{font-size:13px;color:var(--cinza);font-weight:300;line-height:1.7;margin-bottom:48px}
+
+.field{margin-bottom:36px}
+.field label{
+  display:block;font-size:9px;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:var(--cinza);margin-bottom:12px;
+}
+.field input{
+  width:100%;background:transparent;
+  border:none;border-bottom:1px solid var(--preto);
+  padding:10px 0;
+  font-family:'Playfair Display',serif;font-size:26px;
+  color:var(--preto);outline:none;transition:border-color .2s;
+}
+.field input:focus{border-color:var(--ouro)}
+.field input::placeholder{color:#ccc;font-style:italic}
+
+.btn-calc{
+  width:100%;background:var(--preto);color:#fff;
+  padding:18px;border:none;cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;
+  transition:background .2s;
+}
+.btn-calc:hover{background:var(--verde)}
+
+/* Resultado */
+.calc-result{
+  background:var(--bg);padding:56px 48px;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;
+  min-height:460px;border-left:3px solid var(--ouro);
+  position:sticky;top:88px;
+}
+.res-eyebrow{font-family:'Playfair Display',serif;font-size:14px;font-style:italic;color:var(--cinza);margin-bottom:14px}
+.res-val{font-family:'Playfair Display',serif;font-size:60px;font-weight:300;letter-spacing:-.03em;line-height:1;margin-bottom:6px;transition:color .3s}
+.res-label{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--cinza);margin-bottom:36px}
+.res-cta{
+  background:var(--verde);color:#fff;padding:14px 28px;
+  font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  text-decoration:none;display:none;transition:background .2s;
+}
+.res-cta:hover{background:var(--verde2)}
+
+/* ─ BLOG ─────────────────────────────────────── */
+.blog-section{padding:96px 0;border-top:1px solid var(--linha)}
+.blog-head{max-width:1380px;margin:0 auto;padding:0 52px;display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:56px}
+.blog-head h2{font-size:clamp(34px,3.4vw,52px);font-weight:400;letter-spacing:-.02em}
+.blog-head a{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--preto);text-decoration:none;border-bottom:1px solid var(--preto);padding-bottom:2px;transition:opacity .2s}
+.blog-head a:hover{opacity:.4}
+
+.blog-grid{max-width:1380px;margin:0 auto;padding:0 52px;display:grid;grid-template-columns:repeat(3,1fr);gap:44px}
+
+article.post{cursor:pointer}
+.post-photo{width:100%;aspect-ratio:4/5;overflow:hidden;background:var(--bg);margin-bottom:22px;position:relative}
+.post-photo img{width:100%;height:100%;object-fit:cover;filter:grayscale(20%);transition:transform .7s ease,filter .4s}
+article.post:hover .post-photo img{transform:scale(1.06);filter:grayscale(0%)}
+.post-cat{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--ouro);display:block;margin-bottom:10px}
+.post-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:400;line-height:1.32;letter-spacing:-.01em;margin-bottom:12px;transition:font-style .2s}
+article.post:hover .post-title{font-style:italic}
+.post-meta{font-size:10px;color:var(--cinza);letter-spacing:.04em}
+
+/* ─ PROCESSO ─────────────────────────────────── */
+.processo-wrap{background:var(--preto);padding:96px 0}
+.processo-inner{max-width:1380px;margin:0 auto;padding:0 52px}
+.processo-inner .eyebrow{color:rgba(201,168,76,.65);margin-bottom:16px}
+.processo-inner>h2{font-size:clamp(34px,3.4vw,54px);font-weight:400;color:#fff;letter-spacing:-.02em;margin-bottom:60px;max-width:460px;line-height:1.07}
+.processo-inner>h2 em{font-style:italic;color:var(--ouro)}
+
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:rgba(255,255,255,.06)}
+.step{background:var(--preto);padding:48px 40px;transition:background .2s}
+.step:hover{background:#1E1E1E}
+.step-n{font-family:'Playfair Display',serif;font-size:72px;font-weight:400;color:rgba(255,255,255,.06);line-height:1;display:block;margin-bottom:20px}
+.step h3{font-family:'Playfair Display',serif;font-size:22px;font-weight:400;color:#fff;margin-bottom:12px;line-height:1.2}
+.step p{font-size:12px;color:rgba(255,255,255,.38);line-height:1.8;font-weight:300}
+
+/* ─ CONTATO ──────────────────────────────────── */
+.contato-wrap{background:var(--verde);padding:96px 0}
+.contato-inner{max-width:920px;margin:0 auto;padding:0 52px;text-align:center}
+.contato-inner .eyebrow{color:rgba(201,168,76,.7);margin-bottom:16px}
+.contato-inner h2{font-size:clamp(34px,4vw,60px);font-weight:400;color:#fff;letter-spacing:-.025em;line-height:1.06;margin-bottom:14px}
+.contato-inner h2 em{font-style:italic;color:var(--ouro)}
+.contato-inner>p{font-size:14px;color:rgba(255,255,255,.46);font-weight:300;margin-bottom:52px;line-height:1.75}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:36px;text-align:left;margin-bottom:36px}
+.fg{display:flex;flex-direction:column;gap:10px}
+.fg.full{grid-column:1/-1}
+.fg label{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.3)}
+.fg input,.fg select,.fg textarea{
+  background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.18);
+  padding:12px 0;font-family:'Inter',sans-serif;font-size:14px;
+  color:#fff;outline:none;transition:border-color .2s;-webkit-appearance:none;
+}
+.fg input::placeholder,.fg textarea::placeholder{color:rgba(255,255,255,.25)}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--ouro)}
+.fg select option{background:var(--verde);color:#fff}
+.fg textarea{resize:none;height:76px}
+.btn-submit{
+  width:100%;background:#fff;color:var(--verde);padding:20px;
+  border:none;cursor:pointer;font-family:'Inter',sans-serif;
+  font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+  transition:all .25s;
+}
+.btn-submit:hover{background:var(--ouro);color:var(--preto)}
+
+/* ─ FOOTER ───────────────────────────────────── */
+footer{background:var(--preto);padding:56px 52px 28px}
+.footer-inner{max-width:1380px;margin:0 auto}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:64px;margin-bottom:52px}
+.footer-brand p{font-size:12px;color:rgba(255,255,255,.28);line-height:1.75;font-weight:300;margin-top:16px;max-width:240px}
+.footer-col h4{font-size:9px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:20px}
+.footer-col ul{list-style:none}
+.footer-col li{margin-bottom:12px}
+.footer-col a{font-size:12px;color:rgba(255,255,255,.36);text-decoration:none;font-weight:300;transition:color .15s}
+.footer-col a:hover{color:var(--ouro)}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.06);padding-top:22px;display:flex;justify-content:space-between;align-items:center}
+.footer-bottom p{font-size:10px;color:rgba(255,255,255,.15);font-weight:300}
+.footer-status{display:flex;align-items:center;gap:8px;font-size:10px;color:rgba(255,255,255,.22);font-weight:600;letter-spacing:.05em}
+.s-dot{width:7px;height:7px;background:#6FE88F;border-radius:50%;animation:blink 2.2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ─ WA FLOAT ─────────────────────────────────── */
+.wa-float{position:fixed;bottom:32px;right:32px;z-index:200;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.wa-label{background:var(--preto);color:#fff;font-size:10px;font-weight:600;letter-spacing:.06em;padding:7px 13px;white-space:nowrap;opacity:0;animation:fadein .4s ease 1.8s forwards}
+@keyframes fadein{to{opacity:1}}
+.wa-btn{width:54px;height:54px;background:#25D366;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 4px 20px rgba(37,211,102,.28);transition:all .25s}
+.wa-btn:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(37,211,102,.42)}
+.wa-btn svg{width:24px;height:24px;fill:#fff}
+
+/* ─ CHATBOT ──────────────────────────────────── */
+.chat-wrap{position:fixed;bottom:32px;left:32px;z-index:200}
+
+.chat-trigger{
+  display:flex;align-items:center;gap:14px;
+  background:var(--preto);padding:14px 20px;
+  border:none;cursor:pointer;font-family:'Inter',sans-serif;
+  box-shadow:0 8px 36px rgba(0,0,0,.2);
+  transition:background .2s;position:relative;
+}
+.chat-trigger:hover{background:var(--verde)}
+
+.ct-pulse{
+  position:absolute;top:-4px;right:-4px;
+  width:12px;height:12px;background:#6FE88F;
+  border-radius:50%;border:2px solid var(--bg);
+}
+
+.ct-icon{
+  width:38px;height:38px;background:var(--ouro);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-weight:700;
+  font-size:13px;color:var(--preto);flex-shrink:0;
+}
+.ct-text{text-align:left}
+.ct-text strong{display:block;color:#fff;font-size:13px;font-weight:600;margin-bottom:1px}
+.ct-text span{font-size:10px;color:rgba(255,255,255,.38);letter-spacing:.02em}
+
+/* Janela */
+.chat-window{
+  position:absolute;bottom:calc(100% + 12px);left:0;
+  width:384px;height:530px;background:#fff;
+  border:1px solid rgba(0,0,0,.07);
+  box-shadow:0 28px 72px rgba(0,0,0,.13);
+  display:flex;flex-direction:column;overflow:hidden;
+  opacity:0;transform:translateY(14px) scale(.97);
+  transition:all .3s cubic-bezier(.22,1,.36,1);pointer-events:none;
+}
+.chat-window.open{opacity:1;transform:translateY(0) scale(1);pointer-events:all}
+
+.chat-header{
+  background:var(--preto);padding:16px 20px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.ch-agent{display:flex;align-items:center;gap:12px}
+.ch-avatar{
+  width:36px;height:36px;background:var(--ouro);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-weight:700;font-size:12px;
+  color:var(--preto);position:relative;flex-shrink:0;
+}
+.ch-dot{position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;background:#6FE88F;border-radius:50%;border:2px solid var(--preto)}
+.ch-info strong{display:block;color:#fff;font-size:13px;margin-bottom:1px}
+.ch-info span{font-size:10px;color:rgba(255,255,255,.38)}
+.ch-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.35);display:flex;padding:4px;transition:color .2s}
+.ch-close:hover{color:#fff}
+
+.chat-msgs{flex:1;overflow-y:auto;padding:18px 16px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:#DDD}
+.msg{max-width:88%;font-size:12px;line-height:1.7}
+.msg.bot{align-self:flex-start;background:#fff;border:1px solid rgba(0,0,0,.07);padding:12px 16px;color:var(--preto)}
+.msg.user{align-self:flex-end;background:var(--preto);padding:12px 16px;color:#fff}
+
+.chat-quick{padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px;border-top:1px solid rgba(0,0,0,.07);background:#fff;flex-shrink:0}
+.qb{font-size:10px;font-weight:600;padding:5px 11px;border:1px solid rgba(0,0,0,.1);background:none;cursor:pointer;color:var(--cinza);letter-spacing:.03em;transition:all .15s;font-family:'Inter',sans-serif}
+.qb:hover{border-color:var(--ouro);background:var(--ouro);color:var(--preto)}
+
+.chat-input-wrap{display:flex;border-top:1px solid rgba(0,0,0,.07);flex-shrink:0}
+#chat-inp{flex:1;padding:14px 16px;border:none;outline:none;font-family:'Inter',sans-serif;font-size:12px;background:#fff;color:var(--preto)}
+#chat-inp::placeholder{color:#bbb}
+#chat-send{width:48px;background:var(--preto);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0}
+#chat-send:hover{background:var(--verde)}
+#chat-send:disabled{opacity:.4;cursor:not-allowed}
+#chat-send svg{width:15px;height:15px;fill:#fff}
+
+.typing{display:flex;gap:4px;align-items:center}
+.td{width:5px;height:5px;background:var(--cinza);border-radius:50%;animation:t 1.2s ease-in-out infinite}
+.td:nth-child(2){animation-delay:.2s}
+.td:nth-child(3){animation-delay:.4s}
+@keyframes t{0%,100%{opacity:.2;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+
+</style>
 </head>
-<body class="antialiased">
+<body>
 
-    <!-- Header Minimalista -->
-    <header class="fixed w-full top-0 z-50 bg-[#F9F7F2]/80 backdrop-blur-md editorial-border">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="text-xl font-bold tracking-tighter serif uppercase">Tax & Strategy</div>
-            <nav class="hidden md:flex space-x-10 text-xs font-semibold uppercase tracking-widest">
-                <a href="#calculadora" class="hover:opacity-50 transition">Calculadora</a>
-                <a href="#servicos" class="hover:opacity-50 transition">Serviços</a>
-                <a href="#blog" class="hover:opacity-50 transition">Insights</a>
-                <a href="#contato" class="hover:opacity-50 transition border-b border-black">Declarar Agora</a>
-            </nav>
-            <button class="md:hidden">MENU</button>
-        </div>
-    </header>
+<!-- HEADER -->
+<header>
+  <div class="hdr">
+    <a href="/" class="logo">
+      <div class="logo-dot"></div>
+      Consultoria IRPF NSB
+    </a>
+    <nav>
+      <a href="#calculadora">Calculadora</a>
+      <a href="#servicos">Serviços</a>
+      <a href="#insights">Insights</a>
+      <a href="#contato" class="nav-primary">Declarar Agora</a>
+    </nav>
+  </div>
+</header>
 
-    <main class="pt-32">
-        <!-- Hero Section - Layout Editorial -->
-        <section class="max-w-7xl mx-auto px-6 mb-32">
-            <div class="grid md:grid-cols-12 gap-8 items-end">
-                <div class="md:col-span-8">
-                    <span class="block text-sm uppercase tracking-[0.3em] mb-6 opacity-60">Consultoria Boutique de IRPF</span>
-                    <h1 class="text-6xl md:text-8xl leading-none font-normal mb-8">
-                        A precisão que o seu patrimônio <span class="italic font-light text-gray-500">exige.</span>
-                    </h1>
-                </div>
-                <div class="md:col-span-4 pb-4">
-                    <p class="text-lg leading-relaxed opacity-80 mb-8 border-l-2 border-black pl-6">
-                        Transcendemos a entrega do formulário. Estruturamos sua conformidade fiscal com inteligência estratégica e discrição absoluta.
-                    </p>
-                    <a href="#calculadora" class="btn-premium px-8 py-4 inline-block uppercase text-xs tracking-widest font-bold">Simular Restituição</a>
-                </div>
-            </div>
-        </section>
-
-        <!-- Calculadora Profissional -->
-        <section id="calculadora" class="bg-white py-24 editorial-border">
-            <div class="max-w-7xl mx-auto px-6">
-                <div class="grid md:grid-cols-2 gap-20">
-                    <div>
-                        <h2 class="text-4xl mb-6">Calculadora de Impacto Fiscal</h2>
-                        <p class="opacity-70 mb-12">Uma estimativa técnica baseada nas tabelas vigentes da Receita Federal para o exercício atual.</p>
-                        
-                        <div class="space-y-8">
-                            <div>
-                                <label class="text-xs uppercase tracking-widest opacity-60">Rendimentos Tributáveis Anuais (R$)</label>
-                                <input type="number" id="rendimentos" class="calc-input text-2xl" placeholder="0,00">
-                            </div>
-                            <div>
-                                <label class="text-xs uppercase tracking-widest opacity-60">Deduções Totais (Saúde, Educação, Dependentes) (R$)</label>
-                                <input type="number" id="deducoes" class="calc-input text-2xl" placeholder="0,00">
-                            </div>
-                            <button onclick="calcularImposto()" class="w-full bg-[#1A1A1A] text-white py-5 uppercase text-xs tracking-[0.2em] font-bold hover:bg-[#333] transition">Processar Análise</button>
-                        </div>
-                    </div>
-
-                    <div id="resultado-calc" class="bg-[#F9F7F2] p-12 flex flex-col justify-center items-center text-center border border-gray-100">
-                        <div class="serif italic text-xl mb-4 text-gray-400">Estimativa Final</div>
-                        <div id="res-valor" class="text-5xl font-light mb-2">R$ 0,00</div>
-                        <div id="res-label" class="text-xs uppercase tracking-widest opacity-50">Aguardando dados...</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Blog Editorial -->
-        <section id="blog" class="py-24 max-w-7xl mx-auto px-6">
-            <div class="flex justify-between items-end mb-16">
-                <h2 class="text-5xl">Perspectivas Técnicas</h2>
-                <a href="#" class="text-xs uppercase border-b border-black pb-1 hover:opacity-50">Ver todos os artigos</a>
-            </div>
-            
-            <div class="grid md:grid-cols-3 gap-12">
-                <article class="group cursor-pointer">
-                    <div class="overflow-hidden mb-6 aspect-[4/5] bg-gray-200">
-                        <div class="w-full h-full bg-cover bg-center transition duration-700 group-hover:scale-105" style="background-image: url('https://images.unsplash.com/photo-1554224155-1696413565d3?auto=format&fit=crop&q=80&w=800')"></div>
-                    </div>
-                    <span class="text-[10px] uppercase tracking-widest opacity-50">Tributação Exterior</span>
-                    <h3 class="text-2xl mt-2 group-hover:italic transition-all">Novas regras para ativos digitais e offshores em 2024.</h3>
-                </article>
-
-                <article class="group cursor-pointer">
-                    <div class="overflow-hidden mb-6 aspect-[4/5] bg-gray-200">
-                        <div class="w-full h-full bg-cover bg-center transition duration-700 group-hover:scale-105" style="background-image: url('https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800')"></div>
-                    </div>
-                    <span class="text-[10px] uppercase tracking-widest opacity-50">Planejamento</span>
-                    <h3 class="text-2xl mt-2 group-hover:italic transition-all">Como otimizar a dedução por previdência privada (PGBL).</h3>
-                </article>
-
-                <article class="group cursor-pointer">
-                    <div class="overflow-hidden mb-6 aspect-[4/5] bg-gray-200">
-                        <div class="w-full h-full bg-cover bg-center transition duration-700 group-hover:scale-105" style="background-image: url('https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=800')"></div>
-                    </div>
-                    <span class="text-[10px] uppercase tracking-widest opacity-50">Malha Fina</span>
-                    <h3 class="text-2xl mt-2 group-hover:italic transition-all">Os 5 erros mais comuns que levam à retenção de declaração.</h3>
-                </article>
-            </div>
-        </section>
-
-        <!-- Formulário de Contato Profissional -->
-        <section id="contato" class="bg-[#2D4033] text-white py-24">
-            <div class="max-w-4xl mx-auto px-6 text-center">
-                <h2 class="text-5xl mb-8">Inicie seu Processo</h2>
-                <p class="opacity-80 mb-12 text-lg">Preencha os dados básicos abaixo para que um consultor sênior entre em contato e avalie seu caso.</p>
-                
-                <form class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                    <div class="flex flex-col">
-                        <label class="text-[10px] uppercase tracking-widest opacity-50 mb-2">Nome Completo</label>
-                        <input type="text" class="bg-transparent border-b border-white/30 py-3 outline-none focus:border-white">
-                    </div>
-                    <div class="flex flex-col">
-                        <label class="text-[10px] uppercase tracking-widest opacity-50 mb-2">E-mail Corporativo</label>
-                        <input type="email" class="bg-transparent border-b border-white/30 py-3 outline-none focus:border-white">
-                    </div>
-                    <div class="flex flex-col md:col-span-2">
-                        <label class="text-[10px] uppercase tracking-widest opacity-50 mb-2">Breve Resumo da Complexidade Fiscal</label>
-                        <textarea class="bg-transparent border-b border-white/30 py-3 outline-none focus:border-white h-24 resize-none"></textarea>
-                    </div>
-                    <button class="md:col-span-2 bg-white text-[#2D4033] py-5 uppercase text-xs tracking-widest font-bold hover:bg-opacity-90 transition">Solicitar Diagnóstico</button>
-                </form>
-            </div>
-        </section>
-    </main>
-
-    <footer class="py-12 bg-white text-center">
-        <div class="text-xs uppercase tracking-widest opacity-40">Tax & Strategy &copy; 2024 | Consultoria Tributária de Alto Padrão</div>
-    </footer>
-
-    <!-- Chatbot Discreto -->
-    <div id="chat-container" class="fixed bottom-8 right-8 z-[100]">
-        <div id="chat-bubble" onclick="toggleChat()" class="w-16 h-16 bg-[#1A1A1A] text-white flex items-center justify-center cursor-pointer shadow-2xl hover:scale-110 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-        </div>
-
-        <div id="chat-window" class="hidden absolute bottom-20 right-0 w-80 bg-white chat-window flex flex-col overflow-hidden">
-            <div class="bg-[#1A1A1A] text-white p-4 text-xs uppercase tracking-widest font-bold">
-                Consultor Virtual
-            </div>
-            <div id="chat-messages" class="h-64 overflow-y-auto p-4 space-y-4 text-sm leading-relaxed">
-                <div class="bg-gray-100 p-3 self-start mr-8">
-                    Olá. Como posso auxiliar em sua estratégia fiscal hoje?
-                </div>
-            </div>
-            <div class="p-4 border-t border-gray-100">
-                <input type="text" id="chat-input" placeholder="Digite sua dúvida..." class="w-full text-sm outline-none">
-            </div>
-        </div>
+<!-- HERO -->
+<section>
+  <div class="hero">
+    <div class="hero-meta">
+      <div class="hero-meta-tag">Declaração de Imposto de Renda — Pessoa Física — Todo Brasil</div>
+      <div class="hero-stats">
+        <div class="hs"><strong>24h</strong><span>Entrega</span></div>
+        <div class="hs"><strong>400+</strong><span>Declarações/mês</span></div>
+        <div class="hs"><strong>10 anos</strong><span>Experiência</span></div>
+      </div>
     </div>
 
-    <script>
-        // Lógica da Calculadora Simplificada IRPF
-        function calcularImposto() {
-            const rendimentos = parseFloat(document.getElementById('rendimentos').value) || 0;
-            const deducoes = parseFloat(document.getElementById('deducoes').value) || 0;
-            const baseCalculo = rendimentos - deducoes;
-            
-            let imposto = 0;
-            let label = "Imposto a Pagar";
+    <div class="hero-grid">
+      <h1 class="hero-title">
+        A precisão que o seu<br>
+        Imposto de Renda<br>
+        <em>exige.</em>
+      </h1>
+      <div class="hero-right">
+        <p class="hero-desc">
+          Analista Financeiro com 10 anos de atuação em IRPF. Declarações novas, anos em atraso e retificações — todo Brasil, 100% pelo WhatsApp, preço justo, entrega em 24 horas.
+        </p>
+        <div class="hero-actions">
+          <a href="https://wa.me/5511940825120?text=Olá! Vim pelo site e gostaria de saber sobre minha declaração de IR." target="_blank" class="btn-dark">Falar no WhatsApp</a>
+          <a href="#calculadora" class="btn-ghost">Simular restituição</a>
+        </div>
+      </div>
+    </div>
 
-            // Lógica de Tabela Progressiva Simplificada (Exemplo)
-            if (baseCalculo <= 24511.92) {
-                imposto = 0;
-            } else if (baseCalculo <= 33919.80) {
-                imposto = (baseCalculo * 0.075) - 1838.39;
-            } else if (baseCalculo <= 45012.60) {
-                imposto = (baseCalculo * 0.15) - 4382.38;
-            } else if (baseCalculo <= 55976.16) {
-                imposto = (baseCalculo * 0.225) - 7758.32;
-            } else {
-                imposto = (baseCalculo * 0.275) - 10557.13;
-            }
+    <div class="hero-data-bar">
+      <div class="hd-item">
+        <span class="hd-num">100%</span>
+        <span class="hd-label">Online — sem deslocamento</span>
+      </div>
+      <div class="hd-item" style="padding-left:40px">
+        <span class="hd-num">R$165</span>
+        <span class="hd-label">Multa mínima por atraso</span>
+      </div>
+      <div class="hd-item" style="padding-left:40px">
+        <span class="hd-num">31/05</span>
+        <span class="hd-label">Prazo da declaração 2025</span>
+      </div>
+      <div class="hd-item" style="padding-left:40px">
+        <span class="hd-num">1 ano</span>
+        <span class="hd-label">Suporte grátis incluído</span>
+      </div>
+    </div>
+  </div>
+</section>
 
-            const resValor = document.getElementById('res-valor');
-            const resLabel = document.getElementById('res-label');
-            const resContainer = document.getElementById('resultado-calc');
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <div class="marquee-item"><b>Declaração IRPF</b> <span class="marquee-sep">·</span> Profissional em 24 horas</div>
+    <div class="marquee-item"><b>IR em Atraso</b> <span class="marquee-sep">·</span> Regularize sem burocracia</div>
+    <div class="marquee-item"><b>Retificação</b> <span class="marquee-sep">·</span> Erros corrigidos na fonte</div>
+    <div class="marquee-item"><b>Com Dependentes</b> <span class="marquee-sep">·</span> Deduções maximizadas</div>
+    <div class="marquee-item"><b>Todo Brasil</b> <span class="marquee-sep">·</span> Atendimento pelo WhatsApp</div>
+    <div class="marquee-item"><b>Preço Justo</b> <span class="marquee-sep">·</span> Abaixo do mercado</div>
+    <div class="marquee-item"><b>Declaração IRPF</b> <span class="marquee-sep">·</span> Profissional em 24 horas</div>
+    <div class="marquee-item"><b>IR em Atraso</b> <span class="marquee-sep">·</span> Regularize sem burocracia</div>
+    <div class="marquee-item"><b>Retificação</b> <span class="marquee-sep">·</span> Erros corrigidos na fonte</div>
+    <div class="marquee-item"><b>Com Dependentes</b> <span class="marquee-sep">·</span> Deduções maximizadas</div>
+    <div class="marquee-item"><b>Todo Brasil</b> <span class="marquee-sep">·</span> Atendimento pelo WhatsApp</div>
+    <div class="marquee-item"><b>Preço Justo</b> <span class="marquee-sep">·</span> Abaixo do mercado</div>
+  </div>
+</div>
 
-            if (imposto < 0) {
-                resValor.innerText = "R$ " + Math.abs(imposto).toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                resLabel.innerText = "Restituição Estimada";
-                resContainer.classList.remove('bg-[#F9F7F2]');
-                resContainer.classList.add('bg-green-50');
-            } else {
-                resValor.innerText = "R$ " + imposto.toLocaleString('pt-BR', {minimumFractionDigits: 2});
-                resLabel.innerText = "Imposto Estimado";
-                resContainer.classList.remove('bg-green-50');
-                resContainer.classList.add('bg-[#F9F7F2]');
-            }
-        }
+<!-- SERVIÇOS -->
+<section id="servicos">
+  <div class="s-wrap">
+    <div class="s-header">
+      <div>
+        <span class="eyebrow">O que fazemos</span>
+        <h2>Apenas IRPF.<br>Com total dedicação.</h2>
+      </div>
+      <p class="s-header-note">Cada caso é analisado individualmente — sem automação, sem genérico.</p>
+    </div>
 
-        // Lógica do Chatbot
-        function toggleChat() {
-            const window = document.getElementById('chat-window');
-            window.classList.toggle('hidden');
-        }
+    <div>
+      <div class="srv-line">
+        <span class="srv-n">01</span>
+        <span class="srv-name">Declaração Nova</span>
+        <span class="srv-desc">Assalariados, autônomos, aposentados e profissionais liberais — ano corrente.</span>
+        <span class="srv-tag filled">Mais solicitado</span>
+        <span class="arr">↗</span>
+      </div>
+      <div class="srv-line">
+        <span class="srv-n">02</span>
+        <span class="srv-name">IRPF em Atraso</span>
+        <span class="srv-desc">Regularize anos anteriores antes que multas e juros da Selic aumentem.</span>
+        <span class="srv-tag gold">Urgente</span>
+        <span class="arr">↗</span>
+      </div>
+      <div class="srv-line">
+        <span class="srv-n">03</span>
+        <span class="srv-name">Retificação</span>
+        <span class="srv-desc">Corrija inconsistências ou erros em declarações já transmitidas à Receita Federal.</span>
+        <span class="srv-tag">Disponível</span>
+        <span class="arr">↗</span>
+      </div>
+      <div class="srv-line">
+        <span class="srv-n">04</span>
+        <span class="srv-name">Com Dependentes</span>
+        <span class="srv-desc">Filhos, cônjuge, pais — orientação completa para maximizar cada dedução legal.</span>
+        <span class="srv-tag">Disponível</span>
+        <span class="arr">↗</span>
+      </div>
+    </div>
+  </div>
+</section>
 
-        const chatInput = document.getElementById('chat-input');
-        chatInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter' && this.value.trim() !== "") {
-                const msg = this.value;
-                const container = document.getElementById('chat-messages');
-                
-                // User message
-                const userDiv = document.createElement('div');
-                userDiv.className = "bg-[#2D4033] text-white p-3 self-end ml-8 text-right";
-                userDiv.innerText = msg;
-                container.appendChild(userDiv);
-                
-                this.value = "";
-                
-                // Simple Bot Response
-                setTimeout(() => {
-                    const botDiv = document.createElement('div');
-                    botDiv.className = "bg-gray-100 p-3 self-start mr-8";
-                    botDiv.innerText = "Entendido. Um de nossos especialistas em IRPF pode analisar seu caso detalhadamente. Deseja agendar uma breve reunião?";
-                    container.appendChild(botDiv);
-                    container.scrollTop = container.scrollHeight;
-                }, 1000);
-                
-                container.scrollTop = container.scrollHeight;
-            }
-        });
-    </script>
+<!-- FOTO SPLIT -->
+<section class="split-wrap">
+  <div class="split-photo">
+    <img src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?auto=format&fit=crop&q=80&w=900" alt="Especialista IRPF — foto profissional">
+    <div class="photo-badge">
+      <span class="badge-n">10+</span>
+      <span class="badge-l">Anos de experiência</span>
+    </div>
+  </div>
+  <div class="split-content">
+    <span class="eyebrow">Quem cuida do seu IR</span>
+    <h2>Analista Financeiro.<br><em>Especialista dedicado ao IRPF.</em></h2>
+    <p>Com mais de <strong>10 anos em análise financeira</strong>, percebo deduções que a maioria dos declarantes — e até de outros profissionais — deixa passar.</p>
+    <p>O modelo é simples: sem escritório físico, sem burocracia. <strong>Tudo pelo WhatsApp</strong>. Isso reduz custo operacional e permite cobrar um preço justo, muito abaixo da média do mercado.</p>
+    <p>Cada cliente recebe atenção individual. Não terceirizo, não delego. A declaração é feita por mim — e você tem suporte por <strong>12 meses sem custo adicional</strong>.</p>
+    <hr class="split-hr">
+    <div class="split-links">
+      <a href="https://wa.me/5511940825120" target="_blank">WhatsApp +55 11 94082-5120</a>
+      <a href="mailto:nilson.brites@gmail.com">nilson.brites@gmail.com</a>
+    </div>
+  </div>
+</section>
+
+<!-- DADOS RECEITA FEDERAL -->
+<section class="dados-wrap">
+  <div class="dados-inner">
+    <span class="eyebrow">Fonte: Receita Federal do Brasil — gov.br</span>
+    <h2>Tabela vigente e<br>o custo real<br><em>do atraso.</em></h2>
+
+    <div class="dados-grid">
+      <!-- Tabela IRPF -->
+      <div class="dados-card">
+        <span class="eyebrow" style="color:rgba(201,168,76,.7)">Tabela Progressiva IRPF 2025 — Base de cálculo anual</span>
+        <table class="tbl">
+          <tr class="isento"><td>Até R$ 24.511,92</td><td>Isento</td></tr>
+          <tr><td>R$ 24.511,93 a R$ 33.919,80</td><td>7,5%</td></tr>
+          <tr><td>R$ 33.919,81 a R$ 45.012,60</td><td>15%</td></tr>
+          <tr><td>R$ 45.012,61 a R$ 55.976,16</td><td>22,5%</td></tr>
+          <tr><td>Acima de R$ 55.976,16</td><td>27,5%</td></tr>
+        </table>
+      </div>
+
+      <!-- Multas -->
+      <div class="dados-card">
+        <span class="eyebrow" style="color:rgba(201,168,76,.7)">Consequências por não declarar — Receita Federal</span>
+        <div class="multa-row"><span class="ml">Multa mínima por declaração</span><span class="mv red">R$ 165,74</span></div>
+        <div class="multa-row"><span class="ml">Multa máxima por declaração</span><span class="mv red">R$ 6.275,00</span></div>
+        <div class="multa-row"><span class="ml">Cálculo: 1% ao mês sobre IR devido</span><span class="mv neutral">+ Selic acumulada</span></div>
+        <div class="multa-row"><span class="ml">CPF bloqueado — prazo de desbloqueio</span><span class="mv neutral">48 a 72h</span></div>
+        <div class="multa-row"><span class="ml">Prazo final — declaração 2025 (ano-base 2024)</span><span class="mv neutral">31/05/2025</span></div>
+      </div>
+
+      <div class="dados-cta-bar">
+        <p>Cada mês de atraso aumenta a multa automaticamente. <em>O momento de regularizar é agora.</em></p>
+        <a href="https://wa.me/5511940825120?text=Tenho IR em atraso e quero regularizar." target="_blank">Regularizar pelo WhatsApp</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CALCULADORA -->
+<section id="calculadora" class="calc-section">
+  <div class="calc-inner">
+    <div class="calc-left">
+      <span class="eyebrow">Ferramenta gratuita</span>
+      <h2>Calculadora de Impacto Fiscal 2025</h2>
+      <p>Estime sua restituição ou imposto a pagar com base na tabela progressiva vigente da Receita Federal. Os valores são aproximados — o resultado real depende da análise completa dos seus documentos.</p>
+
+      <div class="field">
+        <label>Rendimentos tributáveis anuais (R$)</label>
+        <input type="number" id="c-renda" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Dependentes — filhos, cônjuge, pais</label>
+        <input type="number" id="c-dep" placeholder="0" min="0">
+      </div>
+      <div class="field">
+        <label>INSS recolhido no ano (R$)</label>
+        <input type="number" id="c-inss" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Gastos com saúde — sem limite de dedução (R$)</label>
+        <input type="number" id="c-saude" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Gastos com educação — limite R$3.561,50/pessoa (R$)</label>
+        <input type="number" id="c-edu" placeholder="0,00">
+      </div>
+      <button class="btn-calc" onclick="calcular()">Processar Análise Fiscal</button>
+    </div>
+
+    <div class="calc-result">
+      <div class="res-eyebrow">Estimativa Fiscal</div>
+      <div class="res-val" id="res-val">—</div>
+      <div class="res-label" id="res-label">Insira seus dados ao lado</div>
+      <a class="res-cta" id="res-cta" href="#" target="_blank">Confirmar com especialista</a>
+    </div>
+  </div>
+</section>
+
+<!-- BLOG -->
+<section id="insights" class="blog-section">
+  <div class="blog-head">
+    <h2>Perspectivas <em style="font-weight:400;color:var(--cinza)">sobre IRPF</em></h2>
+    <a href="/blog">Ver todos os artigos</a>
+  </div>
+  <div class="blog-grid">
+    <article class="post">
+      <div class="post-photo">
+        <img src="https://images.unsplash.com/photo-1554224155-1696413565d3?auto=format&fit=crop&q=80&w=700" alt="IR 2025">
+      </div>
+      <span class="post-cat">Obrigatoriedade</span>
+      <h3 class="post-title">Quem é obrigado a declarar o IR em 2025? Os limites mudaram e afetam mais pessoas.</h3>
+      <div class="post-meta">5 min de leitura &nbsp;·&nbsp; Mar 2025</div>
+    </article>
+    <article class="post">
+      <div class="post-photo">
+        <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=700" alt="IRPF Atrasado">
+      </div>
+      <span class="post-cat">IR em Atraso</span>
+      <h3 class="post-title">IR em atraso: como calcular exatamente quanto você deve à Receita Federal hoje.</h3>
+      <div class="post-meta">7 min de leitura &nbsp;·&nbsp; Fev 2025</div>
+    </article>
+    <article class="post">
+      <div class="post-photo">
+        <img src="https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&q=80&w=700" alt="Deduções">
+      </div>
+      <span class="post-cat">Restituição</span>
+      <h3 class="post-title">Seis deduções que a maioria dos declarantes ignora e que aumentam a restituição.</h3>
+      <div class="post-meta">6 min de leitura &nbsp;·&nbsp; Jan 2025</div>
+    </article>
+  </div>
+</section>
+
+<!-- PROCESSO -->
+<section class="processo-wrap">
+  <div class="processo-inner">
+    <span class="eyebrow">Sem complicação</span>
+    <h2>Três passos.<br><em>Declaração entregue.</em></h2>
+    <div class="steps">
+      <div class="step">
+        <span class="step-n">01</span>
+        <h3>Você envia os documentos</h3>
+        <p>Informe de rendimentos, CPF e dados dos dependentes. Tudo pelo WhatsApp em menos de cinco minutos. Nada de digitalizar em cartório.</p>
+      </div>
+      <div class="step">
+        <span class="step-n">02</span>
+        <h3>Análise e preparação</h3>
+        <p>Com experiência em análise financeira, cada dedução é verificada individualmente para maximizar o resultado dentro da legislação vigente.</p>
+      </div>
+      <div class="step">
+        <span class="step-n">03</span>
+        <h3>Comprovante em 24 horas</h3>
+        <p>Declaração transmitida, protocolo entregue. Suporte gratuito por 12 meses incluído — sem custo adicional e sem letras miúdas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTATO -->
+<section id="contato" class="contato-wrap">
+  <div class="contato-inner">
+    <span class="eyebrow">Inicie agora</span>
+    <h2>Resolva seu IR<br><em>hoje.</em></h2>
+    <p>Preencha os dados básicos. Você receberá resposta pelo WhatsApp em breve — ou ligue diretamente se preferir atendimento imediato.</p>
+    <form onsubmit="enviar(event)">
+      <div class="form-grid">
+        <div class="fg"><label>Nome Completo</label><input type="text" placeholder="Seu nome" required></div>
+        <div class="fg"><label>WhatsApp</label><input type="tel" placeholder="(11) 99999-9999" required></div>
+        <div class="fg"><label>E-mail</label><input type="email" placeholder="seu@email.com"></div>
+        <div class="fg">
+          <label>Tipo de Declaração</label>
+          <select>
+            <option value="">Selecione</option>
+            <option>Declaração Nova 2025</option>
+            <option>IR em Atraso</option>
+            <option>Retificação</option>
+            <option>Com Dependentes</option>
+            <option>Tenho dúvidas — quero orientação</option>
+          </select>
+        </div>
+        <div class="fg full"><label>Observação (opcional)</label><textarea placeholder="Alguma situação que devo saber?"></textarea></div>
+      </div>
+      <button type="submit" class="btn-submit" id="btn-submit">Solicitar Atendimento</button>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo" style="color:#fff"><div class="logo-dot" style="background:var(--ouro)"></div>Consultoria IRPF NSB</div>
+        <p>Declaração de Imposto de Renda para pessoas físicas em todo o Brasil. Analista Financeiro com 10 anos de experiência.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Serviços</h4>
+        <ul>
+          <li><a href="#">Declaração Nova</a></li>
+          <li><a href="#">IR em Atraso</a></li>
+          <li><a href="#">Retificação</a></li>
+          <li><a href="#">Com Dependentes</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Ferramentas</h4>
+        <ul>
+          <li><a href="#calculadora">Calculadora IR</a></li>
+          <li><a href="#">Simulador de Multa</a></li>
+          <li><a href="#">Guia IRPF 2025</a></li>
+          <li><a href="/blog">Blog</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contato</h4>
+        <ul>
+          <li><a href="https://wa.me/5511940825120" target="_blank">+55 11 94082-5120</a></li>
+          <li><a href="mailto:nilson.brites@gmail.com">nilson.brites@gmail.com</a></li>
+          <li><a href="#contato">Solicitar atendimento</a></li>
+          <li><a href="https://gov.br/receitafederal" target="_blank">Receita Federal</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 Consultoria IRPF NSB &nbsp;·&nbsp; irpf.qaplay.com.br &nbsp;·&nbsp; Todos os direitos reservados</p>
+      <div class="footer-status"><div class="s-dot"></div>Aceitando declarações</div>
+    </div>
+  </div>
+</footer>
+
+<!-- WHATSAPP FLOAT (direita) -->
+<div class="wa-float">
+  <div class="wa-label">Resposta imediata</div>
+  <a href="https://wa.me/5511940825120?text=Olá! Vim pelo site — quero saber sobre declaração de IR." target="_blank" class="wa-btn">
+    <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+</div>
+
+<!-- CHATBOT (esquerda) -->
+<div class="chat-wrap">
+  <div class="chat-window" id="cw">
+    <div class="chat-header">
+      <div class="ch-agent">
+        <div class="ch-avatar">NB<div class="ch-dot"></div></div>
+        <div class="ch-info">
+          <strong>Assistente NSB</strong>
+          <span>Especialista em IRPF &nbsp;·&nbsp; Online agora</span>
+        </div>
+      </div>
+      <button class="ch-close" onclick="toggleChat()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="msg bot">
+        Olá. Sou o assistente da Consultoria IRPF NSB.<br><br>
+        Posso esclarecer dúvidas sobre declaração de Imposto de Renda — prazos, deduções, restituição, IR em atraso e mais.<br><br>
+        <strong>Em que posso ajudar?</strong>
+      </div>
+    </div>
+
+    <div class="chat-quick" id="cq">
+      <button class="qb" onclick="qmsg('Preciso declarar IR em 2025?')">Devo declarar?</button>
+      <button class="qb" onclick="qmsg('Tenho IR em atraso — o que fazer?')">IR em atraso</button>
+      <button class="qb" onclick="qmsg('Qual o prazo de 2025?')">Prazo 2025</button>
+      <button class="qb" onclick="qmsg('Quanto custa a declaração?')">Quanto custa?</button>
+    </div>
+
+    <div class="chat-input-wrap">
+      <input id="chat-inp" type="text" placeholder="Sua dúvida sobre Imposto de Renda...">
+      <button id="chat-send" onclick="sendMsg()">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <button class="chat-trigger" onclick="toggleChat()">
+    <div class="ct-pulse"></div>
+    <div class="ct-icon">NB</div>
+    <div class="ct-text">
+      <strong>Tire dúvidas sobre IR</strong>
+      <span>Assistente especializado &nbsp;·&nbsp; Online</span>
+    </div>
+  </button>
+</div>
+
+<script>
+/* ── CALCULADORA ─────────────────────────────── */
+function calcular(){
+  const r=parseFloat(document.getElementById('c-renda').value)||0;
+  const d=parseInt(document.getElementById('c-dep').value)||0;
+  const inss=parseFloat(document.getElementById('c-inss').value)||0;
+  const s=parseFloat(document.getElementById('c-saude').value)||0;
+  const e=parseFloat(document.getElementById('c-edu').value)||0;
+
+  const dedDep=d*2275.08;
+  const dedEdu=Math.min(e,3561.50*(d+1));
+  const base=Math.max(0,r-dedDep-inss-s-dedEdu);
+
+  let ir=0;
+  if(base<=24511.92) ir=0;
+  else if(base<=33919.80) ir=base*.075-1838.39;
+  else if(base<=45012.60) ir=base*.15-4382.38;
+  else if(base<=55976.16) ir=base*.225-7758.57;
+  else ir=base*.275-10557.65;
+
+  const fmt=v=>'R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const vEl=document.getElementById('res-val');
+  const lEl=document.getElementById('res-label');
+  const cEl=document.getElementById('res-cta');
+
+  vEl.textContent=fmt(ir);
+  if(ir<=0){
+    vEl.style.color='#2D7A4F';
+    lEl.textContent='Estimativa de restituição';
+    cEl.textContent='Garantir esta restituição';
+    cEl.href=`https://wa.me/5511940825120?text=Calculei uma restituição de ${fmt(ir)} — quero confirmar e declarar.`;
+  } else {
+    vEl.style.color='#B03030';
+    lEl.textContent='Imposto estimado a pagar';
+    cEl.textContent='Reduzir este valor — fale comigo';
+    cEl.href=`https://wa.me/5511940825120?text=Calculei imposto de ${fmt(ir)} — quero otimizar e declarar.`;
+  }
+  cEl.style.display='inline-block';
+}
+document.querySelectorAll('.field input').forEach(i=>i.addEventListener('keypress',e=>{if(e.key==='Enter')calcular()}));
+
+/* ── CHATBOT ─────────────────────────────────── */
+let open=false,hist=[];
+
+function toggleChat(){
+  open=!open;
+  document.getElementById('cw').classList.toggle('open',open);
+  if(open) setTimeout(()=>document.getElementById('chat-inp').focus(),150);
+}
+
+function qmsg(t){
+  document.getElementById('chat-inp').value=t;
+  document.getElementById('cq').style.display='none';
+  sendMsg();
+}
+
+function addBubble(txt,role){
+  const m=document.getElementById('chat-msgs');
+  const el=document.createElement('div');
+  el.className='msg '+role;
+  if(role==='bot') el.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+  else el.textContent=txt;
+  m.appendChild(el);
+  m.scrollTop=m.scrollHeight;
+  return el;
+}
+
+function sendMsg(){
+  const inp=document.getElementById('chat-inp');
+  const t=inp.value.trim(); if(!t) return;
+  hist.push({role:'user',content:t});
+  addBubble(t,'user');
+  inp.value='';
+  document.getElementById('chat-send').disabled=true;
+
+  // Typing
+  const m=document.getElementById('chat-msgs');
+  const ty=document.createElement('div');
+  ty.className='msg bot'; ty.id='typer';
+  ty.innerHTML='<div class="typing"><div class="td"></div><div class="td"></div><div class="td"></div></div>';
+  m.appendChild(ty); m.scrollTop=m.scrollHeight;
+
+  fetch('/api/chatbot',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({messages:hist.slice(-10)})
+  })
+  .then(async res=>{
+    document.getElementById('typer')?.remove();
+    if(!res.ok||!res.body) throw new Error();
+    const reader=res.body.getReader(), dec=new TextDecoder();
+    let full='';
+    const el=addBubble('','bot');
+    while(true){
+      const {done,value}=await reader.read(); if(done) break;
+      full+=dec.decode(value,{stream:true});
+      el.innerHTML=full.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+      m.scrollTop=m.scrollHeight;
+    }
+    hist.push({role:'assistant',content:full});
+  })
+  .catch(()=>{
+    document.getElementById('typer')?.remove();
+    addBubble('Problema momentâneo. Pode tentar novamente ou falar diretamente no WhatsApp.','bot');
+  })
+  .finally(()=>{
+    document.getElementById('chat-send').disabled=false;
+    document.getElementById('chat-inp').focus();
+  });
+}
+
+document.getElementById('chat-inp').addEventListener('keypress',e=>{if(e.key==='Enter')sendMsg()});
+
+/* ── FORM ────────────────────────────────────── */
+function enviar(e){
+  e.preventDefault();
+  const btn=document.getElementById('btn-submit');
+  btn.textContent='Enviando...';
+  setTimeout(()=>{
+    btn.textContent='Solicitação enviada — aguarde o contato pelo WhatsApp';
+    btn.disabled=true;btn.style.background='var(--ouro2,#C9A84C)';btn.style.color='var(--preto)';
+  },1200);
+}
+</script>
 </body>
 </html>

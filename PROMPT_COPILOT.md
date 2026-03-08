@@ -7,6 +7,8 @@ Você é engenheiro full-stack sênior. Construa o site completo da Consultoria 
 - `documentos tec/PLANEJAMENTO_IRPF_v2_FINAL.md` → planejamento técnico
 - Pasta `documentos IRPF/` → todo o conhecimento do chatbot (ler TODOS os arquivos)
 - Pasta `.agent/` → instruções detalhadas 01 a 09
+- **Pasta `C:\Users\Pichau\Documents\desenvolvimento\SITE IRPF 2\DOCS OpenAI`** → documentos técnicos da OpenAI (ler TODOS antes de qualquer código de IA)
+
 
 ## Stack
 Next.js 14 App Router + TypeScript + Tailwind CSS + Framer Motion + Supabase/Prisma + NextAuth + Resend
@@ -30,7 +32,14 @@ Groq Llama 3.3 70B (GRÁTIS) → blog auto-geração
 2. Extrair: tabela IRPF 2025 E 2026, limites de obrigatoriedade, prazos, multas, deduções
 3. Ler `PENSAMENTO IRPF.MD` — regras do chatbot vendedor
 4. Usar na: lib/chatbot-prompt.ts + lib/ir-calculations.ts + lib/blog-engine.ts
-
+## Fabe 0.b - DOCS OpenAI (conhecimento técnico de IA — NÃO PULAR)
+1. Ler **todos** os arquivos em `C:\Users\Pichau\Documents\desenvolvimento\SITE IRPF 2\DOCS OpenAI`
+2. Estudar profundamente antes de escrever qualquer chamada à API da OpenAI
+3. O objetivo é garantir uso correto e atualizado das APIs: Chat Completions, Audio (Whisper + TTS), Streaming
+4. Qualquer padrão de chamada à OpenAI deve seguir o que está documentado nesses arquivos
+5. Se houver conflito entre o que está nos DOCS OpenAI e conhecimento interno do modelo, **os DOCS prevalecem**
+6. Após leitura, confirmar no comentário do primeiro arquivo gerado:
+   `// DOCS OpenAI lidos: [listar arquivos encontrados]`
 ---
 
 ## FASE 1 — Setup (ler .agent/01-setup.md)

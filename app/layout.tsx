@@ -27,6 +27,12 @@ export const metadata: Metadata = {
     "Consultoria especializada em IRPF. Declaracao completa, atrasados, retificacao e malha fina. 100% online, todo o Brasil.",
   keywords: ["IRPF", "imposto de renda", "declaracao", "restituicao", "malha fina"],
   authors: [{ name: "Consultoria IRPF NSB" }],
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/favicon.svg",
+  },
   openGraph: {
     type: "website",
     locale: "pt_BR",

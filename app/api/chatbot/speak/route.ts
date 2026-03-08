@@ -22,10 +22,10 @@ export async function POST(req: NextRequest) {
     }
 
     const mp3 = await gpt4o.audio.speech.create({
-      model: "tts-1-hd",
+      model: "tts-1",
       voice: "onyx",
       input: text.trim(),
-      speed: 1.08,
+      speed: 1.05,
     });
 
     const buffer = Buffer.from(await mp3.arrayBuffer());

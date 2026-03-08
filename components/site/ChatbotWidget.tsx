@@ -81,13 +81,14 @@ export default function ChatbotWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(true); // voz ativa por padrão
   const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioElRef = useRef<HTMLAudioElement | null>(null);
+  const voiceInputRef = useRef(false); // input veio do microfone
 
   // init audio element once
   useEffect(() => {
@@ -116,7 +117,10 @@ export default function ChatbotWidget() {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const text = await transcribeAudio(blob);
         setIsTranscribing(false);
-        if (text) sendMessage(text);
+        if (text) {
+          voiceInputRef.current = true; // marcar que veio do microfone
+          sendMessage(text);
+        }
       };
       mediaRecorderRef.current = recorder;
       recorder.start();
@@ -223,8 +227,10 @@ export default function ChatbotWidget() {
             }
           }
         }
-        // Auto-speak when audio mode is enabled
-        if (audioEnabled && assistantContent && audioElRef.current) {
+        // Auto-speak: sempre se veio do microfone, ou se audioEnabled estiver ativo
+        const shouldSpeak = voiceInputRef.current || audioEnabled;
+        voiceInputRef.current = false; // reset para próxima mensagem
+        if (shouldSpeak && assistantContent && audioElRef.current) {
           speakText(assistantContent, audioElRef.current);
         }
       } catch {

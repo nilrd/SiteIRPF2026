@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
       model: "playai-tts",
       voice: "Fritz-PlayAI",
       input: text.trim(),
-      // @ts-expect-error Groq aceita speed mas tipagem OpenAI nao inclui
       speed: 1.05,
     });
 

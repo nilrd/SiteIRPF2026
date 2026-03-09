@@ -129,7 +129,7 @@ async function collectResearchContext(keyword: string): Promise<ResearchItem[]> 
   for (const item of merged) {
     if (!dedup.has(item.url)) dedup.set(item.url, item);
   }
-  return [...dedup.values()].slice(0, 8);
+  return Array.from(dedup.values()).slice(0, 8);
 }
 
 function ensureSourcesSection(content: string, sources: ResearchItem[]): string {

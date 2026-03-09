@@ -5,6 +5,8 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { JsonLdArticle, JsonLdBreadcrumb, JsonLdFAQ } from "@/components/seo/JsonLd";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: { slug: string };
 }

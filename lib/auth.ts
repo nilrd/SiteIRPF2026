@@ -1,6 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,12 +14,27 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.username || !credentials?.password) return null;
 
         const adminUsername = process.env.ADMIN_USERNAME;
-        const adminHash = process.env.ADMIN_PASSWORD_HASH;
+        const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 
-        if (!adminUsername || !adminHash) return null;
+        if (!adminUsername || !adminPasswordHash) return null;
         if (credentials.username !== adminUsername) return null;
 
-        const isValid = await bcrypt.compare(credentials.password, adminHash);
+        // SHA-256 hex — sem $ no hash, seguro para env vars
+        const inputHash = crypto
+          .createHash("sha256")
+          .update(credentials.password)
+          .digest("hex");
+
+        let isValid = false;
+        try {
+          isValid = crypto.timingSafeEqual(
+            Buffer.from(inputHash),
+            Buffer.from(adminPasswordHash)
+          );
+        } catch {
+          return null;
+        }
+
         if (!isValid) return null;
 
         return { id: "1", name: "Admin NSB", email: "nilson.brites@gmail.com" };

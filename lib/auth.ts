@@ -13,17 +13,21 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        const adminUsername = process.env.ADMIN_USERNAME;
-        const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
+        const adminUsername = process.env.ADMIN_USERNAME?.trim();
+        const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH?.trim();
 
         if (!adminUsername || !adminPasswordHash) return null;
-        if (credentials.username !== adminUsername) return null;
+        if (credentials.username.trim() !== adminUsername) return null;
 
         // SHA-256 hex — sem $ no hash, seguro para env vars
         const inputHash = crypto
           .createHash("sha256")
           .update(credentials.password)
           .digest("hex");
+
+        // timingSafeEqual exige buffers do mesmo tamanho;
+        // se o hash salvo tiver comprimento diferente, a senha está errada
+        if (inputHash.length !== adminPasswordHash.length) return null;
 
         let isValid = false;
         try {

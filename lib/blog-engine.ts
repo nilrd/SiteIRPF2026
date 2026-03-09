@@ -10,9 +10,13 @@ type ResearchItem = {
 const TRUSTED_SOURCE_URLS = [
   "https://www.gov.br/receitafederal/pt-br",
   "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
+  "https://www.restituicao.receita.fazenda.gov.br/",
   "https://www.bcb.gov.br",
   "https://www.planalto.gov.br",
   "https://www.ibge.gov.br",
+  "https://g1.globo.com/economia/",
+  "https://veja.abril.com.br/economia/",
+  "https://www.infomoney.com.br/",
 ] as const;
 
 function stripHtml(input: string): string {
@@ -46,7 +50,7 @@ async function getTrendTopicFromInternet(): Promise<string | null> {
     );
     if (!res.ok) return null;
     const xml = await res.text();
-    const titles = [...xml.matchAll(/<title><!\[CDATA\[(.*?)\]\]><\/title>/g)]
+    const titles = Array.from(xml.matchAll(/<title><!\[CDATA\[(.*?)\]\]><\/title>/g))
       .map((m) => m[1]?.trim())
       .filter(Boolean)
       .slice(1, 20) as string[];
@@ -61,13 +65,15 @@ async function getTrendTopicFromInternet(): Promise<string | null> {
 
 async function getGoogleNewsResearch(keyword: string): Promise<ResearchItem[]> {
   try {
-    const q = encodeURIComponent(`${keyword} site:gov.br OR site:bcb.gov.br OR site:planalto.gov.br`);
+    const q = encodeURIComponent(
+      `${keyword} site:gov.br OR site:receita.fazenda.gov.br OR site:bcb.gov.br OR site:planalto.gov.br OR site:g1.globo.com OR site:veja.abril.com.br OR site:infomoney.com.br`
+    );
     const url = `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
     const res = await fetchWithTimeout(url, 9000);
     if (!res.ok) return [];
     const xml = await res.text();
 
-    const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)]
+    const items = Array.from(xml.matchAll(/<item>([\s\S]*?)<\/item>/g))
       .slice(0, 5)
       .map((m) => m[1]);
 

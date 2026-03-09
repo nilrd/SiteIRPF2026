@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import BlogPostImage from "@/components/site/BlogPostImage";
 import { JsonLdArticle, JsonLdBreadcrumb, JsonLdFAQ } from "@/components/seo/JsonLd";
 
 export const dynamic = "force-dynamic";
@@ -128,13 +128,7 @@ export default async function BlogPostPage({ params }: Props) {
 
             {post.coverImage && (
               <div className="relative aspect-[16/9] mb-12 bg-gray-200 overflow-hidden">
-                <Image
-                  src={post.coverImage}
-                  alt={post.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 66vw"
-                />
+                <BlogPostImage src={post.coverImage} alt={post.title} />
               </div>
             )}
 

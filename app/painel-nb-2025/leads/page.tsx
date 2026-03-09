@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import LeadsActions from "./LeadsActions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +20,9 @@ async function getContatos() {
 }
 
 export default async function LeadsPage() {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/painel-nb-2025?callbackUrl=%2Fpainel-nb-2025%2Fleads");
+
   const [leads, contatos] = await Promise.all([getLeads(), getContatos()]);
 
   return (

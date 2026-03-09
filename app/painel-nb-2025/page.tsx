@@ -32,6 +32,7 @@ function LoginForm() {
         username,
         password,
         redirect: false,
+        callbackUrl,
       });
 
       if (!res) {
@@ -44,11 +45,22 @@ function LoginForm() {
         setError("Usuario ou senha incorretos.");
         setLoading(false);
       } else {
-        router.replace(
+        const targetUrl =
           callbackUrl.startsWith("/painel-nb-2025/")
             ? callbackUrl
-            : "/painel-nb-2025/dashboard"
-        );
+            : "/painel-nb-2025/dashboard";
+
+        // Confirma a sessão no cliente antes de navegar para evitar loop de login.
+        const sessionRes = await fetch("/api/auth/session", { cache: "no-store" });
+        const sessionData = await sessionRes.json();
+
+        if (sessionData?.user) {
+          window.location.href = res.url || targetUrl;
+          return;
+        }
+
+        setError("Sessao nao criada. Verifique NEXTAUTH_SECRET no Vercel e tente novamente.");
+        setLoading(false);
       }
     } catch {
       setError("Erro ao conectar. Verifique sua conexão.");

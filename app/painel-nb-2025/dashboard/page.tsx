@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +22,9 @@ async function getMetrics() {
 }
 
 export default async function DashboardPage() {
+  const session = await getServerSession(authOptions);
+  if (!session) redirect("/painel-nb-2025?callbackUrl=%2Fpainel-nb-2025%2Fdashboard");
+
   const metrics = await getMetrics();
 
   const cards = [

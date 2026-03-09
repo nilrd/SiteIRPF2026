@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import BlogPostImage from "@/components/site/BlogPostImage";
 
 export const dynamic = "force-dynamic";
 
@@ -66,13 +66,7 @@ export default async function BlogPage() {
 
                   <div className="overflow-hidden mb-3 aspect-[16/10] bg-gray-200 relative">
                     {post.coverImage ? (
-                      <Image
-                        src={post.coverImage}
-                        alt={post.title}
-                        fill
-                        className="object-cover transition duration-500 group-hover:scale-[1.03]"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
+                      <BlogPostImage src={post.coverImage} alt={post.title} />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-verde/5">
                         <span className="font-serif text-5xl text-verde/10">

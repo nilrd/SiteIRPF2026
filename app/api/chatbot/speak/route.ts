@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
       model: "playai-tts",
       voice: "Fritz-PlayAI",
       input: text.trim(),
-      speed: 1.05,
     });
 
     const buffer = Buffer.from(await mp3.arrayBuffer());

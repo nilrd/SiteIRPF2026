@@ -31,7 +31,7 @@ function cleanBotContent(content: string): string {
 
 /** Remove markdown e normaliza texto para leitura natural em voz */
 function cleanForTTS(text: string): string {
-  return text
+  const cleaned = text
     // Remove headers markdown
     .replace(/^#{1,6}\s+/gm, "")
     // Remove negrito e italico
@@ -59,6 +59,13 @@ function cleanForTTS(text: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]+/g, " ")
     .trim();
+  // Limita a 900 chars para nao exceder o limite do endpoint (evita erro 400)
+  if (cleaned.length > 900) {
+    const truncated = cleaned.slice(0, 900);
+    const lastDot = truncated.lastIndexOf(". ");
+    return lastDot > 400 ? truncated.slice(0, lastDot + 1) : truncated;
+  }
+  return cleaned;
 }
 
 async function transcribeAudio(blob: Blob): Promise<string> {
@@ -133,6 +140,15 @@ export default function ChatbotWidget() {
 
   const startRecording = useCallback(async () => {
     if (isLoading || isTranscribing) return;
+    // Desbloqueia autoplay via gesto do usuario (deve ser sincrono, antes de qualquer await)
+    if (audioElRef.current && audioEnabled) {
+      const el = audioElRef.current;
+      el.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+      el.volume = 0;
+      void el.play().catch(() => {});
+      el.volume = 1;
+    }
+    setAudioBlocked(false);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
@@ -157,7 +173,7 @@ export default function ChatbotWidget() {
     } catch {
       alert("Permita o acesso ao microfone nas configuracoes do navegador.");
     }
-  }, [isLoading, isTranscribing]); // sendMessage added below via ref trick
+  }, [isLoading, isTranscribing, audioEnabled]); // sendMessage added below via ref trick
 
   const stopRecording = useCallback(() => {
     mediaRecorderRef.current?.stop();
@@ -260,7 +276,11 @@ export default function ChatbotWidget() {
         const shouldSpeak = voiceInputRef.current || audioEnabled;
         voiceInputRef.current = false; // reset para próxima mensagem
         if (shouldSpeak && assistantContent && audioElRef.current) {
-          speakText(assistantContent, audioElRef.current);
+          setAudioBlocked(false);
+          speakText(assistantContent, audioElRef.current, (url) => {
+            pendingAudioUrlRef.current = url;
+            setAudioBlocked(true);
+          });
         }
       } catch {
         setMessages((prev) => [
@@ -287,7 +307,11 @@ export default function ChatbotWidget() {
     (content: string) => {
       if (!audioElRef.current) return;
       audioElRef.current.pause();
-      speakText(content, audioElRef.current);
+      setAudioBlocked(false);
+      speakText(content, audioElRef.current, (url) => {
+        pendingAudioUrlRef.current = url;
+        setAudioBlocked(true);
+      });
     },
     []
   );

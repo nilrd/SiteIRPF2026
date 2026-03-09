@@ -15,17 +15,63 @@ type ExistingPostSnapshot = {
   keywords: string[];
 };
 
+// Fontes raspadas via HTTP (HTML) — cobertura máxima oficial + jornalismo econômico
 const TRUSTED_SOURCE_URLS = [
+  // Receita Federal — IR e IRPF
   "https://www.gov.br/receitafederal/pt-br",
   "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
-  "https://www.restituicao.receita.fazenda.gov.br/",
-  "https://www.bcb.gov.br",
+  "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/tributos/irpf",
+  // Legislação federal
   "https://www.planalto.gov.br",
+  // Banco Central
+  "https://www.bcb.gov.br",
+  // Previdência Social / INSS
+  "https://www.gov.br/previdencia/pt-br",
+  "https://www.gov.br/inss/pt-br",
+  // Ministério do Trabalho
+  "https://www.gov.br/trabalho-e-emprego/pt-br",
+  // CVM — mercado de capitais
+  "https://www.gov.br/cvm/pt-br",
+  // IBGE — dados econômicos
   "https://www.ibge.gov.br",
+  // Portal da Transparência
+  "https://www.portaltransparencia.gov.br",
+  // Jornalismo financeiro
   "https://g1.globo.com/economia/",
-  "https://veja.abril.com.br/economia/",
   "https://www.infomoney.com.br/",
+  "https://www.valor.globo.com/legislacao/",
+  "https://www.contabeis.com.br/noticias/categoria/imposto-de-renda/",
 ] as const;
+
+// Fontes estáticas permanentes — sempre incluídas no contexto, independente de scraping
+// Usadas quando o scraping de TRUSTED_SOURCE_URLS falha
+const STATIC_SOURCES: ResearchItem[] = [
+  {
+    title: "Receita Federal — Imposto de Renda Pessoa Física (IRPF)",
+    url: "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
+    snippet: "Portal oficial da Receita Federal para declaração, consulta de restituição e orientações sobre o IRPF. Tabelas de alíquotas, prazos e deduções permitidas.",
+  },
+  {
+    title: "Planalto — Legislação federal tributária",
+    url: "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/l15270.htm",
+    snippet: "Lei nº 15.270/2025 — altera a tabela progressiva do IRPF, estabelece nova faixa de isenção até R$ 5.000 com dedução especial e reajusta limites de deduções.",
+  },
+  {
+    title: "Banco Central do Brasil — Taxa Selic",
+    url: "https://www.bcb.gov.br/controleinflacao/taxaselic",
+    snippet: "Taxa Selic definida pelo COPOM. Usada como referência para tributação de renda fixa, atualização de débitos e planejamento financeiro.",
+  },
+  {
+    title: "INSS — Tabela de contribuição e benefícios",
+    url: "https://www.gov.br/inss/pt-br",
+    snippet: "Portal oficial do INSS com tabelas de alíquotas de contribuição, regras de aposentadoria e benefícios previdenciários. Relevante para cálculo de deduções no IRPF.",
+  },
+  {
+    title: "CVM — Tributação em renda variável",
+    url: "https://www.gov.br/cvm/pt-br",
+    snippet: "Comissão de Valores Mobiliários — orientações sobre tributação de operações em bolsa, fundos de investimento e renda variável no IRPF.",
+  },
+];
 
 function stripHtml(input: string): string {
   return input
@@ -82,7 +128,7 @@ async function getGoogleNewsResearch(keyword: string): Promise<ResearchItem[]> {
     const xml = await res.text();
 
     const items = Array.from(xml.matchAll(/<item>([\s\S]*?)<\/item>/g))
-      .slice(0, 5)
+      .slice(0, 8)
       .map((m) => m[1]);
 
     const parsed = items
@@ -127,17 +173,19 @@ async function getTrustedSourceSnippets(): Promise<ResearchItem[]> {
 }
 
 async function collectResearchContext(keyword: string): Promise<ResearchItem[]> {
-  const [news, trusted] = await Promise.all([
+  const [news, scraped] = await Promise.all([
     getGoogleNewsResearch(keyword),
     getTrustedSourceSnippets(),
   ]);
 
-  const merged = [...news, ...trusted];
+  // STATIC_SOURCES garantem contexto factual mesmo quando o scraping falha
+  const merged = [...STATIC_SOURCES, ...news, ...scraped];
   const dedup = new Map<string, ResearchItem>();
   for (const item of merged) {
     if (!dedup.has(item.url)) dedup.set(item.url, item);
   }
-  return Array.from(dedup.values()).slice(0, 8);
+  // Aumentado para 14: mais contexto = menos alucinação
+  return Array.from(dedup.values()).slice(0, 14);
 }
 
 function ensureSourcesSection(content: string, sources: ResearchItem[]): string {

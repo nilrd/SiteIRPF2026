@@ -7,6 +7,14 @@ type ResearchItem = {
   snippet: string;
 };
 
+type ExistingPostSnapshot = {
+  id: string;
+  title: string;
+  slug: string;
+  tags: string[];
+  keywords: string[];
+};
+
 const TRUSTED_SOURCE_URLS = [
   "https://www.gov.br/receitafederal/pt-br",
   "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
@@ -139,6 +147,75 @@ function ensureSourcesSection(content: string, sources: ResearchItem[]): string 
     .join("");
   if (!links) return content;
   return `${content}\n<h2>Fontes</h2><ul>${links}</ul>`;
+}
+
+function normalizeText(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenSet(input: string): Set<string> {
+  const tokens = normalizeText(input)
+    .split(" ")
+    .filter((t) => t.length >= 4);
+  return new Set(tokens);
+}
+
+function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let intersection = 0;
+  a.forEach((v) => {
+    if (b.has(v)) intersection += 1;
+  });
+  const union = a.size + b.size - intersection;
+  return union === 0 ? 0 : intersection / union;
+}
+
+function isTitleTooSimilar(candidateTitle: string, existingTitles: string[]): boolean {
+  const candNorm = normalizeText(candidateTitle);
+  const candSet = tokenSet(candidateTitle);
+
+  return existingTitles.some((title) => {
+    const existingNorm = normalizeText(title);
+    if (!existingNorm) return false;
+    if (candNorm === existingNorm) return true;
+    if (candNorm.includes(existingNorm) || existingNorm.includes(candNorm)) return true;
+
+    const score = jaccardSimilarity(candSet, tokenSet(title));
+    return score >= 0.62;
+  });
+}
+
+async function getExistingPublishedPosts(): Promise<ExistingPostSnapshot[]> {
+  try {
+    const rows = await prisma.blogPost.findMany({
+      where: { published: true },
+      orderBy: { createdAt: "desc" },
+      take: 120,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        tags: true,
+        keywords: true,
+      },
+    });
+
+    return rows.map((r) => ({
+      id: r.id,
+      title: r.title,
+      slug: r.slug,
+      tags: Array.isArray(r.tags) ? r.tags : [],
+      keywords: Array.isArray(r.keywords) ? r.keywords : [],
+    }));
+  } catch {
+    return [];
+  }
 }
 
 /* ---- Selic API do Banco Central ---- */
@@ -378,7 +455,11 @@ export const FINANCE_CLUSTERS = [
 export const ALL_CLUSTERS = [...KEYWORD_CLUSTERS, ...FINANCE_CLUSTERS];
 
 /* ---- System prompt para blog ---- */
-function blogSystemPrompt(selicAtual: number, research: ResearchItem[]) {
+function blogSystemPrompt(
+  selicAtual: number,
+  research: ResearchItem[],
+  existingPosts: ExistingPostSnapshot[]
+) {
   const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   const researchBlock = research.length
     ? research
@@ -386,12 +467,22 @@ function blogSystemPrompt(selicAtual: number, research: ResearchItem[]) {
         .join("\n\n")
     : "Sem dados recentes de internet disponiveis. Use apenas fontes oficiais atemporais e explicite incertezas de data.";
 
+  const existingBlock = existingPosts.length
+    ? existingPosts
+        .slice(0, 40)
+        .map((p, i) => `${i + 1}. ${p.title} | slug: ${p.slug}`)
+        .join("\n")
+    : "Sem historico de posts publicado disponivel.";
+
   return `Voce e um redator especialista em financas pessoais, IRPF e tributacao no Brasil.
 Escreva artigos longos, educativos e uteis para o blog da Consultoria IRPF NSB.
 Data de publicacao: ${hoje}.
 
 DADOS PESQUISADOS NA INTERNET (priorize estes links e cite URL exata ao usar):
 ${researchBlock}
+
+POSTS JA PUBLICADOS (NAO REPETIR TITULO NEM ANGULO):
+${existingBlock}
 
 REGRAS INEGOCIAVEIS:
 1. NUNCA invente dados, noticias, leis ou percentuais. Use APENAS informacoes verificaveis de fontes oficiais.
@@ -411,6 +502,8 @@ REGRAS INEGOCIAVEIS:
 10. Inclua secao "Fontes" ao final com URLs reais de orgaos oficiais citados no texto.
 11. Adicione nota de rodape: "Conteudo de carater educativo. Para analise do seu caso especifico, consulte o especialista Nilson Brites — Consultoria IRPF NSB."
 12. Zero emojis. Tom: profissional, autoritativo, acessivel ao publico geral.
+13. Nao repetir temas com o mesmo enquadramento: se o assunto for parecido com posts existentes, mude a lente (ex.: checklist, erros comuns, comparativo, estudo de caso, mitos e verdades).
+14. Titulo deve ser forte e atrair clique com curiosidade legitima (sem sensacionalismo ridiculo, sem promessa enganosa, sem clickbait abusivo).
 
 OTIMIZACAO SEO E AEO (Answer Engine Optimization):
 - Primeiro paragrafo: responda diretamente a pergunta principal em 1-2 frases (featured snippet)
@@ -419,6 +512,7 @@ OTIMIZACAO SEO E AEO (Answer Engine Optimization):
 - Inclua dados numericos concretos (valores, percentuais, prazos, exemplos calculados)
 - Linguagem clara para voz: frases curtas, sujeito-verbo-objeto
 - FAQs devem ser perguntas reais que usuarios digitam no Google sobre o tema
+- Gere um "gancho" de curiosidade no titulo e na introducao, mantendo rigor tecnico e legal
 
 FORMATO DE SAIDA (JSON):
 {
@@ -438,6 +532,8 @@ export async function generateBlogPost(
   customKeyword?: string
 ) {
   const selicAtual = await getSelicAtual();
+  const existingPosts = await getExistingPublishedPosts();
+  const existingTitles = existingPosts.map((p) => p.title);
   const cluster = clusterIndex !== undefined
     ? ALL_CLUSTERS[clusterIndex % ALL_CLUSTERS.length]
     : null;
@@ -447,24 +543,34 @@ export async function generateBlogPost(
   const secundarias = cluster?.secondary?.join(", ") || "";
   const research = await collectResearchContext(keyword);
 
-  const completion = await groqLlama.chat.completions.create({
-    model: MODELS.blogGeneration,
-    messages: [
-      { role: "system", content: blogSystemPrompt(selicAtual, research) },
-      {
-        role: "user",
-        content: `Escreva um artigo completo sobre: "${keyword}"${
-          secundarias ? `. Keywords secundarias: ${secundarias}` : ""
-        }. Retorne APENAS o JSON valido, sem markdown.`,
-      },
-    ],
-    temperature: 0.35,
-    max_tokens: 8000,
-    response_format: { type: "json_object" },
-  });
+  async function runGeneration(extraInstruction?: string) {
+    const completion = await groqLlama.chat.completions.create({
+      model: MODELS.blogGeneration,
+      messages: [
+        { role: "system", content: blogSystemPrompt(selicAtual, research, existingPosts) },
+        {
+          role: "user",
+          content: `Escreva um artigo completo sobre: "${keyword}"${
+            secundarias ? `. Keywords secundarias: ${secundarias}` : ""
+          }. ${extraInstruction || ""} Retorne APENAS o JSON valido, sem markdown.`,
+        },
+      ],
+      temperature: 0.35,
+      max_tokens: 8000,
+      response_format: { type: "json_object" },
+    });
 
-  const raw = completion.choices[0]?.message?.content || "{}";
-  const parsed = JSON.parse(raw);
+    const raw = completion.choices[0]?.message?.content || "{}";
+    return JSON.parse(raw);
+  }
+
+  let parsed = await runGeneration();
+
+  if (parsed?.title && isTitleTooSimilar(parsed.title, existingTitles)) {
+    parsed = await runGeneration(
+      "O titulo proposto ficou parecido com outro post existente. Gere NOVO titulo e NOVO angulo editorial com foco em curiosidade legitima e alto CTR, sem sensacionalismo."
+    );
+  }
 
   // Slug sanitizado: remove acentos e caracteres especiais
   const baseSlug = (parsed.slug || keyword)

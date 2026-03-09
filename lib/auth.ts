@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import crypto from "crypto";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,35 +14,29 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        const adminUsername = process.env.ADMIN_USERNAME?.trim();
-        const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH?.trim();
-
-        if (!adminUsername || !adminPasswordHash) return null;
-        if (credentials.username.trim() !== adminUsername) return null;
-
-        // SHA-256 hex — sem $ no hash, seguro para env vars
-        const inputHash = crypto
-          .createHash("sha256")
-          .update(credentials.password)
-          .digest("hex");
-
-        // timingSafeEqual exige buffers do mesmo tamanho;
-        // se o hash salvo tiver comprimento diferente, a senha está errada
-        if (inputHash.length !== adminPasswordHash.length) return null;
-
-        let isValid = false;
         try {
-          isValid = crypto.timingSafeEqual(
-            Buffer.from(inputHash),
-            Buffer.from(adminPasswordHash)
+          const user = await prisma.adminUser.findUnique({
+            where: { username: credentials.username.trim() },
+          });
+
+          if (!user || !user.active) return null;
+
+          const isValid = await bcrypt.compare(
+            credentials.password,
+            user.passwordHash
           );
-        } catch {
+
+          if (!isValid) return null;
+
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email ?? "nilson.brites@gmail.com",
+          };
+        } catch (err) {
+          console.error("[auth] erro ao autenticar:", err);
           return null;
         }
-
-        if (!isValid) return null;
-
-        return { id: "1", name: "Admin NSB", email: "nilson.brites@gmail.com" };
       },
     }),
   ],

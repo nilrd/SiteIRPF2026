@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { gpt4o } from "@/lib/llm-providers";
+import { groqLlama } from "@/lib/llm-providers";
 
 export const dynamic = "force-dynamic";
 
@@ -36,9 +36,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const transcription = await gpt4o.audio.transcriptions.create({
+    const transcription = await groqLlama.audio.transcriptions.create({
       file: audio,
-      model: "whisper-1",
+      model: "whisper-large-v3-turbo",
       language: "pt",
     });
 

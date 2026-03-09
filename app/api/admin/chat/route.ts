@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { gpt4o, MODELS } from "@/lib/llm-providers";
+import { groqLlama, MODELS } from "@/lib/llm-providers";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +20,12 @@ Contexto do negocio:
 - Atendimento: 100% online, todo o Brasil
 - WhatsApp: +55 11 94082-5120
 - Site: irpf.qaplay.com.br
-- Stack: Next.js 14 + Supabase + GPT-4o (chatbot) + Groq (blog)
+- Stack: Next.js 14 + Supabase + Groq Llama-3.3-70b (chatbot + blog)
 
 Ajude com: analise de metricas, sugestoes de marketing, copy para campanhas, estrategia de conteudo, analise de leads, e qualquer questao tecnica ou de negocio.
 Seja direto, pratico e orientado a acao.`;
 
-    const stream = await gpt4o.chat.completions.create({
+    const stream = await groqLlama.chat.completions.create({
       model: MODELS.adminIA,
       messages: [
         { role: "system", content: systemPrompt },

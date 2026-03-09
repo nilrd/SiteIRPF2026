@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { gpt4o } from "@/lib/llm-providers";
+import { groqLlama } from "@/lib/llm-providers";
 
 export const dynamic = "force-dynamic";
 
@@ -21,10 +21,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const mp3 = await gpt4o.audio.speech.create({
-      model: "tts-1",
-      voice: "onyx",
+    const mp3 = await groqLlama.audio.speech.create({
+      model: "playai-tts",
+      voice: "Fritz-PlayAI",
       input: text.trim(),
+      // @ts-expect-error Groq aceita speed mas tipagem OpenAI nao inclui
       speed: 1.05,
     });
 

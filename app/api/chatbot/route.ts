@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { gpt4o, MODELS } from "@/lib/llm-providers";
+import { groqLlama, MODELS } from "@/lib/llm-providers";
 import { CHATBOT_SYSTEM_PROMPT } from "@/lib/chatbot-prompt";
 
 export const dynamic = "force-dynamic";
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     // Keep only last 10 messages for context
     const recentMessages = sanitized.slice(-10);
 
-    const stream = await gpt4o.chat.completions.create({
+    const stream = await groqLlama.chat.completions.create({
       model: MODELS.chatbot,
       messages: [
         { role: "system", content: CHATBOT_SYSTEM_PROMPT },

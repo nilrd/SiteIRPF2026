@@ -1,8 +1,9 @@
 import OpenAI from "openai";
 
-export const gpt4o = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Cliente OpenAI — desativado temporariamente. Descomente para reativar.
+// export const gpt4o = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY,
+// });
 
 export const groqLlama = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
@@ -10,7 +11,7 @@ export const groqLlama = new OpenAI({
 });
 
 export const MODELS = {
-  chatbot: "gpt-4o",
-  adminIA: "gpt-4o",
+  chatbot: "llama-3.3-70b-versatile",
+  adminIA: "llama-3.3-70b-versatile",
   blogGeneration: "llama-3.3-70b-versatile",
 } as const;

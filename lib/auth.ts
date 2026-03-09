@@ -1,7 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,29 +13,24 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
 
-        try {
-          const user = await prisma.adminUser.findUnique({
-            where: { username: credentials.username.trim() },
-          });
+        const adminUsername = process.env.ADMIN_USERNAME;
+        const adminHash = process.env.ADMIN_PASSWORD_HASH;
 
-          if (!user || !user.active) return null;
-
-          const isValid = await bcrypt.compare(
-            credentials.password,
-            user.passwordHash
-          );
-
-          if (!isValid) return null;
-
-          return {
-            id: user.id,
-            name: user.name,
-            email: user.email ?? "nilson.brites@gmail.com",
-          };
-        } catch (err) {
-          console.error("[auth] erro ao autenticar:", err);
+        if (!adminUsername || !adminHash) {
+          console.error("[auth] ADMIN_USERNAME ou ADMIN_PASSWORD_HASH não configurados");
           return null;
         }
+
+        if (credentials.username.trim() !== adminUsername) return null;
+
+        const isValid = await bcrypt.compare(credentials.password, adminHash);
+        if (!isValid) return null;
+
+        return {
+          id: "admin",
+          name: "Nilson Brites",
+          email: "nilson.brites@gmail.com",
+        };
       },
     }),
   ],

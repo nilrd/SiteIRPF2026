@@ -113,12 +113,15 @@ body {
 
 /* Button premium */
 .btn-premium {
+  background-color: #ffffff;
+  color: #1A1A1A;
+  border: 1px solid #1A1A1A;
   transition: all 0.3s ease;
-  border: 1px solid var(--text-main);
 }
 .btn-premium:hover {
-  background-color: var(--text-main);
-  color: white;
+  background-color: #2D4033;
+  color: #ffffff;
+  border-color: #2D4033;
 }
 
 /* Selection */

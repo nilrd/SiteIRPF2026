@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
 import { generateBlogPost, saveBlogPost, ALL_CLUSTERS } from "@/lib/blog-engine";
-import { Resend } from "resend";
+import { resend } from "@/lib/resend";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Vercel Pro: permite até 60s para geração via Groq
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function GET(request: Request) {
   try {

@@ -142,10 +142,16 @@ async function collectResearchContext(keyword: string): Promise<ResearchItem[]> 
 
 function ensureSourcesSection(content: string, sources: ResearchItem[]): string {
   if (/fontes/i.test(content)) return content;
-  const links = sources
+  if (!sources.length) return content;
+
+  // Usa apenas fontes cujo URL foi realmente citado no conteúdo gerado pela IA.
+  // Fallback para todas as fontes pesquisadas somente se nenhuma foi citada.
+  const cited = sources.filter((s) => content.includes(s.url));
+  const usedSources = cited.length > 0 ? cited : sources;
+
+  const links = usedSources
     .map((s) => `<li><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.title}</a></li>`)
     .join("");
-  if (!links) return content;
   return `${content}\n<h2>Fontes</h2><ul>${links}</ul>`;
 }
 

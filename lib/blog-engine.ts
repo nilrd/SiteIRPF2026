@@ -1,6 +1,140 @@
 import { groqLlama, MODELS } from "./llm-providers";
 import { prisma } from "./prisma";
 
+type ResearchItem = {
+  title: string;
+  url: string;
+  snippet: string;
+};
+
+const TRUSTED_SOURCE_URLS = [
+  "https://www.gov.br/receitafederal/pt-br",
+  "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
+  "https://www.bcb.gov.br",
+  "https://www.planalto.gov.br",
+  "https://www.ibge.gov.br",
+] as const;
+
+function stripHtml(input: string): string {
+  return input
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+async function fetchWithTimeout(url: string, timeoutMs = 9000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 IRPF-NSB-BlogBot/1.0" },
+      next: { revalidate: 3600 },
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function getTrendTopicFromInternet(): Promise<string | null> {
+  try {
+    const res = await fetchWithTimeout(
+      "https://trends.google.com/trending/rss?geo=BR",
+      8000
+    );
+    if (!res.ok) return null;
+    const xml = await res.text();
+    const titles = [...xml.matchAll(/<title><!\[CDATA\[(.*?)\]\]><\/title>/g)]
+      .map((m) => m[1]?.trim())
+      .filter(Boolean)
+      .slice(1, 20) as string[];
+
+    const financePattern = /(imposto|irpf|receita federal|inss|aposentadoria|fgts|mei|selic|ipca|salario|renda)/i;
+    const picked = titles.find((t) => financePattern.test(t));
+    return picked ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function getGoogleNewsResearch(keyword: string): Promise<ResearchItem[]> {
+  try {
+    const q = encodeURIComponent(`${keyword} site:gov.br OR site:bcb.gov.br OR site:planalto.gov.br`);
+    const url = `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
+    const res = await fetchWithTimeout(url, 9000);
+    if (!res.ok) return [];
+    const xml = await res.text();
+
+    const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)]
+      .slice(0, 5)
+      .map((m) => m[1]);
+
+    const parsed = items
+      .map((item) => {
+        const titleMatch = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/);
+        const linkMatch = item.match(/<link>(.*?)<\/link>/);
+        const descMatch = item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/);
+        const title = titleMatch?.[1]?.trim() || "";
+        const url = linkMatch?.[1]?.trim() || "";
+        const snippet = stripHtml(descMatch?.[1] || "").slice(0, 280);
+        if (!title || !url) return null;
+        return { title, url, snippet };
+      })
+      .filter(Boolean) as ResearchItem[];
+
+    return parsed;
+  } catch {
+    return [];
+  }
+}
+
+async function getTrustedSourceSnippets(): Promise<ResearchItem[]> {
+  const slices = await Promise.all(
+    TRUSTED_SOURCE_URLS.map(async (url) => {
+      try {
+        const res = await fetchWithTimeout(url, 7000);
+        if (!res.ok) return null;
+        const html = await res.text();
+        const text = stripHtml(html).slice(0, 260);
+        return {
+          title: `Fonte oficial: ${new URL(url).hostname}`,
+          url,
+          snippet: text,
+        };
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return slices.filter(Boolean) as ResearchItem[];
+}
+
+async function collectResearchContext(keyword: string): Promise<ResearchItem[]> {
+  const [news, trusted] = await Promise.all([
+    getGoogleNewsResearch(keyword),
+    getTrustedSourceSnippets(),
+  ]);
+
+  const merged = [...news, ...trusted];
+  const dedup = new Map<string, ResearchItem>();
+  for (const item of merged) {
+    if (!dedup.has(item.url)) dedup.set(item.url, item);
+  }
+  return [...dedup.values()].slice(0, 8);
+}
+
+function ensureSourcesSection(content: string, sources: ResearchItem[]): string {
+  if (/fontes/i.test(content)) return content;
+  const links = sources
+    .map((s) => `<li><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.title}</a></li>`)
+    .join("");
+  if (!links) return content;
+  return `${content}\n<h2>Fontes</h2><ul>${links}</ul>`;
+}
+
 /* ---- Selic API do Banco Central ---- */
 export async function getSelicAtual(): Promise<number> {
   try {
@@ -238,11 +372,20 @@ export const FINANCE_CLUSTERS = [
 export const ALL_CLUSTERS = [...KEYWORD_CLUSTERS, ...FINANCE_CLUSTERS];
 
 /* ---- System prompt para blog ---- */
-function blogSystemPrompt(selicAtual: number) {
+function blogSystemPrompt(selicAtual: number, research: ResearchItem[]) {
   const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  const researchBlock = research.length
+    ? research
+        .map((r, idx) => `${idx + 1}. ${r.title}\nURL: ${r.url}\nResumo: ${r.snippet}`)
+        .join("\n\n")
+    : "Sem dados recentes de internet disponiveis. Use apenas fontes oficiais atemporais e explicite incertezas de data.";
+
   return `Voce e um redator especialista em financas pessoais, IRPF e tributacao no Brasil.
 Escreva artigos longos, educativos e uteis para o blog da Consultoria IRPF NSB.
 Data de publicacao: ${hoje}.
+
+DADOS PESQUISADOS NA INTERNET (priorize estes links e cite URL exata ao usar):
+${researchBlock}
 
 REGRAS INEGOCIAVEIS:
 1. NUNCA invente dados, noticias, leis ou percentuais. Use APENAS informacoes verificaveis de fontes oficiais.
@@ -293,13 +436,15 @@ export async function generateBlogPost(
     ? ALL_CLUSTERS[clusterIndex % ALL_CLUSTERS.length]
     : null;
 
-  const keyword = customKeyword || cluster?.primary || "IRPF 2026";
+  const trendKeyword = await getTrendTopicFromInternet();
+  const keyword = customKeyword || trendKeyword || cluster?.primary || "IRPF 2026";
   const secundarias = cluster?.secondary?.join(", ") || "";
+  const research = await collectResearchContext(keyword);
 
   const completion = await groqLlama.chat.completions.create({
     model: MODELS.blogGeneration,
     messages: [
-      { role: "system", content: blogSystemPrompt(selicAtual) },
+      { role: "system", content: blogSystemPrompt(selicAtual, research) },
       {
         role: "user",
         content: `Escreva um artigo completo sobre: "${keyword}"${
@@ -307,7 +452,7 @@ export async function generateBlogPost(
         }. Retorne APENAS o JSON valido, sem markdown.`,
       },
     ],
-    temperature: 0.7,
+    temperature: 0.35,
     max_tokens: 8000,
     response_format: { type: "json_object" },
   });
@@ -325,11 +470,13 @@ export async function generateBlogPost(
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
+  const content = ensureSourcesSection(parsed.content || "", research);
+
   return {
     title: parsed.title || keyword,
     slug: baseSlug,
     summary: parsed.summary || "",
-    content: parsed.content || "",
+    content,
     tags: Array.isArray(parsed.tags) ? parsed.tags : [],
     keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
     faqs: Array.isArray(parsed.faqs) ? parsed.faqs : [],

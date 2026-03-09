@@ -15,14 +15,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const keyword = typeof body.keyword === "string" ? body.keyword.trim() : "";
 
-    if (!keyword) {
-      return NextResponse.json(
-        { error: "Keyword is required" },
-        { status: 400 }
-      );
-    }
-
-    const post = await generateBlogPost(undefined, keyword);
+    const post = await generateBlogPost(undefined, keyword || undefined);
     const saved = await saveBlogPost(post);
 
     return NextResponse.json({

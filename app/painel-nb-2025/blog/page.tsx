@@ -39,7 +39,6 @@ export default function BlogAdminPage() {
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
   async function handleGenerate() {
-    if (!keyword.trim()) return;
     setGenerating(true);
     setGenResult(null);
     try {
@@ -52,6 +51,8 @@ export default function BlogAdminPage() {
       if (data.success) {
         setGenResult(data.post);
         setKeyword("");
+        setActionMsg("Post gerado e publicado automaticamente no site.");
+        setTimeout(() => setActionMsg(null), 3500);
         await fetchPosts();
       }
     } catch {
@@ -121,7 +122,7 @@ export default function BlogAdminPage() {
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-              placeholder="Keyword do artigo (ex: tabela IRPF 2026)"
+              placeholder="Tema opcional (vazio = IA escolhe assunto atual da internet)"
               className="flex-1 bg-transparent border-b border-white/20 py-3 outline-none focus:border-white transition text-white placeholder:text-white/30"
             />
             <button
@@ -136,7 +137,7 @@ export default function BlogAdminPage() {
             <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20">
               <p className="text-sm">Post criado: <strong>{genResult.title}</strong></p>
               <p className="text-xs opacity-60 mt-1">
-                Aparece na lista abaixo como rascunho — publique quando estiver pronto.
+                Ja foi publicado automaticamente no site e aparece na lista abaixo.
               </p>
             </div>
           )}

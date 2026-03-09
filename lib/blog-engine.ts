@@ -232,20 +232,20 @@ export async function getSelicAtual(): Promise<number> {
   }
 }
 
-/* ---- Imagens de capa rotativas (picsum.photos — seeds determinísticos) ---- */
+/* ---- Imagens de capa rotativas (Unsplash curado — finanças/documentos) ---- */
 const COVER_IMAGES = [
-  "https://picsum.photos/seed/irpf-tax1/1200/675",
-  "https://picsum.photos/seed/irpf-finance2/1200/675",
-  "https://picsum.photos/seed/irpf-business3/1200/675",
-  "https://picsum.photos/seed/irpf-data4/1200/675",
+  "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=75",
   "https://picsum.photos/seed/irpf-finance5/1200/675",
-  "https://picsum.photos/seed/irpf-stock6/1200/675",
-  "https://picsum.photos/seed/irpf-docs7/1200/675",
+  "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1434626881859-194d67b2b86f?auto=format&fit=crop&w=1200&q=75",
   "https://picsum.photos/seed/irpf-rendas8/1200/675",
-  "https://picsum.photos/seed/irpf-money9/1200/675",
-  "https://picsum.photos/seed/irpf-person10/1200/675",
-  "https://picsum.photos/seed/irpf-work11/1200/675",
-  "https://picsum.photos/seed/irpf-audit12/1200/675",
+  "https://images.unsplash.com/photo-1554224154-22dec7ec8818?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1200&q=75",
+  "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&q=75",
 ];
 function getRandomCoverImage(): string {
   return COVER_IMAGES[Math.floor(Math.random() * COVER_IMAGES.length)];

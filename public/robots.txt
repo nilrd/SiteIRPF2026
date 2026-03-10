@@ -4,3 +4,4 @@ Disallow: /painel-nb-2025
 Disallow: /api/
 
 Sitemap: https://irpf.qaplay.com.br/sitemap.xml
+Sitemap: https://irpf.qaplay.com.br/news-sitemap.xml

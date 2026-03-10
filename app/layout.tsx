@@ -1,6 +1,8 @@
 import "@/app/globals.css";
 import type { Metadata } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
+import Script from "next/script";
+import { JsonLdWebSite } from "@/components/seo/JsonLd";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -26,7 +28,8 @@ export const metadata: Metadata = {
   description:
     "Consultoria especializada em IRPF. Declaracao completa, atrasados, retificacao e malha fina. 100% online, todo o Brasil.",
   keywords: ["IRPF", "imposto de renda", "declaracao", "restituicao", "malha fina"],
-  authors: [{ name: "Consultoria IRPF NSB" }],
+  authors: [{ name: "Nilson Brites", url: "https://irpf.qaplay.com.br/sobre" }],
+  themeColor: "#2D4033",
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -73,7 +76,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-br" className={`${playfair.variable} ${inter.variable}`}>
-      <body className="font-sans antialiased bg-base text-preto">{children}</body>
+      <body className="font-sans antialiased bg-base text-preto">
+        <JsonLdWebSite />
+        {children}
+        {process.env.NEXT_PUBLIC_GA4_ID && (
+          <>
+            <Script
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA4_ID}`}
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${process.env.NEXT_PUBLIC_GA4_ID}',{page_path:window.location.pathname});`}
+            </Script>
+          </>
+        )}
+      </body>
     </html>
   );
 }

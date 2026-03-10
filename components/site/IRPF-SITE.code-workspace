@@ -1,0 +1,37 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "C:/Users/Pichau/Documents/desenvolvimento/SITE IRPF 2/DOCS OpenAI"
+		},
+		{
+			"path": "C:/Users/Pichau/Documents/desenvolvimento/SITE IRPF 2/documentos IRPF"
+		},
+		{
+			"path": "C:/Users/Pichau/Documents/desenvolvimento/SITE IRPF 2/documentos tec"
+		},
+		{
+			"path": "C:/Users/Pichau/Documents/desenvolvimento/SITE IRPF 2/Dosc Claude"
+		},
+		{
+			"path": "C:/Users/Pichau/Downloads/copilot-irpf-v4-GROUND-TRUTH/copilot-v2/.github"
+		}
+	],
+	"settings": {
+		"github.copilot.chat.codesearch.enabled": true,
+		"github.copilot.renameSuggestions.triggerAutomatically": false,
+		"chat.agent.enabled": true,
+		"workbench.editor.enablePreview": false,
+		"terminal.integrated.env.linux": {
+			"NODE_ENV": "development"
+		},
+		"terminal.integrated.env.osx": {
+			"NODE_ENV": "development"
+		},
+		"terminal.integrated.env.windows": {
+			"NODE_ENV": "development"
+		}
+	}
+}

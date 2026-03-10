@@ -305,6 +305,76 @@ function getRandomCoverImage(): string {
   return COVER_IMAGES[Math.floor(Math.random() * COVER_IMAGES.length)];
 }
 
+/* ---- Mapa keyword → visual query para Unsplash (en) ---- */
+const VISUAL_QUERY_MAP: Record<string, string> = {
+  // IRPF
+  "malha fina": "tax audit inspection document warning",
+  "multa": "penalty deadline overdue bill calendar",
+  "restituicao": "money refund success finance",
+  "atrasado": "late deadline clock urgent",
+  "retific": "edit document correction",
+  "dependente": "family child document care",
+  "deducao": "savings reduce money calculator",
+  "aposentado": "retirement senior pension savings",
+  "autonomo": "freelancer laptop work independent",
+  "aluguel": "real estate house keys property",
+  "heranca": "inheritance signing document family",
+  "previdencia": "retirement planning pension fund",
+  "fgts": "savings worker protection fund",
+  "cpf bloqueado": "blocked identity document locked",
+  "investimento": "investment chart growth stocks",
+  "renda fixa": "bond certificate bank savings",
+  "declaracao": "tax documents paperwork professional",
+  "imposto de renda": "income tax form calculator",
+  "irpf": "tax documents calculator finance",
+  "tabela": "spreadsheet data numbers finance",
+  // Financas gerais
+  "planejamento financeiro": "financial planning budget notebook",
+  "selic": "interest rate economy central bank",
+  "inss": "social security welfare document",
+  "mei": "small business entrepreneur office",
+  "salario minimo": "minimum wage paycheck worker",
+  "divida": "debt finance stress money",
+  "inflacao": "inflation economy market chart",
+};
+
+function getVisualQuery(keyword: string): string {
+  const lower = keyword
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  for (const [key, query] of Object.entries(VISUAL_QUERY_MAP)) {
+    if (lower.includes(key)) return query;
+  }
+  return "finance tax brazil professional document";
+}
+
+/** Busca imagem contextual via Unsplash API. Fallback para pool local se a key nao estiver configurada. */
+async function getTopicSpecificImage(keyword: string): Promise<string> {
+  const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+  if (!accessKey) return getRandomCoverImage();
+
+  const query = encodeURIComponent(getVisualQuery(keyword));
+  try {
+    const res = await fetch(
+      `https://api.unsplash.com/photos/random?query=${query}&orientation=landscape&content_filter=high`,
+      {
+        headers: { Authorization: `Client-ID ${accessKey}` },
+        next: { revalidate: 0 },
+      }
+    );
+    if (!res.ok) return getRandomCoverImage();
+    const data = (await res.json()) as { urls?: { regular?: string } };
+    const rawUrl = data.urls?.regular;
+    if (!rawUrl) return getRandomCoverImage();
+    // Forca 1200x630 — dimensao exata exigida pelo Google Discover
+    const base = rawUrl.split("?")[0];
+    return `${base}?auto=format&fit=crop&w=1200&h=630&q=85`;
+  } catch {
+    return getRandomCoverImage();
+  }
+}
+
 /* ---- Keyword clusters para SEO ---- */
 export const KEYWORD_CLUSTERS = [
   {
@@ -542,7 +612,7 @@ REGRAS INEGOCIAVEIS:
 1. NUNCA invente dados, noticias, leis ou percentuais. Use APENAS informacoes verificaveis de fontes oficiais.
 2. Para cada dado numerico ou legal citado, informe a fonte: Receita Federal (gov.br/receitafederal), BCB (bcb.gov.br), Previdencia (gov.br/previdencia), Planalto (planalto.gov.br), IBGE (ibge.gov.br).
 3. Se nao tiver certeza de uma data exata de evento recente, use "conforme legislacao vigente" — nunca invente datas.
-4. Artigo com no minimo 1.800 palavras em HTML semantico.
+4. Artigo com no minimo 2.500 palavras em HTML semantico. Profundidade e o principal fator de permanencia — que o Google Discover valoriza.
 5. Inclua pelo menos 1 exemplo numerico calculado passo a passo.
 6. Taxa Selic atual: ${selicAtual}% a.a. (Fonte: Banco Central do Brasil, ${hoje}).
 7. Tabela IRPF 2026 oficial (Fonte: Receita Federal / Lei 15.270/2025):
@@ -559,24 +629,66 @@ REGRAS INEGOCIAVEIS:
 13. Nao repetir temas com o mesmo enquadramento: se o assunto for parecido com posts existentes, mude a lente (ex.: checklist, erros comuns, comparativo, estudo de caso, mitos e verdades).
 14. Titulo deve ser forte e atrair clique com curiosidade legitima (sem sensacionalismo ridiculo, sem promessa enganosa, sem clickbait abusivo).
 
-OTIMIZACAO SEO E AEO (Answer Engine Optimization):
-- Primeiro paragrafo: responda diretamente a pergunta principal em 1-2 frases (featured snippet)
-- Cada H2 deve ser uma pergunta ou afirmacao clara que antecipa o que o leitor busca
-- Use a keyword principal no title, no primeiro paragrafo e no last H2
-- Inclua dados numericos concretos (valores, percentuais, prazos, exemplos calculados)
-- Linguagem clara para voz: frases curtas, sujeito-verbo-objeto
-- FAQs devem ser perguntas reais que usuarios digitam no Google sobre o tema
-- Gere um "gancho" de curiosidade no titulo e na introducao, mantendo rigor tecnico e legal
+OTIMIZACAO SEO + GOOGLE DISCOVER + ASEO (AI Search Engine Optimization):
 
-FORMATO DE SAIDA (JSON):
+REGRA 15 — TITULOS DISCOVER (escolha a formula mais adequada ao tema):
+   Formulas com alto CTR comprovado no feed do Discover:
+   - "[N] erros de [tema] que a Receita Federal detecta automaticamente"
+   - "O que muda no [tema] em [ano] — e o que voce precisa fazer agora"
+   - "Por que [X%] dos brasileiros [problema] sem saber"
+   - "[Tema]: o que poucos especialistas revelam — e como isso afeta voce"
+   - "Checklist: [tema] completo passo a passo (com tabelas oficiais [ano])"
+   - "[Tema] em [ano]: guia definitivo para nao cair na malha fina"
+   - "Mitos e verdades sobre [tema] — desvendado com dados oficiais"
+   O titulo deve gerar curiosidade LEGITIMA sem sensacionalismo. Dado numerico no titulo aumenta 35% o CTR.
+
+REGRA 16 — PARAGRAFO ABERTURA (featured snippet + Discover card):
+   Primeiro paragrafo: responda diretamente a pergunta principal em 2-3 frases com dado numerico concreto.
+   Este trecho aparece no card do Discover e como featured snippet. Seja direto: sujeito-verbo-dado.
+
+REGRA 17 — BLOCO TL;DR (obrigatorio, logo apos o primeiro paragrafo):
+   <div class="tldr-box" style="background:#f5f5f2;border-left:4px solid #2D4033;padding:16px 20px;margin:24px 0;">
+   <strong>Resumo rapido:</strong>
+   <ul><li>[ponto 1 com dado concreto — valor, percentual ou prazo]</li>
+   <li>[ponto 2 com dado concreto]</li>
+   <li>[ponto 3 com dado concreto]</li></ul>
+   </div>
+   O Google Discover usa este bloco para pre-visualizar o conteudo.
+
+REGRA 18 — BLOCO KEY FACTS (antes das FAQs):
+   <div class="key-facts" style="background:#2D4033;color:#F9F7F2;padding:20px 24px;margin:32px 0;">
+   <strong style="display:block;margin-bottom:12px;letter-spacing:0.1em;text-transform:uppercase;font-size:0.8em;">Dados Essenciais</strong>
+   <ul style="margin:0;padding-left:20px;">
+   <li>[dado 1: valor monetario, percentual ou prazo oficial]</li>
+   <li>[dado 2]</li><li>[dado 3]</li><li>[dado 4]</li></ul>
+   </div>
+   IAs de busca (Perplexity, ChatGPT, Google AI Overview) extraem este bloco para citacoes.
+
+REGRA 19 — H2 COMO PERGUNTA NATURAL:
+   Cada H2 deve ser formulado como pergunta (como o usuario digitaria no Google).
+   Exemplo: "Quem e obrigado a declarar o IRPF 2026?" em vez de "Obrigatoriedade".
+   AIs de busca usam H2s como ancora de citacao nas respostas.
+
+REGRA 20 — BOLD EM DADOS-CHAVE:
+   Use <strong> em: valores monetarios (R$), percentuais, datas, nomes de leis, prazos.
+   IAs de busca usam <strong> como sinal de fato verificavel para extracao.
+
+REGRA 21 — TABELA HTML OBRIGATORIA:
+   Inclua ao menos 1 <table> com dados oficiais (faixas, prazos, deducoes).
+   Tabelas aumentam tempo de permanencia e recebem destaque especial no Google.
+
+FORMATO DE SAIDA (JSON estrito — TODOS os campos obrigatorios):
 {
-  "title": "titulo SEO com keyword principal, max 65 caracteres",
-  "slug": "slug-do-artigo-com-keywords",
-  "summary": "resposta direta a pergunta do titulo em 150-160 caracteres, incluindo dado numerico",
-  "content": "conteudo HTML completo com h2, h3, p, ul, li, table, strong — minimo 1800 palavras",
+  "title": "titulo com formula Discover + keyword principal, max 65 caracteres",
+  "slug": "slug-seo-com-keywords-principais",
+  "summary": "resposta direta a pergunta do titulo em 150-160 caracteres, com dado numerico — este texto e o card do Discover",
+  "content": "HTML completo: h2 (como perguntas), h3, p, ul, li, table, strong — minimo 2500 palavras — TL;DR e Key Facts inclusos",
   "tags": ["tag1", "tag2", "tag3"],
   "keywords": ["keyword-principal", "keyword-secundaria-1", "keyword-secundaria-2"],
-  "faqs": [{"question": "pergunta real de usuario", "answer": "resposta direta e completa em 50-100 palavras"}]
+  "faqs": [{"question": "pergunta real exatamente como usuario digita no Google", "answer": "resposta direta em 50-100 palavras com dado numerico quando possivel"}],
+  "imageAlt": "descricao visual em ingles para busca de foto (ex: tax documents calculator brazil finance)",
+  "articleSection": "categoria do artigo (ex: IRPF 2026, Malha Fina, Deducoes, Financas Pessoais)",
+  "isNewsworthy": false
 }`;
 }
 
@@ -638,6 +750,13 @@ export async function generateBlogPost(
 
   const content = ensureSourcesSection(parsed.content || "", research);
 
+  // Usa Unsplash contextual ao tema; fallback seguro para pool local
+  const coverImage = await getTopicSpecificImage(
+    typeof parsed.imageAlt === "string" && parsed.imageAlt
+      ? parsed.imageAlt
+      : keyword
+  );
+
   return {
     title: parsed.title || keyword,
     slug: baseSlug,
@@ -646,7 +765,10 @@ export async function generateBlogPost(
     tags: Array.isArray(parsed.tags) ? parsed.tags : [],
     keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
     faqs: Array.isArray(parsed.faqs) ? parsed.faqs : [],
-    coverImage: getRandomCoverImage(),
+    coverImage,
+    imageAlt: (typeof parsed.imageAlt === "string" ? parsed.imageAlt : null) ?? (parsed.title || keyword),
+    articleSection: (typeof parsed.articleSection === "string" ? parsed.articleSection : null) ?? "IRPF",
+    isNewsworthy: typeof parsed.isNewsworthy === "boolean" ? parsed.isNewsworthy : false,
   };
 }
 

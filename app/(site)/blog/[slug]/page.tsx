@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import BlogPostImage from "@/components/site/BlogPostImage";
-import { JsonLdArticle, JsonLdBreadcrumb, JsonLdFAQ } from "@/components/seo/JsonLd";
+import AuthorBadge from "@/components/site/AuthorBadge";
+import { JsonLdArticle, JsonLdBreadcrumb, JsonLdFAQ, JsonLdSpeakable } from "@/components/seo/JsonLd";
 
 export const dynamic = "force-dynamic";
 
@@ -42,15 +43,23 @@ async function getRelated(tags: string[], excludeId: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPost(params.slug);
   if (!post) return { title: "Artigo nao encontrado" };
+  const url = `https://irpf.qaplay.com.br/blog/${post.slug}`;
   return {
     title: `${post.title} | Blog IRPF NSB`,
     description: post.summary || post.title,
     keywords: post.keywords || [],
+    alternates: { canonical: url },
     openGraph: {
       title: post.title,
       description: post.summary || post.title,
       type: "article",
-      images: post.coverImage ? [post.coverImage] : [],
+      url,
+      publishedTime: post.createdAt.toISOString(),
+      modifiedTime: post.updatedAt.toISOString(),
+      authors: ["https://irpf.qaplay.com.br/sobre"],
+    },
+    twitter: {
+      card: "summary_large_image",
     },
   };
 }
@@ -75,6 +84,11 @@ export default async function BlogPostPage({ params }: Props) {
         image={post.coverImage || ""}
         datePublished={post.createdAt.toISOString()}
         dateModified={post.updatedAt.toISOString()}
+        type={(Date.now() - post.createdAt.getTime()) < 7 * 24 * 60 * 60 * 1000 ? "NewsArticle" : "Article"}
+        articleSection={post.tags?.[0] ?? "IRPF"}
+      />
+      <JsonLdSpeakable
+        url={`https://irpf.qaplay.com.br/blog/${post.slug}`}
       />
       <JsonLdBreadcrumb
         items={[
@@ -121,10 +135,15 @@ export default async function BlogPostPage({ params }: Props) {
             </h1>
 
             {post.summary && (
-              <p className="text-lg opacity-70 mb-8 border-l-2 border-ouro pl-6">
+              <p className="text-lg opacity-70 mb-4 border-l-2 border-ouro pl-6 article-summary">
                 {post.summary}
               </p>
             )}
+
+            <AuthorBadge
+              readTime={post.readTime || undefined}
+              publishedAt={post.createdAt}
+            />
 
             {post.coverImage && (
               <div className="relative aspect-[16/9] mb-12 bg-gray-200 overflow-hidden">
@@ -132,13 +151,13 @@ export default async function BlogPostPage({ params }: Props) {
               </div>
             )}
 
-            {/* Content */}
+            {/* Conteudo do artigo */}
             <div
               className="prose-irpf"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
-            {/* CTA Box mid-content */}
+            {/* CTA Box mid-content */
             <div className="bg-verde text-white p-8 my-12 text-center">
               <h3 className="font-serif text-2xl mb-3">
                 Precisa declarar seu IRPF?

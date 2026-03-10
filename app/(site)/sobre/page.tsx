@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
+import { JsonLdPerson } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
   title: "Sobre | Consultoria IRPF NSB",
@@ -10,6 +12,7 @@ export const metadata: Metadata = {
 export default function SobrePage() {
   return (
     <main className="pt-32 pb-24">
+      <JsonLdPerson />
       <section className="max-w-7xl mx-auto px-6">
         <span className="block text-sm uppercase tracking-[0.3em] mb-6 opacity-60">
           Sobre Nos
@@ -58,15 +61,15 @@ export default function SobrePage() {
                 </span>
               </div>
               <div>
-                <span className="font-serif text-3xl text-ouro">100%</span>
+                <span className="font-serif text-3xl text-ouro">400+</span>
                 <span className="block text-[10px] uppercase tracking-widest opacity-50 mt-1">
-                  Online
+                  Declaracoes/mes
                 </span>
               </div>
               <div>
-                <span className="font-serif text-3xl text-ouro">BR</span>
+                <span className="font-serif text-3xl text-ouro">100%</span>
                 <span className="block text-[10px] uppercase tracking-widest opacity-50 mt-1">
-                  Todo Brasil
+                  Online
                 </span>
               </div>
             </div>
@@ -96,6 +99,91 @@ export default function SobrePage() {
               Atendimento personalizado com ferramentas inteligentes para
               maximizar seu resultado.
             </p>
+          </div>
+        </div>
+
+        {/* Bloco E-E-A-T: por que confiar */}
+        <div className="editorial-border pt-12 mt-12">
+          <span className="block text-sm uppercase tracking-[0.3em] mb-6 opacity-60">
+            Credenciais
+          </span>
+          <h2 className="font-serif text-3xl md:text-4xl mb-10">
+            Por que confiar na Consultoria IRPF NSB
+          </h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <span className="font-serif text-2xl text-ouro flex-shrink-0">01</span>
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">10+ anos de experiencia exclusiva em IRPF PF</h4>
+                  <p className="text-sm opacity-60 leading-relaxed">
+                    Declaracoes simples, complexas, atrasadas e com multiplas fontes de renda — todo o espectro do Imposto de Renda Pessoa Fisica.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <span className="font-serif text-2xl text-ouro flex-shrink-0">02</span>
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">400+ declaracoes processadas por mes</h4>
+                  <p className="text-sm opacity-60 leading-relaxed">
+                    Volume real, atendimento individual. Cada declaracao e revisada com rigor antes do envio a Receita Federal.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <span className="font-serif text-2xl text-ouro flex-shrink-0">03</span>
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Entrega em 24 horas uteis</h4>
+                  <p className="text-sm opacity-60 leading-relaxed">
+                    Agilidade sem abrir mao da qualidade. Voce envia os documentos, nos cuidamos do resto.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <span className="font-serif text-2xl text-ouro flex-shrink-0">04</span>
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">1 ano de suporte pos-declaracao incluido</h4>
+                  <p className="text-sm opacity-60 leading-relaxed">
+                    Caso a Receita Federal solicite documentacao ou esclarecimentos, estamos disponíveis sem custo adicional.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <span className="font-serif text-2xl text-ouro flex-shrink-0">05</span>
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">100% online — todo o Brasil</h4>
+                  <p className="text-sm opacity-60 leading-relaxed">
+                    Processo digital completo: envio de documentos, revisao, entrega e suporte sem sair de casa.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <span className="font-serif text-2xl text-ouro flex-shrink-0">06</span>
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Dados verificados, zero praticas enganosas</h4>
+                  <p className="text-sm opacity-60 leading-relaxed">
+                    Todos os consultores usam apenas informacoes oficiais da Receita Federal e legislacao vigente.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 bg-verde text-white p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <p className="font-serif text-xl mb-1">Pronto para regularizar sua situacao fiscal?</p>
+              <p className="text-sm opacity-70">Fale com o especialista. Resposta rapida, sem compromisso.</p>
+            </div>
+            <Link
+              href={`https://wa.me/5511940825120?text=${encodeURIComponent("Olá! Quero declarar meu IRPF.")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-white text-verde px-8 py-3 uppercase text-xs tracking-widest font-bold hover:bg-white/90 transition flex-shrink-0"
+            >
+              Falar pelo WhatsApp
+            </Link>
           </div>
         </div>
       </section>

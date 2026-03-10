@@ -27,7 +27,7 @@ export default function SplitSection() {
             <div className="absolute bottom-6 left-6 bg-preto text-white px-5 py-3">
               <span className="font-serif text-3xl font-bold">10+</span>
               <span className="block text-[10px] uppercase tracking-widest opacity-60 mt-1">
-                Anos de experiencia
+                Anos de experiência
               </span>
             </div>
           </div>
@@ -45,18 +45,18 @@ export default function SplitSection() {
             Sobre a Consultoria
           </span>
           <h2 className="font-serif text-3xl md:text-4xl mb-6">
-            Consultoria que entende a complexidade do seu patrimonio
+            Consultoria que entende a complexidade do seu patrimônio
           </h2>
           <p className="text-white/70 leading-relaxed mb-6">
-            A Consultoria IRPF NSB nasceu da conviccao de que a declaracao de
-            Imposto de Renda nao precisa ser uma dor de cabeca. Com mais de 10
-            anos de experiencia em analise financeira e tributacao de pessoa
-            fisica, oferecemos um servico 100% online para todo o Brasil.
+            A Consultoria IRPF NSB nasceu da convicção de que a declaração de
+            Imposto de Renda não precisa ser uma dor de cabeça. Com mais de 10
+            anos de experiência em análise financeira e tributação de pessoa
+            física, oferecemos um serviço 100% online para todo o Brasil.
           </p>
           <p className="text-white/70 leading-relaxed mb-8">
-            Nossa abordagem combina precisao tecnica com atendimento
-            personalizado. Em cada declaracao, verificamos todas as deducoes
-            a que o cliente tem direito conforme a legislacao vigente —
+            Nossa abordagem combina precisão técnica com atendimento
+            personalizado. Em cada declaração, verificamos todas as deduções
+            a que o cliente tem direito conforme a legislação vigente —
             sem deixar nada passar.
           </p>
 

@@ -15,15 +15,15 @@ export default function Footer() {
               NSB
             </div>
             <p className="text-sm text-white/60 leading-relaxed">
-              Mais de 10 anos de experiencia em declaracao de Imposto de Renda
-              Pessoa Fisica. Todo Brasil, 100% online.
+              Mais de 10 anos de experiência em declaração de Imposto de Renda
+              Pessoa Física. Todo Brasil, 100% online.
             </p>
           </div>
 
           {/* Col 2 - Servicos */}
           <div>
             <h4 className="text-[10px] uppercase tracking-widest text-white/40 mb-4">
-              Servicos
+              Serviços
             </h4>
             <ul className="space-y-2.5">
               <li>
@@ -31,7 +31,7 @@ export default function Footer() {
                   href="/servicos"
                   className="text-sm text-white/70 hover:text-white transition"
                 >
-                  Declaracao Nova
+                  Declaração Nova
                 </Link>
               </li>
               <li>
@@ -47,7 +47,7 @@ export default function Footer() {
                   href="/servicos"
                   className="text-sm text-white/70 hover:text-white transition"
                 >
-                  Retificacao
+                  Retificação
                 </Link>
               </li>
               <li>
@@ -91,6 +91,16 @@ export default function Footer() {
                   Blog / Insights
                 </Link>
               </li>
+              <li>
+                <a
+                  href="https://www.restituicao.receita.fazenda.gov.br/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-white/70 hover:text-white transition"
+                >
+                  Consultar Restituição ↗
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -115,7 +125,7 @@ export default function Footer() {
                   href="/contato"
                   className="text-sm text-white/70 hover:text-white transition"
                 >
-                  Formulario de Contato
+                  Formulário de Contato
                 </Link>
               </li>
               <li>

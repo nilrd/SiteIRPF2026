@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NAV_LINKS = [
-  { href: "/servicos", label: "Servicos" },
+  { href: "/servicos", label: "Serviços" },
   { href: "/como-funciona", label: "Como Funciona" },
   { href: "/ferramentas/calculadora-ir", label: "Calculadora" },
   { href: "/blog", label: "Insights" },
@@ -13,7 +13,7 @@ const NAV_LINKS = [
 ];
 
 const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent(
-  process.env.NEXT_PUBLIC_WA_MESSAGE || "Ola! Vim pelo site e quero saber sobre declaracao de IR."
+  process.env.NEXT_PUBLIC_WA_MESSAGE || "Olá! Vim pelo site e quero saber sobre declaração de IR."
 )}`;
 
 export default function Navbar() {

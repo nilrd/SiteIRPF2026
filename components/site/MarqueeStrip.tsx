@@ -4,10 +4,10 @@ import { motion } from "framer-motion";
 
 const items = [
   "IRPF 2025",
-  "Declaracao Completa",
-  "Deducoes Aplicadas",
+  "Declaração Completa",
+  "Deduções Aplicadas",
   "IRPF Atrasado",
-  "Retificacao",
+  "Retificação",
   "100% Online",
   "Todo Brasil",
   "Malha Fina",

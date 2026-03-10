@@ -63,7 +63,7 @@ export default function ContatoSection() {
               Mensagem enviada com sucesso
             </p>
             <p className="opacity-70">
-              Entraremos em contato em ate 24 horas.
+              Entraremos em contato em até 24 horas.
             </p>
           </motion.div>
         ) : (
@@ -111,9 +111,9 @@ export default function ContatoSection() {
                 name="servico"
                 className="bg-transparent border-b border-white/30 py-3 outline-none focus:border-white transition text-white [&>option]:text-preto"
               >
-                <option value="declaracao-nova">Declaracao Nova</option>
+                <option value="declaracao-nova">Declaração Nova</option>
                 <option value="irpf-atrasado">IRPF Atrasado</option>
-                <option value="retificacao">Retificacao</option>
+                <option value="retificacao">Retificação</option>
                 <option value="malha-fina">Malha Fina</option>
                 <option value="outro">Outro</option>
               </select>

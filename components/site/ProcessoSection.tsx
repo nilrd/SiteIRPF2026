@@ -6,17 +6,17 @@ const steps = [
   {
     num: "01",
     title: "Envie seus documentos",
-    desc: "Pelo WhatsApp ou formulario. Precisamos dos informes de rendimentos, comprovantes de deducoes e dados pessoais.",
+    desc: "Pelo WhatsApp ou formulário. Precisamos dos informes de rendimentos, comprovantes de deduções e dados pessoais.",
   },
   {
     num: "02",
     title: "Analisamos tudo",
-    desc: "Nosso consultor verifica todos os rendimentos, identifica as deducoes legais aplicaveis ao seu perfil e garante conformidade total com a Receita Federal.",
+    desc: "Nosso consultor verifica todos os rendimentos, identifica as deduções legais aplicáveis ao seu perfil e garante conformidade total com a Receita Federal.",
   },
   {
     num: "03",
-    title: "Declaracao entregue",
-    desc: "Voce recebe o comprovante de entrega e acompanhamento ate a liberacao da restituicao pela Receita Federal.",
+    title: "Declaração entregue",
+    desc: "Você recebe o comprovante de entrega e acompanhamento até a liberação da restituição pela Receita Federal.",
   },
 ];
 

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá! Quero declarar meu IRPF.")}`;
 
 const dataItems = [
-  { label: "Experiencia", value: "10+ anos" },
+  { label: "Experiência", value: "10+ anos" },
   { label: "Atendimento", value: "Todo Brasil" },
   { label: "Formato", value: "100% Online" },
   { label: "IRPF 2026", value: "16/03 Abertura" },
@@ -55,7 +55,7 @@ export default function HeroSection() {
             <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[0.95] font-normal text-white">
               Declaramos seu{" "}
               <span className="italic text-[#C9A84C]">Imposto de Renda</span>{" "}
-              com precisao e responsabilidade.
+              com precisão e responsabilidade.
             </h1>
           </motion.div>
 
@@ -66,8 +66,8 @@ export default function HeroSection() {
             transition={{ duration: 0.7, delay: 0.3 }}
           >
             <p className="text-base leading-relaxed text-white/75 mb-6 border-l-2 border-[#C9A84C] pl-6">
-              Declaracoes novas, atrasadas e retificacoes para todo o Brasil,
-              100% online. Garantimos que nenhuma deducao legal seja perdida.
+              Declarações novas, atrasadas e retificações para todo o Brasil,
+              100% online. Garantimos que nenhuma dedução legal seja perdida.
             </p>
             <a
               href={WA_LINK}

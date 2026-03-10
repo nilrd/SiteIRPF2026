@@ -8,26 +8,26 @@ const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "551194082
 const servicos = [
   {
     num: "01",
-    title: "Declaracao Completa",
-    desc: "Organizamos e entregamos sua declaracao com todos os rendimentos, bens e deducoes legais aplicaveis — sem erros, sem pendencias.",
+    title: "Declaração Completa",
+    desc: "Organizamos e entregamos sua declaração com todos os rendimentos, bens e deduções legais aplicáveis — sem erros, sem pendências.",
     tag: "Mais popular",
   },
   {
     num: "02",
     title: "IRPF Atrasado",
-    desc: "Regularizamos declaracoes de anos anteriores com calculo preciso das multas e orientacao completa para quitar sua situacao com a Receita.",
+    desc: "Regularizamos declarações de anos anteriores com cálculo preciso das multas e orientação completa para quitar sua situação com a Receita.",
     tag: "Urgente",
   },
   {
     num: "03",
-    title: "Retificacao",
-    desc: "Corrigimos declaracoes ja entregues com erros, omissoes ou inconsistencias antes que virem problema na Receita Federal.",
+    title: "Retificação",
+    desc: "Corrigimos declarações já entregues com erros, omissões ou inconsistências antes que virem problema na Receita Federal.",
     tag: "Correcao",
   },
   {
     num: "04",
     title: "Malha Fina",
-    desc: "Resolvemos notificacoes e pendencias com a Receita Federal, identificando a causa e regularizando sua situacao fiscal.",
+    desc: "Resolvemos notificações e pendências com a Receita Federal, identificando a causa e regularizando sua situação fiscal.",
     tag: "Especialidade",
   },
 ];
@@ -36,7 +36,7 @@ export default function ServicosSection() {
   return (
     <section id="servicos" className="max-w-7xl mx-auto px-6 py-14">
       <div className="flex justify-between items-end mb-10">
-        <h2 className="font-serif text-4xl md:text-5xl">Servicos</h2>
+        <h2 className="font-serif text-4xl md:text-5xl">Serviços</h2>
         <span className="text-[10px] uppercase tracking-widest opacity-40">
           Especialidades
         </span>

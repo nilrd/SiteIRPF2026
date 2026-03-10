@@ -7,36 +7,36 @@ import { JsonLdFAQ } from "@/components/seo/JsonLd";
 
 const faqs = [
   {
-    q: "Quem e obrigado a declarar o IRPF em 2026?",
-    a: "As regras completas (prazo e limite de renda) serao anunciadas pela Receita Federal em 16/03/2026. Os criterios gerais que sempre se aplicam: ganho de capital na alienacao de bens, operacoes em bolsa, atividade rural acima do limite, ter passado a ser residente no Brasil em 2025, ou ter bens acima de R$ 800.000 em 31/12/2025. Para saber se voce esta obrigado, fale conosco pelo WhatsApp.",
+    q: "Quem é obrigado a declarar o IRPF em 2026?",
+    a: "As regras completas (prazo e limite de renda) serão anunciadas pela Receita Federal em 16/03/2026. Os critérios gerais que sempre se aplicam: ganho de capital na alienação de bens, operações em bolsa, atividade rural acima do limite, ter passado a ser residente no Brasil em 2025, ou ter bens acima de R$ 800.000 em 31/12/2025. Para saber se você está obrigado, fale conosco pelo WhatsApp.",
   },
   {
-    q: "Qual o prazo para entregar a declaracao IRPF 2026?",
-    a: "As declaracoes do IRPF 2026 (renda de 2025) abrem em 16/03/2026. O prazo de encerramento sera confirmado pela Receita Federal nessa data. Acompanhe aqui ou fale conosco no WhatsApp para ser avisado assim que o prazo for divulgado. Declaracoes de anos anteriores ja atrasados podem ser entregues a qualquer momento.",
+    q: "Qual o prazo para entregar a declaração IRPF 2026?",
+    a: "As declarações do IRPF 2026 (renda de 2025) abrem em 16/03/2026. O prazo de encerramento será confirmado pela Receita Federal nessa data. Acompanhe aqui ou fale conosco no WhatsApp para ser avisado assim que o prazo for divulgado. Declarações de anos anteriores já atrasados podem ser entregues a qualquer momento.",
   },
   {
-    q: "Como funciona o servico 100% online?",
-    a: "Voce envia seus documentos pelo WhatsApp ou formulario no nosso site. Nosso consultor analisa tudo, prepara a declaracao e envia o comprovante de entrega. Todo o processo e digital, sem necessidade de presenca fisica.",
+    q: "Como funciona o serviço 100% online?",
+    a: "Você envia seus documentos pelo WhatsApp ou formulário no nosso site. Nosso consultor analisa tudo, prepara a declaração e envia o comprovante de entrega. Todo o processo é digital, sem necessidade de presença física.",
   },
   {
     q: "Quanto custa para declarar o IRPF?",
-    a: "O valor depende da complexidade da sua declaracao. Envie seus documentos pelo WhatsApp e recebera um orcamento personalizado sem compromisso.",
+    a: "O valor depende da complexidade da sua declaração. Envie seus documentos pelo WhatsApp e receberá um orçamento personalizado sem compromisso.",
   },
   {
-    q: "Como posso maximizar minha restituicao?",
-    a: "Atraves da analise detalhada de todas as suas deducoes legais: despesas medicas sem limite, educacao ate R$ 3.561,50 por pessoa, dependentes (R$ 2.275,08 cada), previdencia privada PGBL (ate 12% da renda) e outras. Nosso consultor identifica todas as oportunidades dentro da lei.",
+    q: "Como posso maximizar minha restituição?",
+    a: "Através da análise detalhada de todas as suas deduções legais: despesas médicas sem limite, educação até R$ 3.561,50 por pessoa, dependentes (R$ 2.275,08 cada), previdência privada PGBL (até 12% da renda) e outras. Nosso consultor identifica todas as oportunidades dentro da lei.",
   },
   {
-    q: "O que acontece se eu nao declarar?",
-    a: "A falta de declaracao gera multa de 1% ao mes sobre o imposto devido (minimo R$ 165,74, maximo 20% do imposto devido), alem de CPF irregular que impede emprestimos, financiamentos, concursos publicos e viagens ao exterior. O risco aumenta a cada mes de atraso.",
+    q: "O que acontece se eu não declarar?",
+    a: "A falta de declaração gera multa de 1% ao mês sobre o imposto devido (mínimo R$ 165,74, máximo 20% do imposto devido), além de CPF irregular que impede empréstimos, financiamentos, concursos públicos e viagens ao exterior. O risco aumenta a cada mês de atraso.",
   },
   {
-    q: "Posso retificar uma declaracao ja enviada?",
-    a: "Sim. A retificacao pode ser feita a qualquer momento dentro do prazo de 5 anos. Corrigimos erros, incluimos informacoes faltantes e ajustamos valores para manter sua conformidade com a Receita Federal.",
+    q: "Posso retificar uma declaração já enviada?",
+    a: "Sim. A retificação pode ser feita a qualquer momento dentro do prazo de 5 anos. Corrigimos erros, incluímos informações faltantes e ajustamos valores para manter sua conformidade com a Receita Federal.",
   },
   {
     q: "Atendem todo o Brasil?",
-    a: "Sim. Nosso atendimento e 100% online, atendendo contribuintes de todos os estados brasileiros com a mesma qualidade e agilidade.",
+    a: "Sim. Nosso atendimento é 100% online, atendendo contribuintes de todos os estados brasileiros com a mesma qualidade e agilidade.",
   },
 ];
 
@@ -55,7 +55,7 @@ export default function FAQSection() {
         <span className="text-[10px] uppercase tracking-widest opacity-40 mb-4 block">
           Perguntas Frequentes
         </span>
-        <h2 className="font-serif text-4xl md:text-5xl">Duvidas Comuns</h2>
+        <h2 className="font-serif text-4xl md:text-5xl">Dúvidas Comuns</h2>
       </motion.div>
 
       <Accordion.Root type="single" collapsible className="space-y-0">

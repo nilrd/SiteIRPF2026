@@ -4,6 +4,7 @@ import MarqueeStrip from "@/components/site/MarqueeStrip";
 import ServicosSection from "@/components/site/ServicosSection";
 import SplitSection from "@/components/site/SplitSection";
 import DadosOficiaisSection from "@/components/site/DadosOficiaisSection";
+import RestituicaoCard from "@/components/site/RestituicaoCard";
 import CalculadoraSection from "@/components/site/CalculadoraSection";
 import BlogPreviewSection from "@/components/site/BlogPreviewSection";
 import ProcessoSection from "@/components/site/ProcessoSection";
@@ -12,21 +13,21 @@ import FAQSection from "@/components/site/FAQSection";
 import { JsonLdWebsite } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
-  title: "Consultoria IRPF NSB | Declaracao de Imposto de Renda Pessoa Fisica",
+  title: "Consultoria IRPF NSB | Declaração de Imposto de Renda Pessoa Física",
   description:
-    "Consultoria especializada em IRPF. Declaracao completa, atrasados, retificacao e malha fina. 100% online, atendemos todo o Brasil. Mais de 10 anos de experiencia.",
+    "Consultoria especializada em IRPF. Declaração completa, atrasados, retificação e malha fina. 100% online, atendemos todo o Brasil. Mais de 10 anos de experiência.",
   keywords: [
     "IRPF",
     "imposto de renda",
-    "declaracao IRPF",
-    "restituicao",
+    "declaração IRPF",
+    "restituição",
     "malha fina",
     "IRPF atrasado",
-    "retificacao IRPF",
+    "retificação IRPF",
     "consultoria IRPF",
   ],
   openGraph: {
-    title: "Consultoria IRPF NSB | Declaracao de Imposto de Renda",
+    title: "Consultoria IRPF NSB | Declaração de Imposto de Renda",
     description:
       "Consultoria especializada em IRPF. 100% online, todo o Brasil.",
     type: "website",
@@ -43,6 +44,7 @@ export default function HomePage() {
       <ServicosSection />
       <SplitSection />
       <DadosOficiaisSection />
+      <RestituicaoCard />
       <CalculadoraSection />
       <BlogPreviewSection />
       <ProcessoSection />

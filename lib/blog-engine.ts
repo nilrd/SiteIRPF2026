@@ -128,10 +128,10 @@ async function getGoogleNewsResearch(keyword: string): Promise<ResearchItem[]> {
     const xml = await res.text();
 
     const items = Array.from(xml.matchAll(/<item>([\s\S]*?)<\/item>/g))
-      .slice(0, 8)
+      .slice(0, 12)
       .map((m) => m[1]);
 
-    const parsed = items
+    const rssItems = items
       .map((item) => {
         const titleMatch = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/);
         const linkMatch = item.match(/<link>(.*?)<\/link>/);
@@ -144,58 +144,80 @@ async function getGoogleNewsResearch(keyword: string): Promise<ResearchItem[]> {
       })
       .filter(Boolean) as ResearchItem[];
 
-    return parsed;
+    // Enriquece os 4 artigos mais recentes com conteudo real da pagina
+    const enriched = await Promise.all(
+      rssItems.slice(0, 4).map(async (item) => {
+        const deep = await fetchArticleDeep(item.url);
+        return deep.length > 80 ? { ...item, snippet: deep } : item;
+      })
+    );
+
+    return [...enriched, ...rssItems.slice(4)];
   } catch {
     return [];
   }
 }
 
-async function getTrustedSourceSnippets(): Promise<ResearchItem[]> {
-  const slices = await Promise.all(
-    TRUSTED_SOURCE_URLS.map(async (url) => {
-      try {
-        const res = await fetchWithTimeout(url, 7000);
-        if (!res.ok) return null;
-        const html = await res.text();
-        const text = stripHtml(html).slice(0, 260);
-        return {
-          title: `Fonte oficial: ${new URL(url).hostname}`,
-          url,
-          snippet: text,
-        };
-      } catch {
-        return null;
-      }
-    })
-  );
-
-  return slices.filter(Boolean) as ResearchItem[];
+/** Busca o corpo real de um artigo — usa tags semanticas <article>/<main> se disponiveis */
+async function fetchArticleDeep(articleUrl: string): Promise<string> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(articleUrl, {
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 IRPF-NSB-BlogBot/1.0" },
+      next: { revalidate: 0 },
+    });
+    clearTimeout(timer);
+    if (!res.ok) return "";
+    const html = await res.text();
+    // Tenta extrair corpo do artigo de tags semanticas
+    const semantic =
+      html.match(/<article[^>]*>([\s\S]*?)<\/article>/i) ??
+      html.match(/<main[^>]*>([\s\S]*?)<\/main>/i) ??
+      html.match(/<div[^>]*class="[^"]*(?:content|article|post|corpo|materia|news-body)[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    const source = semantic ? semantic[1] : html;
+    const text = stripHtml(source)
+      .replace(/\s+/g, " ")
+      .trim();
+    // Pula os primeiros 120 chars (geralmente nav/header) e retorna ate 700 chars de corpo real
+    return text.slice(120, 820).trim();
+  } catch {
+    return "";
+  }
 }
 
 async function collectResearchContext(keyword: string): Promise<ResearchItem[]> {
-  const [news, scraped] = await Promise.all([
-    getGoogleNewsResearch(keyword),
-    getTrustedSourceSnippets(),
-  ]);
-
-  // STATIC_SOURCES garantem contexto factual mesmo quando o scraping falha
-  const merged = [...STATIC_SOURCES, ...news, ...scraped];
+  // STATIC_SOURCES: contexto factual permanente (prazos, tabela, deducoes)
+  // getGoogleNewsResearch: artigos recentes com conteudo profundo (top 4 deep-fetched)
+  const news = await getGoogleNewsResearch(keyword);
+  const merged = [...STATIC_SOURCES, ...news];
   const dedup = new Map<string, ResearchItem>();
   for (const item of merged) {
     if (!dedup.has(item.url)) dedup.set(item.url, item);
   }
-  // Aumentado para 14: mais contexto = menos alucinação
-  return Array.from(dedup.values()).slice(0, 14);
+  return Array.from(dedup.values()).slice(0, 16);
 }
 
-function ensureSourcesSection(content: string, sources: ResearchItem[]): string {
+function ensureSourcesSection(
+  content: string,
+  sources: ResearchItem[],
+  usedUrls?: string[]
+): string {
   if (/fontes/i.test(content)) return content;
   if (!sources.length) return content;
 
-  // Usa apenas fontes cujo URL foi realmente citado no conteúdo gerado pela IA.
-  // Fallback para todas as fontes pesquisadas somente se nenhuma foi citada.
-  const cited = sources.filter((s) => content.includes(s.url));
-  const usedSources = cited.length > 0 ? cited : sources;
+  let usedSources: ResearchItem[];
+  if (usedUrls && usedUrls.length > 0) {
+    // IA declarou quais fontes usou — usar diretamente (mais preciso)
+    usedSources = sources.filter((s) => usedUrls.includes(s.url));
+  } else {
+    // Fallback: checar se URL aparece no HTML; se nao, limitar a 3 sources
+    const cited = sources.filter((s) => content.includes(s.url));
+    usedSources = cited.length > 0 ? cited : sources.slice(0, 3);
+  }
+
+  if (!usedSources.length) return content;
 
   const links = usedSources
     .map((s) => `<li><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.title}</a></li>`)
@@ -658,7 +680,7 @@ CONTEXTO TEMPORAL OBRIGATORIO — LEIA ANTES DE ESCREVER:
 - Restituicoes em 5 lotes: primeiro lote em junho/2026, ultimo em outubro/2026
 - Quando citar dados do IRPF 2025 (declaracao do ano passado, rendimentos de 2024), deixe explicitamente claro que e o exercicio anterior
 
-DADOS PESQUISADOS NA INTERNET (priorize estes links e cite URL exata ao usar):
+DADOS PESQUISADOS NA INTERNET — leia atentamente. Use os relevantes e declare em "usedSourceUrls" SOMENTE os URLs que voce EFETIVAMENTE consultou/referenciou:
 ${researchBlock}
 
 POSTS JA PUBLICADOS (NAO REPETIR TITULO NEM ANGULO):
@@ -679,7 +701,7 @@ REGRAS INEGOCIAVEIS:
    - Acima de R$ 4.664,68: 27,5% (deducao R$ 908,73)
 8. Inclua exatamente 6 FAQs reais no final.
 9. Inclua CTA para WhatsApp (+55 11 94082-5120) no meio e no final do artigo.
-10. Inclua secao "Fontes" ao final com URLs reais de orgaos oficiais citados no texto.
+10. A secao "Fontes" e gerada automaticamente. No campo "usedSourceUrls" do JSON: liste APENAS os URLs da lista de pesquisa acima que voce efetivamente consultou — maximo 5. NUNCA inclua URL que nao foi usado. URLs inventados = PROIBIDO.
 11. Adicione nota de rodape: "Conteudo de carater educativo. Para analise do seu caso especifico, consulte o especialista Nilson Brites — Consultoria IRPF NSB."
 12. Zero emojis. Tom: profissional, autoritativo, acessivel ao publico geral.
 13. Nao repetir temas com o mesmo enquadramento: se o assunto for parecido com posts existentes, mude a lente (ex.: checklist, erros comuns, comparativo, estudo de caso, mitos e verdades).
@@ -742,6 +764,7 @@ FORMATO DE SAIDA (JSON estrito — TODOS os campos obrigatorios):
   "tags": ["tag1", "tag2", "tag3"],
   "keywords": ["keyword-principal", "keyword-secundaria-1", "keyword-secundaria-2"],
   "faqs": [{"question": "pergunta real exatamente como usuario digita no Google", "answer": "resposta direta em 50-100 palavras com dado numerico quando possivel"}],
+  "usedSourceUrls": ["cole aqui APENAS os URLs da lista de pesquisa que voce efetivamente usou no artigo, maximo 5"],
   "imageQuery": "3 a 5 palavras em INGLES para buscar no Unsplash — seja ESPECIFICO ao tema do artigo. Exemplos: 'tax audit letter envelope penalty', 'medical receipt health expenses deduction', 'self-employed freelancer home office tax', 'stock market investment income tax brazil', 'retirement pension senior finance'. NUNCA use frases genericas como 'tax documents' ou 'finance calculator'.",
   "imageAlt": "texto alternativo descritivo em portugues para a imagem de capa (acessibilidade + SEO)",
   "articleSection": "categoria do artigo (ex: IRPF 2026, Malha Fina, Deducoes, Financas Pessoais)",
@@ -805,7 +828,11 @@ export async function generateBlogPost(
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
-  const content = ensureSourcesSection(parsed.content || "", research);
+  const content = ensureSourcesSection(
+    parsed.content || "",
+    research,
+    Array.isArray(parsed.usedSourceUrls) ? (parsed.usedSourceUrls as string[]) : undefined
+  );
 
   // Usa imageQuery gerado pela IA (mais específico ao contexto do artigo)
   // Fallback: getVisualQuery(keyword) via VISUAL_QUERY_MAP

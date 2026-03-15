@@ -653,6 +653,52 @@ export const FINANCE_CLUSTERS = [
 /* ---- Pool unificado para rotacao automatica ---- */
 export const ALL_CLUSTERS = [...KEYWORD_CLUSTERS, ...FINANCE_CLUSTERS];
 
+/* ---- Detecta o formato de titulo de um post ---- */
+function detectTitleFormat(title: string): string {
+  const t = title.trim();
+  if (/^\d+\s/.test(t)) return "lista-numerada";
+  if (/\?$/.test(t)) return "pergunta";
+  if (/^(como|por que|quando|quem|onde|qual)\b/i.test(t)) return "pergunta-indireta";
+  if (/\bguia\b|\bpasso a passo\b|\bcompleto\b/i.test(t)) return "guia";
+  if (/\bchecklist\b/i.test(t)) return "checklist";
+  if (/\bo que muda\b|\bnovas regras\b|\bnovidades\b/i.test(t)) return "novidade";
+  if (/\bvs\b|\bdiferenca\b|\bcomparativo\b/i.test(t)) return "comparativo";
+  if (/\bentenda\b|\bdescubra\b|\bveja\b|\bsaiba\b/i.test(t)) return "descubra";
+  if (/\bmitos?\b|\bverdades?\b|\bmentira\b/i.test(t)) return "mitos";
+  if (/^(irpf|imposto|declaracao|receita|tributacao)/i.test(t)) return "tema-direto";
+  return "outro";
+}
+
+/* ---- Gera instrucao de diversidade de formato ---- */
+function buildFormatDiversityNotice(existingPosts: ExistingPostSnapshot[]): string {
+  const recent = existingPosts.slice(0, 8);
+  if (!recent.length) return "";
+
+  // Conta formatos dos posts recentes
+  const formatCounts: Record<string, number> = {};
+  const recentFormats = recent.map((p) => {
+    const f = detectTitleFormat(p.title);
+    formatCounts[f] = (formatCounts[f] ?? 0) + 1;
+    return f;
+  });
+
+  // Formatos usados nos 3 posts mais recentes
+  const last3Formats = recentFormats.slice(0, 3);
+  const overdoneFormats = Object.entries(formatCounts)
+    .filter(([, count]) => count >= 2)
+    .map(([fmt]) => fmt);
+
+  const parts: string[] = [];
+  if (last3Formats.length) {
+    parts.push(`Formatos usados nos ultimos ${last3Formats.length} posts: ${last3Formats.join(", ")}.`);
+  }
+  if (overdoneFormats.length) {
+    parts.push(`Formatos ja repetidos (evite): ${overdoneFormats.join(", ")}.`);
+  }
+  parts.push("Escolha o formato que cria o MAIOR CONTRASTE com esses posts recentes, preservando relevancia para o tema.");
+  return parts.join(" ");
+}
+
 /* ---- System prompt para blog ---- */
 function blogSystemPrompt(
   selicAtual: number,
@@ -672,6 +718,8 @@ function blogSystemPrompt(
         .map((p, i) => `${i + 1}. ${p.title} | slug: ${p.slug}`)
         .join("\n")
     : "Sem historico de posts publicado disponivel.";
+
+  const formatDiversityNotice = buildFormatDiversityNotice(existingPosts);
 
   return `Voce e um redator especialista em financas pessoais, IRPF e tributacao no Brasil.
 Escreva artigos longos, educativos e uteis para o blog da Consultoria IRPF NSB.
@@ -719,26 +767,26 @@ REGRAS INEGOCIAVEIS:
 
 OTIMIZACAO SEO + GOOGLE DISCOVER + ASEO (AI Search Engine Optimization):
 
-REGRA 15 — FORMATOS DE TITULO PROIBIDOS vs PERMITIDOS:
+REGRA 15 — FORMATO DO TITULO: VARIEDADE INTELIGENTE
 
-   PROIBIDO — NUNCA use estes padroes:
-   - Qualquer titulo que comece com numero: "5 erros...", "7 dicas...", "3 mitos..." etc.
-   - Formulas de lista com numero sao VETADAS. Se todos os posts anteriores usaram listas, voce DEVE usar outro formato.
-   - Verificacao obrigatoria: antes de fixar o titulo, veja a lista de POSTS JA PUBLICADOS acima. Se algum titulo la comecar com numero ou pattern similar ao seu, MUDE o formato.
+   ANALISE DE DIVERSIDADE (gerada automaticamente com base nos posts publicados):
+   ${formatDiversityNotice || "Sem historico. Escolha o formato mais adequado ao tema."}
 
-   PERMITIDOS — escolha o formato mais adequado ao tema do artigo:
-   A) Pergunta direta: "Quem e obrigado a declarar o IRPF 2026?" / "Como funciona a malha fina?"
-   B) Guia definitivo: "Guia completo do IRPF 2026: tudo que voce precisa saber"
-   C) O que muda: "O que muda no IRPF 2026 para quem recebe ate R$ 5.000"
-   D) Por que/Como: "Por que tantos brasileiros caem na malha fina — e como evitar"
-   E) Descubra/Entenda: "Entenda como a Receita Federal detecta erros automaticamente"
-   F) Checklist: "Checklist do IRPF 2026: documentos, prazos e deducoes oficiais"
-   G) Estudo de caso: "Como declarar aluguel no IRPF 2026 sem cair na malha fina"
-   H) Mito vs realidade (SEM numero): "Os maiores mitos sobre deducoes no IRPF 2026"
-   I) Urgente/Novidade: "IRPF 2026 comeca em marco: o que voce precisa fazer agora"
-   J) Comparativo: "IRPF 2026 vs 2025: o que mudou na declaracao e no imposto a pagar"
+   CATALOGO DE FORMATOS — todos sao validos. Use o que melhor serve o tema E cria contraste com os posts recentes:
+   A) Lista numerada:    "7 erros que a Receita detecta automaticamente no IRPF 2026"
+   B) Pergunta direta:   "Quem e obrigado a declarar o IRPF 2026?"
+   C) Como/Por que:      "Como declarar aluguel no IRPF 2026 sem cair na malha fina"
+   D) Guia completo:     "Guia definitivo do IRPF 2026: prazos, tabelas e deducoes"
+   E) O que muda:        "O que muda no IRPF 2026 para quem recebe ate R$ 5.000"
+   F) Checklist:         "Checklist IRPF 2026: documentos e prazo para nao perder"
+   G) Descubra/Entenda:  "Entenda por que tantos brasileiros caem na malha fina"
+   H) Mitos:             "Os maiores mitos sobre deducoes medicas no IRPF 2026"
+   I) Comparativo:       "IRPF 2026 vs 2025: o que mudou na declaracao"
+   J) Novidade/Urgente:  "IRPF 2026 comeca em marco: o que fazer antes do prazo"
 
-   O titulo deve gerar curiosidade LEGITIMA. Dado numerico dentro do titulo (R$, percentual, prazo) aumenta CTR.
+   REGRA DE OURO: um blog saudavel alterna formatos. Olhe os posts publicados acima e escolha
+   o formato que VOCE nao usaria se ja tivesse usado nos ultimos 3 posts.
+   Titulo com dado numerico (R$, %, prazo) dentro do texto aumenta CTR — use quando natural ao tema.
 
 REGRA 16 — PARAGRAFO ABERTURA (featured snippet + Discover card):
    Primeiro paragrafo: responda diretamente a pergunta principal em 2-3 frases com dado numerico concreto.

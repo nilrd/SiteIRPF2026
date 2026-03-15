@@ -742,7 +742,8 @@ FORMATO DE SAIDA (JSON estrito — TODOS os campos obrigatorios):
   "tags": ["tag1", "tag2", "tag3"],
   "keywords": ["keyword-principal", "keyword-secundaria-1", "keyword-secundaria-2"],
   "faqs": [{"question": "pergunta real exatamente como usuario digita no Google", "answer": "resposta direta em 50-100 palavras com dado numerico quando possivel"}],
-  "imageAlt": "descricao visual em ingles para busca de foto (ex: tax documents calculator brazil finance)",
+  "imageQuery": "3 a 5 palavras em INGLES para buscar no Unsplash — seja ESPECIFICO ao tema do artigo. Exemplos: 'tax audit letter envelope penalty', 'medical receipt health expenses deduction', 'self-employed freelancer home office tax', 'stock market investment income tax brazil', 'retirement pension senior finance'. NUNCA use frases genericas como 'tax documents' ou 'finance calculator'.",
+  "imageAlt": "texto alternativo descritivo em portugues para a imagem de capa (acessibilidade + SEO)",
   "articleSection": "categoria do artigo (ex: IRPF 2026, Malha Fina, Deducoes, Financas Pessoais)",
   "isNewsworthy": false
 }`;
@@ -806,8 +807,13 @@ export async function generateBlogPost(
 
   const content = ensureSourcesSection(parsed.content || "", research);
 
-  // Usa keyword do artigo para busca de imagem — mais relevante que o imageAlt da IA
-  const imageResult = await getTopicSpecificImage(keyword);
+  // Usa imageQuery gerado pela IA (mais específico ao contexto do artigo)
+  // Fallback: getVisualQuery(keyword) via VISUAL_QUERY_MAP
+  const imageSearchTerm =
+    typeof parsed.imageQuery === "string" && parsed.imageQuery.trim().length > 5
+      ? parsed.imageQuery.trim()
+      : keyword;
+  const imageResult = await getTopicSpecificImage(imageSearchTerm);
 
   return {
     title: parsed.title || keyword,
@@ -821,7 +827,7 @@ export async function generateBlogPost(
     imageAttribution: imageResult.attribution
       ? JSON.stringify(imageResult.attribution)
       : null,
-    imageAlt: (typeof parsed.imageAlt === "string" ? parsed.imageAlt : null) ?? (parsed.title || keyword),
+    imageAlt: (typeof parsed.imageAlt === "string" && parsed.imageAlt ? parsed.imageAlt : null) ?? (parsed.title || keyword),
     articleSection: (typeof parsed.articleSection === "string" ? parsed.articleSection : null) ?? "IRPF",
     isNewsworthy: typeof parsed.isNewsworthy === "boolean" ? parsed.isNewsworthy : false,
   };

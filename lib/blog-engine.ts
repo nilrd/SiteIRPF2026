@@ -388,61 +388,66 @@ type ImageResult = {
 };
 
 /** Busca imagem contextual via Unsplash API.
- * - Usa a visual query derivada da keyword do artigo
+ * - Usa imageQuery gerado pela IA (especifico ao tema do artigo)
+ * - Em caso de falha tenta query generica de financas antes do fallback local
  * - Triggera o endpoint de download (obrigatorio pela politica da Unsplash)
  * - Retorna URL 1200x630 + dados de atribuicao do fotografo
- * - Fallback seguro para pool local se a key nao estiver configurada
  */
 async function getTopicSpecificImage(keyword: string): Promise<ImageResult> {
   const accessKey = process.env.UNSPLASH_ACCESS_KEY;
   if (!accessKey) return { url: getRandomCoverImage(), attribution: null };
 
-  const query = encodeURIComponent(getVisualQuery(keyword));
-  try {
-    const res = await fetch(
-      `https://api.unsplash.com/photos/random?query=${query}&orientation=landscape&content_filter=high`,
-      {
-        headers: { Authorization: `Client-ID ${accessKey}` },
-        next: { revalidate: 0 },
+  // Tenta primeiro com a query especifica; se falhar, tenta query de fallback financeira
+  const queries = [
+    encodeURIComponent(getVisualQuery(keyword)),
+    encodeURIComponent("tax return document calculator finance brazil"),
+  ];
+
+  for (const query of queries) {
+    try {
+      const res = await fetch(
+        `https://api.unsplash.com/photos/random?query=${query}&orientation=landscape&content_filter=high`,
+        {
+          headers: { Authorization: `Client-ID ${accessKey}` },
+          next: { revalidate: 0 },
+        }
+      );
+      if (!res.ok) continue;
+
+      const data = (await res.json()) as {
+        id?: string;
+        urls?: { regular?: string };
+        user?: { name?: string; links?: { html?: string } };
+        links?: { html?: string; download_location?: string };
+      };
+
+      const rawUrl = data.urls?.regular;
+      if (!rawUrl) continue;
+
+      const base = rawUrl.split("?")[0];
+      const finalUrl = `${base}?auto=format&fit=crop&w=1200&h=630&q=85`;
+
+      const downloadLocation = data.links?.download_location;
+      if (downloadLocation) {
+        fetch(`${downloadLocation}&client_id=${accessKey}`, { method: "GET" }).catch(() => {});
       }
-    );
-    if (!res.ok) return { url: getRandomCoverImage(), attribution: null };
 
-    const data = (await res.json()) as {
-      id?: string;
-      urls?: { regular?: string };
-      user?: { name?: string; links?: { html?: string } };
-      links?: { html?: string; download_location?: string };
-    };
+      const attribution: UnsplashAttribution | null =
+        data.user?.name
+          ? {
+              photographerName: data.user.name,
+              photographerUrl: (data.user.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
+              photoUrl: (data.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
+            }
+          : null;
 
-    const rawUrl = data.urls?.regular;
-    if (!rawUrl) return { url: getRandomCoverImage(), attribution: null };
-
-    // Forca 1200x630 — dimensao exata exigida pelo Google Discover
-    const base = rawUrl.split("?")[0];
-    const finalUrl = `${base}?auto=format&fit=crop&w=1200&h=630&q=85`;
-
-    // Triggera download conforme politica obrigatoria da Unsplash
-    const downloadLocation = data.links?.download_location;
-    if (downloadLocation) {
-      fetch(`${downloadLocation}&client_id=${accessKey}`, { method: "GET" }).catch(() => {
-        // silently ignore — nao bloqueia a geracao do post
-      });
+      return { url: finalUrl, attribution };
+    } catch {
+      // tenta proxima query
     }
-
-    const attribution: UnsplashAttribution | null =
-      data.user?.name
-        ? {
-            photographerName: data.user.name,
-            photographerUrl: (data.user.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
-            photoUrl: (data.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
-          }
-        : null;
-
-    return { url: finalUrl, attribution };
-  } catch {
-    return { url: getRandomCoverImage(), attribution: null };
   }
+
+  return { url: getRandomCoverImage(), attribution: null };
 }
 
 /* ---- Keyword clusters para SEO ---- */
@@ -714,16 +719,26 @@ REGRAS INEGOCIAVEIS:
 
 OTIMIZACAO SEO + GOOGLE DISCOVER + ASEO (AI Search Engine Optimization):
 
-REGRA 15 — TITULOS DISCOVER (escolha a formula mais adequada ao tema):
-   Formulas com alto CTR comprovado no feed do Discover:
-   - "[N] erros de [tema] que a Receita Federal detecta automaticamente"
-   - "O que muda no [tema] em [ano] — e o que voce precisa fazer agora"
-   - "Por que [X%] dos brasileiros [problema] sem saber"
-   - "[Tema]: o que poucos especialistas revelam — e como isso afeta voce"
-   - "Checklist: [tema] completo passo a passo (com tabelas oficiais [ano])"
-   - "[Tema] em [ano]: guia definitivo para nao cair na malha fina"
-   - "Mitos e verdades sobre [tema] — desvendado com dados oficiais"
-   O titulo deve gerar curiosidade LEGITIMA sem sensacionalismo. Dado numerico no titulo aumenta 35% o CTR.
+REGRA 15 — FORMATOS DE TITULO PROIBIDOS vs PERMITIDOS:
+
+   PROIBIDO — NUNCA use estes padroes:
+   - Qualquer titulo que comece com numero: "5 erros...", "7 dicas...", "3 mitos..." etc.
+   - Formulas de lista com numero sao VETADAS. Se todos os posts anteriores usaram listas, voce DEVE usar outro formato.
+   - Verificacao obrigatoria: antes de fixar o titulo, veja a lista de POSTS JA PUBLICADOS acima. Se algum titulo la comecar com numero ou pattern similar ao seu, MUDE o formato.
+
+   PERMITIDOS — escolha o formato mais adequado ao tema do artigo:
+   A) Pergunta direta: "Quem e obrigado a declarar o IRPF 2026?" / "Como funciona a malha fina?"
+   B) Guia definitivo: "Guia completo do IRPF 2026: tudo que voce precisa saber"
+   C) O que muda: "O que muda no IRPF 2026 para quem recebe ate R$ 5.000"
+   D) Por que/Como: "Por que tantos brasileiros caem na malha fina — e como evitar"
+   E) Descubra/Entenda: "Entenda como a Receita Federal detecta erros automaticamente"
+   F) Checklist: "Checklist do IRPF 2026: documentos, prazos e deducoes oficiais"
+   G) Estudo de caso: "Como declarar aluguel no IRPF 2026 sem cair na malha fina"
+   H) Mito vs realidade (SEM numero): "Os maiores mitos sobre deducoes no IRPF 2026"
+   I) Urgente/Novidade: "IRPF 2026 comeca em marco: o que voce precisa fazer agora"
+   J) Comparativo: "IRPF 2026 vs 2025: o que mudou na declaracao e no imposto a pagar"
+
+   O titulo deve gerar curiosidade LEGITIMA. Dado numerico dentro do titulo (R$, percentual, prazo) aumenta CTR.
 
 REGRA 16 — PARAGRAFO ABERTURA (featured snippet + Discover card):
    Primeiro paragrafo: responda diretamente a pergunta principal em 2-3 frases com dado numerico concreto.

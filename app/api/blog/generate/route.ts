@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { generateBlogPost, saveBlogPost } from "@/lib/blog-engine";
 import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const token = await getToken({ req: request as Parameters<typeof getToken>[0]["req"], secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
     if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

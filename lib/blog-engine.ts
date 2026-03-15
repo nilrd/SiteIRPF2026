@@ -349,10 +349,26 @@ function getVisualQuery(keyword: string): string {
   return "finance tax brazil professional document";
 }
 
-/** Busca imagem contextual via Unsplash API. Fallback para pool local se a key nao estiver configurada. */
-async function getTopicSpecificImage(keyword: string): Promise<string> {
+type UnsplashAttribution = {
+  photographerName: string;
+  photographerUrl: string;
+  photoUrl: string;
+};
+
+type ImageResult = {
+  url: string;
+  attribution: UnsplashAttribution | null;
+};
+
+/** Busca imagem contextual via Unsplash API.
+ * - Usa a visual query derivada da keyword do artigo
+ * - Triggera o endpoint de download (obrigatorio pela politica da Unsplash)
+ * - Retorna URL 1200x630 + dados de atribuicao do fotografo
+ * - Fallback seguro para pool local se a key nao estiver configurada
+ */
+async function getTopicSpecificImage(keyword: string): Promise<ImageResult> {
   const accessKey = process.env.UNSPLASH_ACCESS_KEY;
-  if (!accessKey) return getRandomCoverImage();
+  if (!accessKey) return { url: getRandomCoverImage(), attribution: null };
 
   const query = encodeURIComponent(getVisualQuery(keyword));
   try {
@@ -363,15 +379,42 @@ async function getTopicSpecificImage(keyword: string): Promise<string> {
         next: { revalidate: 0 },
       }
     );
-    if (!res.ok) return getRandomCoverImage();
-    const data = (await res.json()) as { urls?: { regular?: string } };
+    if (!res.ok) return { url: getRandomCoverImage(), attribution: null };
+
+    const data = (await res.json()) as {
+      id?: string;
+      urls?: { regular?: string };
+      user?: { name?: string; links?: { html?: string } };
+      links?: { html?: string; download_location?: string };
+    };
+
     const rawUrl = data.urls?.regular;
-    if (!rawUrl) return getRandomCoverImage();
+    if (!rawUrl) return { url: getRandomCoverImage(), attribution: null };
+
     // Forca 1200x630 — dimensao exata exigida pelo Google Discover
     const base = rawUrl.split("?")[0];
-    return `${base}?auto=format&fit=crop&w=1200&h=630&q=85`;
+    const finalUrl = `${base}?auto=format&fit=crop&w=1200&h=630&q=85`;
+
+    // Triggera download conforme politica obrigatoria da Unsplash
+    const downloadLocation = data.links?.download_location;
+    if (downloadLocation) {
+      fetch(`${downloadLocation}&client_id=${accessKey}`, { method: "GET" }).catch(() => {
+        // silently ignore — nao bloqueia a geracao do post
+      });
+    }
+
+    const attribution: UnsplashAttribution | null =
+      data.user?.name
+        ? {
+            photographerName: data.user.name,
+            photographerUrl: (data.user.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
+            photoUrl: (data.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
+          }
+        : null;
+
+    return { url: finalUrl, attribution };
   } catch {
-    return getRandomCoverImage();
+    return { url: getRandomCoverImage(), attribution: null };
   }
 }
 
@@ -600,7 +643,15 @@ function blogSystemPrompt(
 
   return `Voce e um redator especialista em financas pessoais, IRPF e tributacao no Brasil.
 Escreva artigos longos, educativos e uteis para o blog da Consultoria IRPF NSB.
-Data de publicacao: ${hoje}.
+CONTEXTO TEMPORAL OBRIGATORIO — LEIA ANTES DE ESCREVER:
+- Hoje: ${hoje}
+- A declaracao de IRPF entregue em 2026 refere-se ao ANO-BASE 2025 (rendimentos de 01/01/2025 a 31/12/2025)
+- Chame SEMPRE de "IRPF 2026" quando falar da declaracao (nunca "IRPF 2025" para esta declaracao)
+- Quando se referir ao periodo de rendimentos, diga "ano-base 2025" ou "exercicio 2025"
+- Exemplo correto: "Na declaracao do IRPF 2026 (ano-base 2025), voce informa os rendimentos recebidos em 2025"
+- NUNCA confundir: IRPF 2026 = declaracao em 2026, rendimentos de 2025
+- NUNCA dizer que o prazo de entrega do IRPF 2026 ja encerrou (estamos em ${hoje} — o prazo ainda nao foi divulgado)
+- Quando citar dados do IRPF 2025 (declaracao do ano passado, rendimentos de 2024), deixe explicitamente claro que e o exercicio anterior
 
 DADOS PESQUISADOS NA INTERNET (priorize estes links e cite URL exata ao usar):
 ${researchBlock}
@@ -751,7 +802,7 @@ export async function generateBlogPost(
   const content = ensureSourcesSection(parsed.content || "", research);
 
   // Usa Unsplash contextual ao tema; fallback seguro para pool local
-  const coverImage = await getTopicSpecificImage(
+  const imageResult = await getTopicSpecificImage(
     typeof parsed.imageAlt === "string" && parsed.imageAlt
       ? parsed.imageAlt
       : keyword
@@ -765,7 +816,10 @@ export async function generateBlogPost(
     tags: Array.isArray(parsed.tags) ? parsed.tags : [],
     keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
     faqs: Array.isArray(parsed.faqs) ? parsed.faqs : [],
-    coverImage,
+    coverImage: imageResult.url,
+    imageAttribution: imageResult.attribution
+      ? JSON.stringify(imageResult.attribution)
+      : null,
     imageAlt: (typeof parsed.imageAlt === "string" ? parsed.imageAlt : null) ?? (parsed.title || keyword),
     articleSection: (typeof parsed.articleSection === "string" ? parsed.articleSection : null) ?? "IRPF",
     isNewsworthy: typeof parsed.isNewsworthy === "boolean" ? parsed.isNewsworthy : false,
@@ -791,6 +845,7 @@ export async function saveBlogPost(post: Awaited<ReturnType<typeof generateBlogP
       keywords: post.keywords,
       faqsJson: JSON.stringify(post.faqs),
       coverImage: post.coverImage,
+      imageAttribution: post.imageAttribution ?? null,
       published: true,
     },
   });

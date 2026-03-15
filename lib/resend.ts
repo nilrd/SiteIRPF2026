@@ -1,20 +1,17 @@
 import { Resend } from "resend";
 
-// Instanciação lazy: evita erro de build quando RESEND_API_KEY não está disponível
-let _resend: Resend | null = null;
-
-function getInstance(): Resend {
-  if (!_resend) {
-    _resend = new Resend(process.env.RESEND_API_KEY ?? "");
-  }
-  return _resend;
-}
-
-export const resend = new Proxy({} as Resend, {
-  get(_target, prop) {
-    const instance = getInstance();
-    const value = (instance as unknown as Record<string | symbol, unknown>)[prop];
-    if (typeof value === "function") return value.bind(instance);
-    return value;
+// Usa factory function — nunca lanca erro em build time (sem RESEND_API_KEY)
+// Compativel com o padrao resend.emails.send() ja usado no codigo
+export const resend = {
+  emails: {
+    send: async (params: Parameters<InstanceType<typeof Resend>["emails"]["send"]>[0]) => {
+      const key = process.env.RESEND_API_KEY;
+      if (!key) {
+        console.warn("[resend] RESEND_API_KEY nao configurada — email nao enviado.");
+        return { data: null, error: null };
+      }
+      const client = new Resend(key);
+      return client.emails.send(params);
+    },
   },
-});
+};

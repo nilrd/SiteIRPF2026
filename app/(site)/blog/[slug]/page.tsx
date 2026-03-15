@@ -75,6 +75,15 @@ export default async function BlogPostPage({ params }: Props) {
 
   const related = await getRelated(post.tags || [], post.id);
 
+  // Parsear atribuicao da imagem (Unsplash)
+  const imageAttribution = (() => {
+    try {
+      return post.imageAttribution ? JSON.parse(post.imageAttribution) : null;
+    } catch {
+      return null;
+    }
+  })();
+
   return (
     <main className="pt-32 pb-24">
       <JsonLdArticle
@@ -147,7 +156,11 @@ export default async function BlogPostPage({ params }: Props) {
 
             {post.coverImage && (
               <div className="relative aspect-[16/9] mb-12 bg-gray-200 overflow-hidden">
-                <BlogPostImage src={post.coverImage} alt={post.title} />
+                <BlogPostImage
+                  src={post.coverImage}
+                  alt={post.title}
+                  attribution={imageAttribution}
+                />
               </div>
             )}
 

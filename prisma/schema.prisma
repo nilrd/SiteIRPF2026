@@ -35,6 +35,7 @@ model BlogPost {
   faqsJson   String   @default("[]")
   tags       String[]
   coverImage String?
+  imageAttribution String?  @map("image_attribution")
   published  Boolean  @default(false)
   metaTitle  String?
   metaDesc   String?

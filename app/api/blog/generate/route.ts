@@ -25,10 +25,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      pending: !saved.published,
+      reviewLevel: saved.published ? "baixo" : "alto",
       post: {
         id: saved.id,
         title: saved.title,
         slug: saved.slug,
+        published: saved.published,
       },
     });
   } catch (error) {

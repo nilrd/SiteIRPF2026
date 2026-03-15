@@ -14,4 +14,5 @@ export const MODELS = {
   chatbot: "llama-3.3-70b-versatile",
   adminIA: "llama-3.3-70b-versatile",
   blogGeneration: "llama-3.3-70b-versatile",
+  blogVerifier: "llama-3.1-8b-instant",  // verificador factual — rápido e gratuito
 } as const;

@@ -33,6 +33,7 @@ model BlogPost {
   summary    String?
   content    String
   faqsJson   String   @default("[]")
+  reviewJson String   @default("") @map("review_json")
   tags       String[]
   coverImage String?
   imageAttribution String?  @map("image_attribution")

@@ -14,6 +14,7 @@ type Post = {
   readTime: number;
   tags: string[];
   createdAt: string;
+  reviewJson: string;
 };
 
 export default function BlogAdminPage() {
@@ -52,8 +53,12 @@ export default function BlogAdminPage() {
       if (data.success) {
         setGenResult(data.post);
         setKeyword("");
-        setActionMsg("Post gerado e publicado automaticamente no site.");
-        setTimeout(() => setActionMsg(null), 3500);
+        if (data.pending) {
+          setActionMsg("Post gerado mas RETIDO para revisão — acesse o rascunho abaixo para verificar e publicar.");
+        } else {
+          setActionMsg("Post gerado e publicado automaticamente no site.");
+        }
+        setTimeout(() => setActionMsg(null), 6000);
         await fetchPosts();
       }
     } catch {
@@ -169,13 +174,20 @@ export default function BlogAdminPage() {
                       <span className="block text-[10px] opacity-40 mt-0.5">{post.slug}</span>
                     </td>
                     <td className="py-3 pr-4">
-                      <span className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
-                        post.published
-                          ? "bg-green-500/20 text-green-300"
-                          : "bg-white/10 text-white/60"
-                      }`}>
-                        {post.published ? "Publicado" : "Rascunho"}
-                      </span>
+                      {(() => {
+                        const isPending = !post.published && post.reviewJson && post.reviewJson.length > 2;
+                        return (
+                          <span className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
+                            post.published
+                              ? "bg-green-500/20 text-green-300"
+                              : isPending
+                              ? "bg-yellow-500/20 text-yellow-300"
+                              : "bg-white/10 text-white/60"
+                          }`}>
+                            {post.published ? "Publicado" : isPending ? "Aguard. Revisão" : "Rascunho"}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 pr-4 opacity-60">{post.views}</td>
                     <td className="py-3 pr-4 opacity-60">{post.readTime} min</td>

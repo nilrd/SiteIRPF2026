@@ -1,5 +1,6 @@
 import { groqLlama, MODELS } from "./llm-providers";
 import { prisma } from "./prisma";
+import { IRPF_DATA_CONTEXT } from "./irpf-context";
 
 type ResearchItem = {
   title: string;
@@ -37,9 +38,9 @@ const TRUSTED_SOURCE_URLS = [
 // Usadas quando o scraping de TRUSTED_SOURCE_URLS falha
 const STATIC_SOURCES: ResearchItem[] = [
   {
-    title: "Receita Federal — IRPF 2026: prazo de entrega previsto 18/03/2026 a 29/05/2026",
+    title: "Receita Federal — IRPF 2026: prazo oficial 16/03/2026 a 30/05/2026 (IN RFB 2.255/2025)",
     url: "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
-    snippet: "IRPF 2026 (ano-base 2025): prazo de entrega previsto de 18 de março a 29 de maio de 2026 (Fonte: Valor Investe / Receita Federal, 13/03/2026). Regras e prazo oficial anunciados pela Receita Federal em 16/03/2026. Multa mínima por atraso: R$ 165,74. Restituicões em 5 lotes (junho a outubro de 2026). Programa IRPF 2026 disponível no site da Receita Federal.",
+    snippet: "IRPF 2026 (ano-base 2025): prazo oficial de 16 de março a 30 de maio de 2026 (Instrução Normativa RFB nº 2.255/2025). Obrigados: rendimentos tributáveis acima de R$ 33.888,00 em 2025. Multa mínima por atraso: R$ 165,74. Restituições em 5 lotes (junho a 30 de setembro de 2026). Programa IRPF 2026 disponível no site da Receita Federal.",
   },
   {
     title: "Lei nº 15.270/2025 — Nova tabela IRPF e isenção até R$ 5.000",
@@ -722,8 +723,11 @@ function blogSystemPrompt(
 
   const formatDiversityNotice = buildFormatDiversityNotice(existingPosts);
 
-  return `Voce e um redator especialista em financas pessoais, IRPF e tributacao no Brasil.
+  return `${IRPF_DATA_CONTEXT}
+
+Voce e um redator especialista em financas pessoais, IRPF e tributacao no Brasil.
 Escreva artigos longos, educativos e uteis para o blog da Consultoria IRPF NSB.
+USE EXCLUSIVAMENTE os dados da secao DADOS OFICIAIS acima para qualquer valor, prazo ou aliquota.
 CONTEXTO TEMPORAL OBRIGATORIO — LEIA ANTES DE ESCREVER:
 - Hoje: ${hoje}
 - A declaracao de IRPF entregue em 2026 refere-se ao ANO-BASE 2025 (rendimentos de 01/01/2025 a 31/12/2025)
@@ -731,12 +735,11 @@ CONTEXTO TEMPORAL OBRIGATORIO — LEIA ANTES DE ESCREVER:
 - Quando se referir ao periodo de rendimentos, diga "ano-base 2025" ou "exercicio 2025"
 - Exemplo correto: "Na declaracao do IRPF 2026 (ano-base 2025), voce informa os rendimentos recebidos em 2025"
 - NUNCA confundir: IRPF 2026 = declaracao em 2026, rendimentos de 2025
-- PRAZO IRPF 2026: previsto de 18 de marco a 29 de maio de 2026 (Valor Investe / Receita Federal, 13/03/2026; anuncio oficial em 16/03/2026).
-- SE os dados pesquisados (secao 'DADOS PESQUISADOS NA INTERNET' abaixo) contiverem prazo oficial diferente da Receita Federal, USE O PRAZO DOS DADOS PESQUISADOS, pois sao mais recentes.
-- SE nao houver prazo confirmado nas fontes pesquisadas, NAO afirme uma data com certeza: diga 'confira o prazo atualizado no site da Receita Federal (gov.br/receitafederal)'.
-- NUNCA invente prazos ou datas. Dados de datas sem fonte verificavel = PROIBIDO.
+- PRAZO IRPF 2026 (OFICIAL — IN RFB 2.255/2025): 16 de marco a 30 de maio de 2026.
+- NUNCA invente prazos, datas ou valores. Use APENAS os dados da secao DADOS OFICIAIS acima.
 - Multa por atraso: minimo R$ 165,74 ou 1% ao mes sobre o imposto devido (o que for maior), limitado a 20%
-- Restituicoes em 5 lotes: primeiro lote em junho/2026, ultimo em outubro/2026
+- Restituicoes em 5 lotes: primeiro lote em junho/2026, ULTIMO lote em 30 de setembro de 2026
+- OBRIGATORIEDADE: rendimentos tributaveis acima de R$ 33.888,00 em 2025 — NAO sao "todos os contribuintes"
 - Quando citar dados do IRPF 2025 (declaracao do ano passado, rendimentos de 2024), deixe explicitamente claro que e o exercicio anterior
 
 DADOS PESQUISADOS NA INTERNET — leia atentamente. Use os relevantes e declare em "usedSourceUrls" SOMENTE os URLs que voce EFETIVAMENTE consultou/referenciou:
@@ -765,6 +768,14 @@ REGRAS INEGOCIAVEIS:
 12. Zero emojis. Tom: profissional, autoritativo, acessivel ao publico geral.
 13. Nao repetir temas com o mesmo enquadramento: se o assunto for parecido com posts existentes, mude a lente (ex.: checklist, erros comuns, comparativo, estudo de caso, mitos e verdades).
 14. Titulo deve ser forte e atrair clique com curiosidade legitima (sem sensacionalismo ridiculo, sem promessa enganosa, sem clickbait abusivo).
+
+REGRAS DE RESPONSABILIDADE FACTUAL (ABSOLUTAS — nunca viole nenhuma):
+RF-1. DADOS NUMERICOS: Nunca escreva valores em R$ especificos, datas exatas ou percentuais sem que estejam na secao DADOS OFICIAIS acima ou na secao DADOS PESQUISADOS. Se nao tiver o dado exato: use "conforme tabela vigente da Receita Federal" ou "verifique em gov.br/receitafederal".
+RF-2. OBRIGATORIEDADE: NUNCA use "todas as pessoas devem declarar", "qualquer contribuinte e obrigado" ou afirmacoes absolutas. Use sempre "quem superou os limites legais" — o limite e R$ 33.888,00 em rendimentos tributaveis em 2025.
+RF-3. ISENCAO R$ 5.000: NUNCA diga "quem ganha ate R$ 5.000 nao paga imposto" sem explicar que e uma isencao EFETIVA via deducao especial (nao isencao total automatica). Sempre explique a mecanica da deducao complementar de R$ 1.571,19.
+RF-4. FORMULAS E CALCULOS: Nunca publique formulas matematicas de calculo de beneficios, aposentadoria ou tributos sem que estejam na secao DADOS OFICIAIS. Se nao tiver: direcione o usuario para gov.br/receitafederal.
+RF-5. ESCOPO: Este blog e de consultoria IRPF. NAO gere conteudo sobre calculo de aposentadoria pelo INSS, pontuacao previdenciaria, regras de elegibilidade ao INSS, BPC/LOAS ou direito trabalhista. PERMITIDO: deducao de contribuicao INSS no IRPF, aposentado declarando IRPF.
+RF-6. LEIS: Nunca cite numero de lei sem que esteja na secao DADOS OFICIAIS. Leis pre-autorizadas: Lei 15.270/2025 e IN RFB 2.255/2025.
 
 OTIMIZACAO SEO + GOOGLE DISCOVER + ASEO (AI Search Engine Optimization):
 
@@ -841,6 +852,88 @@ FORMATO DE SAIDA (JSON estrito — TODOS os campos obrigatorios):
 }`;
 }
 
+/* ---- Filtro de temas fora do escopo IRPF ---- */
+const BLOCKED_TOPICS = [
+  "inss", "aposentadoria", "previdencia", "fgts", "clt", "trabalhista",
+  "beneficio previdenciario", "bpc", "loas", "auxilio doenca", "seguro desemprego",
+] as const;
+
+function isTopicOnScope(topic: string): boolean {
+  const lower = topic
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  // Permitir menção ao INSS apenas no contexto de deduções do IRPF
+  const isInssDeduction = lower.includes("deducao") || lower.includes("contribuicao");
+  return !BLOCKED_TOPICS.some((blocked) => {
+    if ((blocked === "inss" || blocked === "previdencia") && isInssDeduction) return false;
+    return lower.includes(blocked);
+  });
+}
+
+/* ---- Verificador factual pós-geração (llama-3.1-8b-instant) ---- */
+type PostReview = {
+  aprovado: boolean;
+  nivel_risco: "baixo" | "medio" | "alto" | "critico";
+  itens_de_risco: string[];
+  resumo: string;
+};
+
+async function verificarPost(content: string): Promise<PostReview> {
+  try {
+    const completion = await groqLlama.chat.completions.create({
+      model: MODELS.blogVerifier,
+      messages: [
+        {
+          role: "system",
+          content: `Voce e um verificador de fatos tributarios brasileiro. Analise o post e identifique:
+1. Valores em R$ especificos inviaveis ou sem fonte (ex: R$ 28.123,91 nao existe na RF)
+2. Datas exatas sem confirmacao oficial
+3. Numeros de leis inventados
+4. Formulas matematicas de calculo sem base legal citada
+5. Afirmacoes absolutas de obrigatoriedade ("todos devem declarar")
+6. Conteudo fora do IRPF: calculo de aposentadoria INSS, pontuacao previdenciaria, FGTS, CLT
+
+Retorne APENAS JSON valido:
+{
+  "aprovado": true ou false,
+  "nivel_risco": "baixo" | "medio" | "alto" | "critico",
+  "itens_de_risco": ["descricao de cada problema encontrado"],
+  "resumo": "frase curta explicando a decisao"
+}
+
+Criterios: baixo/medio = aprovado:true (publicar); alto/critico = aprovado:false (reter para revisao).`,
+        },
+        {
+          role: "user",
+          content: `POST PARA VERIFICAR:\n\n${content.slice(0, 6000)}`,
+        },
+      ],
+      temperature: 0,
+      max_tokens: 600,
+      response_format: { type: "json_object" },
+    });
+
+    const raw = completion.choices[0]?.message?.content || "{}";
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+    const parsed = JSON.parse(cleaned);
+    return {
+      aprovado: parsed.aprovado === true,
+      nivel_risco: parsed.nivel_risco || "medio",
+      itens_de_risco: Array.isArray(parsed.itens_de_risco) ? parsed.itens_de_risco : [],
+      resumo: parsed.resumo || "Verificacao sem resultado claro",
+    };
+  } catch {
+    // Se o verificador falhar, deixa passar com aviso registrado
+    return {
+      aprovado: true,
+      nivel_risco: "baixo",
+      itens_de_risco: [],
+      resumo: "Verificador indisponivel — publicado sem verificacao",
+    };
+  }
+}
+
 /* ---- Generate blog post ---- */
 export async function generateBlogPost(
   clusterIndex?: number,
@@ -856,6 +949,12 @@ export async function generateBlogPost(
   const trendKeyword = customKeyword ? null : await getTrendTopicFromInternet();
   const keyword = customKeyword || trendKeyword || cluster?.primary || "IRPF 2026";
   const secundarias = cluster?.secondary?.join(", ") || "";
+
+  // Bloqueia temas fora do escopo IRPF antes de qualquer chamada de IA
+  if (!isTopicOnScope(keyword)) {
+    throw new Error(`Tema "${keyword}" esta fora do escopo do blog IRPF (INSS, aposentadoria, FGTS, etc). Post nao gerado.`);
+  }
+
   const research = await collectResearchContext(keyword);
 
   async function runGeneration(extraInstruction?: string) {
@@ -923,6 +1022,9 @@ export async function generateBlogPost(
       : keyword;
   const imageResult = await getTopicSpecificImage(imageSearchTerm);
 
+  // Segunda chamada Groq (modelo leve) — verifica fatos antes de publicar
+  const review = await verificarPost(`${parsed.title || keyword}\n\n${content}`);
+
   return {
     title: parsed.title || keyword,
     slug: baseSlug,
@@ -938,6 +1040,8 @@ export async function generateBlogPost(
     imageAlt: (typeof parsed.imageAlt === "string" && parsed.imageAlt ? parsed.imageAlt : null) ?? (parsed.title || keyword),
     articleSection: (typeof parsed.articleSection === "string" ? parsed.articleSection : null) ?? "IRPF",
     isNewsworthy: typeof parsed.isNewsworthy === "boolean" ? parsed.isNewsworthy : false,
+    reviewApproved: review.aprovado,
+    reviewJson: JSON.stringify(review),
   };
 }
 
@@ -961,7 +1065,8 @@ export async function saveBlogPost(post: Awaited<ReturnType<typeof generateBlogP
       faqsJson: JSON.stringify(post.faqs),
       coverImage: post.coverImage,
       imageAttribution: post.imageAttribution ?? null,
-      published: true,
+      published: post.reviewApproved ?? true,
+      reviewJson: post.reviewJson ?? "",
     },
   });
 }

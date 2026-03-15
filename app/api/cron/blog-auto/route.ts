@@ -20,15 +20,33 @@ export async function GET(request: Request) {
 
     // Notifica admin por email
     if (process.env.ADMIN_EMAIL) {
+      const statusTag = saved.published ? "✅ PUBLICADO" : "⚠️ RETIDO PARA REVISÃO — não publicado";
+      let reviewInfo = "";
+      if (!saved.published && saved.reviewJson) {
+        try {
+          const rv = JSON.parse(saved.reviewJson) as {
+            nivel_risco?: string;
+            resumo?: string;
+            itens_de_risco?: string[];
+          };
+          reviewInfo = `
+            <p><strong>Nível de risco:</strong> ${rv.nivel_risco || "?"}</p>
+            <p><strong>Motivo:</strong> ${rv.resumo || "?"}</p>
+            ${rv.itens_de_risco?.length ? `<ul>${rv.itens_de_risco.map((i) => `<li>${i}</li>`).join("")}</ul>` : ""}
+            <p>Acesse o painel para revisar e publicar manualmente.</p>`;
+        } catch { /* JSON inválido — ignora */ }
+      }
       await resend.emails.send({
         from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
         to: process.env.ADMIN_EMAIL,
-        subject: `Novo post publicado — ${new Date().toLocaleDateString("pt-BR")}`,
+        subject: `[${saved.published ? "Publicado" : "REVISÃO"}] Post gerado — ${new Date().toLocaleDateString("pt-BR")}`,
         html: `
-          <h2>Post publicado automaticamente</h2>
+          <h2>${statusTag}</h2>
           <p><strong>${saved.title}</strong></p>
-          <p>Disponivel em: <a href="https://irpf.qaplay.com.br/blog/${saved.slug}">irpf.qaplay.com.br/blog/${saved.slug}</a></p>
-          <p>Para revisar ou despublicar, acesse o painel administrativo.</p>
+          ${saved.published
+            ? `<p>Disponivel em: <a href="https://irpf.qaplay.com.br/blog/${saved.slug}">irpf.qaplay.com.br/blog/${saved.slug}</a></p>`
+            : `<p>Post salvo como rascunho aguardando revisão humana.</p>${reviewInfo}`}
+          <p>Para gerenciar, acesse o painel administrativo.</p>
         `,
       });
     }

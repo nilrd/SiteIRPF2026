@@ -170,7 +170,7 @@ export default async function BlogPostPage({ params }: Props) {
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
-            {/* CTA Box mid-content */
+            {/* CTA Box mid-content */}
             <div className="bg-verde text-white p-8 my-12 text-center">
               <h3 className="font-serif text-2xl mb-3">
                 Precisa declarar seu IRPF?

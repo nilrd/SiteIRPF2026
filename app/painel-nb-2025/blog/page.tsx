@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
 type Post = {
@@ -183,6 +184,12 @@ export default function BlogAdminPage() {
                     </td>
                     <td className="py-3">
                       <div className="flex gap-3">
+                        <Link
+                          href={`/painel-nb-2025/blog/${post.id}`}
+                          className="text-xs text-yellow-300 hover:text-yellow-100 transition"
+                        >
+                          Editar
+                        </Link>
                         <button
                           onClick={() => togglePublish(post.id, post.published)}
                           className="text-xs text-blue-300 hover:text-blue-100 transition"

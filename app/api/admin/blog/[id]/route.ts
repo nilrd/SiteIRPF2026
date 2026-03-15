@@ -4,6 +4,27 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+// GET /api/admin/blog/[id] — carrega post completo para edição
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const post = await prisma.blogPost.findUnique({ where: { id: params.id } });
+    if (!post) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+    return NextResponse.json({ post });
+  } catch (err) {
+    console.error("[admin/blog GET id]", err);
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+  }
+}
+
 // PATCH /api/admin/blog/[id] — toggle published ou atualizar campos
 export async function PATCH(
   req: NextRequest,

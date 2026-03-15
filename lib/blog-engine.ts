@@ -310,18 +310,23 @@ export async function getSelicAtual(): Promise<number> {
 
 /* ---- Imagens de capa rotativas (Unsplash curado — finanças/documentos) ---- */
 const COVER_IMAGES = [
-  "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&q=75",
-  "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=75",
-  "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&q=75",
-  "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=75",
-  "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&q=75",
-  "https://picsum.photos/seed/irpf-finance5/1200/675",
-  "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=75",
-  "https://images.unsplash.com/photo-1434626881859-194d67b2b86f?auto=format&fit=crop&w=1200&q=75",
-  "https://picsum.photos/seed/irpf-rendas8/1200/675",
-  "https://images.unsplash.com/photo-1554224154-22dec7ec8818?auto=format&fit=crop&w=1200&q=75",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=1200&q=75",
-  "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&q=75",
+  // Documentos / formularios fiscais
+  "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1554224154-22dec7ec8818?auto=format&fit=crop&w=1200&h=630&q=80",
+  // Calculadora / financas
+  "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&h=630&q=80",
+  // Dinheiro / notas
+  "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=1200&h=630&q=80",
+  // Reuniao de negocios / contabilidade
+  "https://images.unsplash.com/photo-1434626881859-194d67b2b86f?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&h=630&q=80",
+  // Grafico / dados financeiros
+  "https://images.unsplash.com/photo-1543286386-713bdd548da4?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&w=1200&h=630&q=80",
 ];
 function getRandomCoverImage(): string {
   return COVER_IMAGES[Math.floor(Math.random() * COVER_IMAGES.length)];
@@ -790,10 +795,13 @@ export async function generateBlogPost(
   const research = await collectResearchContext(keyword);
 
   async function runGeneration(extraInstruction?: string) {
+    const customNotice = customKeyword
+      ? `\n\nATENCAO MAXIMA: O usuario solicitou especificamente o tema "${customKeyword}". O titulo, o conteudo e todas as secoes DEVEM abordar exclusivamente este tema. NAO desvie para outro assunto mesmo que ele seja mais amplo ou relevante para o IRPF.`
+      : "";
     const completion = await groqLlama.chat.completions.create({
       model: MODELS.blogGeneration,
       messages: [
-        { role: "system", content: blogSystemPrompt(selicAtual, research, existingPosts) },
+        { role: "system", content: blogSystemPrompt(selicAtual, research, existingPosts) + customNotice },
         {
           role: "user",
           content: `TEMA OBRIGATORIO DO ARTIGO: "${keyword}". Voce DEVE escrever exclusivamente sobre este tema — nao mude para outro assunto.${

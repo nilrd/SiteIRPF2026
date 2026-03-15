@@ -5,6 +5,7 @@ import { generateBlogPost, saveBlogPost } from "@/lib/blog-engine";
 import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // Vercel Pro: até 60s para geração via Groq (mesmo que o cron route)
 
 export async function POST(request: NextRequest) {
   try {

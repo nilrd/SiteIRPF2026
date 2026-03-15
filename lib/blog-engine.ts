@@ -655,6 +655,7 @@ export const ALL_CLUSTERS = [...KEYWORD_CLUSTERS, ...FINANCE_CLUSTERS];
 
 /* ---- Detecta o formato de titulo de um post ---- */
 function detectTitleFormat(title: string): string {
+  if (!title || typeof title !== "string") return "outro";
   const t = title.trim();
   if (/^\d+\s/.test(t)) return "lista-numerada";
   if (/\?$/.test(t)) return "pergunta";
@@ -878,7 +879,16 @@ export async function generateBlogPost(
     });
 
     const raw = completion.choices[0]?.message?.content || "{}";
-    return JSON.parse(raw);
+    // Remove markdown code fences caso o modelo as adicione (ex: ```json\n{...}\n```)
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+    try {
+      return JSON.parse(cleaned);
+    } catch {
+      // Groq retornou JSON inválido — tenta extrair o objeto JSON da resposta
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) return JSON.parse(match[0]);
+      throw new Error(`Groq retornou resposta não-JSON: ${cleaned.slice(0, 200)}`);
+    }
   }
 
   let parsed = await runGeneration();

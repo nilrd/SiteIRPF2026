@@ -29,6 +29,18 @@ const nextConfig = {
         ],
       },
       {
+        // Páginas do blog: nunca cacheadas em CDN (conteúdo muda via DB)
+        source: "/blog(.*)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "no-store, no-cache, must-revalidate",
+          },
+          { key: "Pragma", value: "no-cache" },
+          { key: "Surrogate-Control", value: "no-store" },
+        ],
+      },
+      {
         source: "/fonts/(.*)",
         headers: [
           {

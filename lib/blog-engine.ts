@@ -17,59 +17,59 @@ type ExistingPostSnapshot = {
 
 // Fontes raspadas via HTTP (HTML) — cobertura máxima oficial + jornalismo econômico
 const TRUSTED_SOURCE_URLS = [
-  // Receita Federal — IR e IRPF
-  "https://www.gov.br/receitafederal/pt-br",
+  // Receita Federal — páginas específicas do IRPF 2026
   "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
-  "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/tributos/irpf",
-  // Legislação federal
-  "https://www.planalto.gov.br",
-  // Banco Central
-  "https://www.bcb.gov.br",
+  "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/declaracoes-e-demonstrativos/dirpf",
+  "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/malha-fiscal/malha-fina",
+  // Legislação federal — lei específica
+  "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/l15270.htm",
+  // Banco Central — Selic e economia
+  "https://www.bcb.gov.br/controleinflacao/taxaselic",
   // Previdência Social / INSS
-  "https://www.gov.br/previdencia/pt-br",
   "https://www.gov.br/inss/pt-br",
-  // Ministério do Trabalho
-  "https://www.gov.br/trabalho-e-emprego/pt-br",
-  // CVM — mercado de capitais
-  "https://www.gov.br/cvm/pt-br",
-  // IBGE — dados econômicos
-  "https://www.ibge.gov.br",
-  // Portal da Transparência
-  "https://www.portaltransparencia.gov.br",
-  // Jornalismo financeiro
-  "https://g1.globo.com/economia/",
-  "https://www.infomoney.com.br/",
-  "https://www.valor.globo.com/legislacao/",
+  // Jornalismo financeiro especializado
+  "https://www.infomoney.com.br/guias/imposto-de-renda/",
   "https://www.contabeis.com.br/noticias/categoria/imposto-de-renda/",
+  "https://g1.globo.com/economia/imposto-de-renda/",
 ] as const;
 
 // Fontes estáticas permanentes — sempre incluídas no contexto, independente de scraping
 // Usadas quando o scraping de TRUSTED_SOURCE_URLS falha
 const STATIC_SOURCES: ResearchItem[] = [
   {
-    title: "Receita Federal — Imposto de Renda Pessoa Física (IRPF)",
+    title: "Receita Federal — IRPF 2026: prazo de entrega previsto 18/03/2026 a 29/05/2026",
     url: "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
-    snippet: "Portal oficial da Receita Federal para declaração, consulta de restituição e orientações sobre o IRPF. Tabelas de alíquotas, prazos e deduções permitidas.",
+    snippet: "IRPF 2026 (ano-base 2025): prazo de entrega previsto de 18 de março a 29 de maio de 2026 (Fonte: Valor Investe / Receita Federal, 13/03/2026). Regras e prazo oficial anunciados pela Receita Federal em 16/03/2026. Multa mínima por atraso: R$ 165,74. Restituicões em 5 lotes (junho a outubro de 2026). Programa IRPF 2026 disponível no site da Receita Federal.",
   },
   {
-    title: "Planalto — Legislação federal tributária",
+    title: "Lei nº 15.270/2025 — Nova tabela IRPF e isenção até R$ 5.000",
     url: "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/l15270.htm",
-    snippet: "Lei nº 15.270/2025 — altera a tabela progressiva do IRPF, estabelece nova faixa de isenção até R$ 5.000 com dedução especial e reajusta limites de deduções.",
+    snippet: "Lei nº 15.270/2025 — altera tabela progressiva do IRPF a partir de 2026: isenção integral até R$ 2.428,80/mês; isenção efetiva até R$ 5.000/mês via dedução especial de R$ 1.571,19 para quem aplica o desconto simplificado. Faixas: 7,5% / 15% / 22,5% / 27,5%.",
   },
   {
-    title: "Banco Central do Brasil — Taxa Selic",
+    title: "Receita Federal — Deduções permitidas no IRPF 2026",
+    url: "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/declaracoes-e-demonstrativos/dirpf",
+    snippet: "Deduções IRPF 2026: saúde (sem limite), educação até R$ 3.561,50 por dependente, dependente R$ 2.275,08/ano, pensão alimentícia integral, previdência oficial e PGBL até 12% da renda bruta. Livro-caixa para autônomos.",
+  },
+  {
+    title: "Banco Central do Brasil — Taxa Selic e tributação de renda fixa",
     url: "https://www.bcb.gov.br/controleinflacao/taxaselic",
-    snippet: "Taxa Selic definida pelo COPOM. Usada como referência para tributação de renda fixa, atualização de débitos e planejamento financeiro.",
+    snippet: "Taxa Selic definida pelo COPOM. Usada como referência para tributação de renda fixa (CDB, LCI, LCA, Tesouro Direto), atualização de débitos tributários e planejamento financeiro.",
   },
   {
-    title: "INSS — Tabela de contribuição e benefícios",
+    title: "INSS — Tabela de contribuição 2026 e deduções no IRPF",
     url: "https://www.gov.br/inss/pt-br",
-    snippet: "Portal oficial do INSS com tabelas de alíquotas de contribuição, regras de aposentadoria e benefícios previdenciários. Relevante para cálculo de deduções no IRPF.",
+    snippet: "Contribuições ao INSS são dedutíveis integralmente no IRPF. Tabela 2026: alíquotas de 7,5% a 14% conforme salário. Aposentados com doenças graves têm isenção de IR sobre proventos.",
   },
   {
-    title: "CVM — Tributação em renda variável",
+    title: "Receita Federal — Malha fina: como evitar e regularizar",
+    url: "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/malha-fiscal/malha-fina",
+    snippet: "Principais motivos de malha fina 2026: omissão de rendimentos, despesas médicas incompatíveis, divergência de informes, pensão alimentícia irregular, deduções sem comprovante. Prazo para autorregularização antes da intimação.",
+  },
+  {
+    title: "CVM — Tributação de renda variável e fundos de investimento",
     url: "https://www.gov.br/cvm/pt-br",
-    snippet: "Comissão de Valores Mobiliários — orientações sobre tributação de operações em bolsa, fundos de investimento e renda variável no IRPF.",
+    snippet: "Operações em bolsa: IR de 15% (swing trade) ou 20% (day trade) sobre lucros. Isenção para vendas de ações até R$ 20.000/mês no mercado à vista. FIIs: rendimentos isentos para PF; ganho de capital tributado a 20%.",
   },
 ];
 
@@ -650,7 +650,12 @@ CONTEXTO TEMPORAL OBRIGATORIO — LEIA ANTES DE ESCREVER:
 - Quando se referir ao periodo de rendimentos, diga "ano-base 2025" ou "exercicio 2025"
 - Exemplo correto: "Na declaracao do IRPF 2026 (ano-base 2025), voce informa os rendimentos recebidos em 2025"
 - NUNCA confundir: IRPF 2026 = declaracao em 2026, rendimentos de 2025
-- NUNCA dizer que o prazo de entrega do IRPF 2026 ja encerrou (estamos em ${hoje} — o prazo ainda nao foi divulgado)
+- PRAZO IRPF 2026: previsto de 18 de marco a 29 de maio de 2026 (Valor Investe / Receita Federal, 13/03/2026; anuncio oficial em 16/03/2026).
+- SE os dados pesquisados (secao 'DADOS PESQUISADOS NA INTERNET' abaixo) contiverem prazo oficial diferente da Receita Federal, USE O PRAZO DOS DADOS PESQUISADOS, pois sao mais recentes.
+- SE nao houver prazo confirmado nas fontes pesquisadas, NAO afirme uma data com certeza: diga 'confira o prazo atualizado no site da Receita Federal (gov.br/receitafederal)'.
+- NUNCA invente prazos ou datas. Dados de datas sem fonte verificavel = PROIBIDO.
+- Multa por atraso: minimo R$ 165,74 ou 1% ao mes sobre o imposto devido (o que for maior), limitado a 20%
+- Restituicoes em 5 lotes: primeiro lote em junho/2026, ultimo em outubro/2026
 - Quando citar dados do IRPF 2025 (declaracao do ano passado, rendimentos de 2024), deixe explicitamente claro que e o exercicio anterior
 
 DADOS PESQUISADOS NA INTERNET (priorize estes links e cite URL exata ao usar):
@@ -801,12 +806,8 @@ export async function generateBlogPost(
 
   const content = ensureSourcesSection(parsed.content || "", research);
 
-  // Usa Unsplash contextual ao tema; fallback seguro para pool local
-  const imageResult = await getTopicSpecificImage(
-    typeof parsed.imageAlt === "string" && parsed.imageAlt
-      ? parsed.imageAlt
-      : keyword
-  );
+  // Usa keyword do artigo para busca de imagem — mais relevante que o imageAlt da IA
+  const imageResult = await getTopicSpecificImage(keyword);
 
   return {
     title: parsed.title || keyword,

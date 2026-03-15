@@ -755,7 +755,7 @@ export async function generateBlogPost(
     ? ALL_CLUSTERS[clusterIndex % ALL_CLUSTERS.length]
     : null;
 
-  const trendKeyword = await getTrendTopicFromInternet();
+  const trendKeyword = customKeyword ? null : await getTrendTopicFromInternet();
   const keyword = customKeyword || trendKeyword || cluster?.primary || "IRPF 2026";
   const secundarias = cluster?.secondary?.join(", ") || "";
   const research = await collectResearchContext(keyword);
@@ -767,9 +767,9 @@ export async function generateBlogPost(
         { role: "system", content: blogSystemPrompt(selicAtual, research, existingPosts) },
         {
           role: "user",
-          content: `Escreva um artigo completo sobre: "${keyword}"${
-            secundarias ? `. Keywords secundarias: ${secundarias}` : ""
-          }. ${extraInstruction || ""} Retorne APENAS o JSON valido, sem markdown.`,
+          content: `TEMA OBRIGATORIO DO ARTIGO: "${keyword}". Voce DEVE escrever exclusivamente sobre este tema — nao mude para outro assunto.${
+            secundarias ? ` Keywords secundarias a incluir: ${secundarias}.` : ""
+          } ${extraInstruction || ""} Retorne APENAS o JSON valido, sem markdown.`,
         },
       ],
       temperature: 0.35,

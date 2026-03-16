@@ -74,19 +74,21 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const ga4Id = process.env.NEXT_PUBLIC_GA4_ID || "G-7FYYGX7C12";
+
   return (
     <html lang="pt-br" className={`${playfair.variable} ${inter.variable}`}>
       <body className="font-sans antialiased bg-base text-preto">
         <JsonLdWebSite />
         {children}
-        {process.env.NEXT_PUBLIC_GA4_ID && (
+        {ga4Id && (
           <>
             <Script
               strategy="afterInteractive"
-              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA4_ID}`}
+              src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}
             />
             <Script id="ga4-init" strategy="afterInteractive">
-              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${process.env.NEXT_PUBLIC_GA4_ID}',{page_path:window.location.pathname});`}
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${ga4Id}');`}
             </Script>
           </>
         )}

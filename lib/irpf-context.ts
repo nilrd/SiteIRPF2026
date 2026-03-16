@@ -1,27 +1,27 @@
-// Dados oficiais IRPF 2026 — Instrução Normativa RFB nº 2.255/2025 + Lei 15.270/2025
-// Verificados em 15/03/2026 — Fonte: gov.br/receitafederal
+// Dados oficiais IRPF 2026 — atualização publicada em 16/03/2026
+// Fontes: Receita Federal (DOU) + cobertura jornalística econômica (G1)
 // Este arquivo é injetado como contexto fixo nos prompts de geração do blog.
 
 export const IRPF_DATA_CONTEXT = `
 ====================================================
 DADOS OFICIAIS IRPF 2026 — USO OBRIGATÓRIO EXCLUSIVO
-(Instrução Normativa RFB nº 2.255/2025 — 15/03/2026)
+(Atualizado em 16/03/2026 com publicação no DOU)
 ====================================================
 
-PRAZOS IRPF 2026 (OFICIAL — IN RFB 2.255/2025):
-- Início da declaração: 16 de março de 2026
-- Fim da declaração: 30 de maio de 2026
+PRAZOS IRPF 2026 (OFICIAL — Receita Federal / DOU em 16/03/2026):
+- Início da declaração: 23 de março de 2026
+- Fim da declaração: 29 de maio de 2026
 - Lote 1 de restituições: junho de 2026
 - Último lote de restituições: 30 de setembro de 2026
 - Multa mínima por atraso: R$ 165,74 ou 1% ao mês sobre o imposto devido, limitado a 20%
 
 OBRIGATORIEDADE — quem DEVE declarar em 2026 (ano-base 2025):
-- Rendimentos tributáveis acima de R$ 33.888,00 em 2025
+- Rendimentos tributáveis acima de R$ 35.584,00 em 2025
 - Rendimentos isentos/não tributáveis/exclusivos na fonte acima de R$ 200.000,00
 - Ganhos de capital na alienação de bens
 - Operações em bolsa (salvo isenção ≤ R$ 20.000/mês no mercado à vista)
 - Bens e direitos acima de R$ 800.000,00 em 31/12/2025
-- Atividade rural com receita bruta acima de R$ 172.704,00
+- Atividade rural com receita bruta acima de R$ 177.920,00
 - Passou à condição de residente no Brasil em qualquer mês de 2025
 
 TABELA PROGRESSIVA IRPF 2026 — mensal (Lei 15.270/2025):
@@ -51,5 +51,6 @@ FONTES OFICIAIS (ÚNICAS ACEITAS PARA CITAR VALORES E PRAZOS):
 - Receita Federal: https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda
 - Lei 15.270/2025: https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/l15270.htm
 - IN RFB 2.255/2025: https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/declaracoes-e-demonstrativos/dirpf
+- G1 Economia (síntese jornalística da publicação no DOU em 16/03/2026): https://g1.globo.com/economia/imposto-de-renda/noticia/2026/03/16/imposto-de-renda-2026-prazo-comeca-em-23-marco-e-se-estende-ate-29-de-maio-veja-quem-deve-declarar.ghtml
 ====================================================
 `.trim();

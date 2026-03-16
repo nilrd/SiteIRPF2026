@@ -32,15 +32,21 @@ const TRUSTED_SOURCE_URLS = [
   "https://www.infomoney.com.br/guias/imposto-de-renda/",
   "https://www.contabeis.com.br/noticias/categoria/imposto-de-renda/",
   "https://g1.globo.com/economia/imposto-de-renda/",
+  "https://g1.globo.com/economia/imposto-de-renda/noticia/2026/03/16/imposto-de-renda-2026-prazo-comeca-em-23-marco-e-se-estende-ate-29-de-maio-veja-quem-deve-declarar.ghtml",
 ] as const;
 
 // Fontes estáticas permanentes — sempre incluídas no contexto, independente de scraping
 // Usadas quando o scraping de TRUSTED_SOURCE_URLS falha
 const STATIC_SOURCES: ResearchItem[] = [
   {
-    title: "Receita Federal — IRPF 2026: prazo oficial 16/03/2026 a 30/05/2026 (IN RFB 2.255/2025)",
+    title: "Receita Federal — IRPF 2026: prazo oficial 23/03/2026 a 29/05/2026 (DOU em 16/03/2026)",
     url: "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
-    snippet: "IRPF 2026 (ano-base 2025): prazo oficial de 16 de março a 30 de maio de 2026 (Instrução Normativa RFB nº 2.255/2025). Obrigados: rendimentos tributáveis acima de R$ 33.888,00 em 2025. Multa mínima por atraso: R$ 165,74. Restituições em 5 lotes (junho a 30 de setembro de 2026). Programa IRPF 2026 disponível no site da Receita Federal.",
+    snippet: "IRPF 2026 (ano-base 2025): prazo oficial de 23 de março a 29 de maio de 2026, conforme publicação da Receita Federal no DOU em 16/03/2026. Obrigados: rendimentos tributáveis acima de R$ 35.584,00 em 2025. Multa mínima por atraso: R$ 165,74 ou 1% ao mês (limite de 20%).",
+  },
+  {
+    title: "G1 Economia — Receita informa prazo IRPF 2026: 23/03 a 29/05 e critérios de obrigatoriedade",
+    url: "https://g1.globo.com/economia/imposto-de-renda/noticia/2026/03/16/imposto-de-renda-2026-prazo-comeca-em-23-marco-e-se-estende-ate-29-de-maio-veja-quem-deve-declarar.ghtml",
+    snippet: "Cobertura jornalística com base na divulgação da Receita Federal: prazo de entrega de 23 de março a 29 de maio de 2026; obrigatoriedade para rendimentos tributáveis acima de R$ 35.584,00; desconto simplificado de 20% limitado a R$ 16.754,34; parcelamento em até 8 quotas, mínimo de R$ 50 por quota.",
   },
   {
     title: "Lei nº 15.270/2025 — Nova tabela IRPF e isenção até R$ 5.000",
@@ -735,11 +741,11 @@ CONTEXTO TEMPORAL OBRIGATORIO — LEIA ANTES DE ESCREVER:
 - Quando se referir ao periodo de rendimentos, diga "ano-base 2025" ou "exercicio 2025"
 - Exemplo correto: "Na declaracao do IRPF 2026 (ano-base 2025), voce informa os rendimentos recebidos em 2025"
 - NUNCA confundir: IRPF 2026 = declaracao em 2026, rendimentos de 2025
-- PRAZO IRPF 2026 (OFICIAL — IN RFB 2.255/2025): 16 de marco a 30 de maio de 2026.
+- PRAZO IRPF 2026 (OFICIAL — RECEITA FEDERAL / DOU 16/03/2026): 23 de marco a 29 de maio de 2026.
 - NUNCA invente prazos, datas ou valores. Use APENAS os dados da secao DADOS OFICIAIS acima.
 - Multa por atraso: minimo R$ 165,74 ou 1% ao mes sobre o imposto devido (o que for maior), limitado a 20%
 - Restituicoes em 5 lotes: primeiro lote em junho/2026, ULTIMO lote em 30 de setembro de 2026
-- OBRIGATORIEDADE: rendimentos tributaveis acima de R$ 33.888,00 em 2025 — NAO sao "todos os contribuintes"
+- OBRIGATORIEDADE: rendimentos tributaveis acima de R$ 35.584,00 em 2025 — NAO sao "todos os contribuintes"
 - Quando citar dados do IRPF 2025 (declaracao do ano passado, rendimentos de 2024), deixe explicitamente claro que e o exercicio anterior
 
 DADOS PESQUISADOS NA INTERNET — leia atentamente. Use os relevantes e declare em "usedSourceUrls" SOMENTE os URLs que voce EFETIVAMENTE consultou/referenciou:
@@ -771,7 +777,7 @@ REGRAS INEGOCIAVEIS:
 
 REGRAS DE RESPONSABILIDADE FACTUAL (ABSOLUTAS — nunca viole nenhuma):
 RF-1. DADOS NUMERICOS: Nunca escreva valores em R$ especificos, datas exatas ou percentuais sem que estejam na secao DADOS OFICIAIS acima ou na secao DADOS PESQUISADOS. Se nao tiver o dado exato: use "conforme tabela vigente da Receita Federal" ou "verifique em gov.br/receitafederal".
-RF-2. OBRIGATORIEDADE: NUNCA use "todas as pessoas devem declarar", "qualquer contribuinte e obrigado" ou afirmacoes absolutas. Use sempre "quem superou os limites legais" — o limite e R$ 33.888,00 em rendimentos tributaveis em 2025.
+RF-2. OBRIGATORIEDADE: NUNCA use "todas as pessoas devem declarar", "qualquer contribuinte e obrigado" ou afirmacoes absolutas. Use sempre "quem superou os limites legais" — o limite e R$ 35.584,00 em rendimentos tributaveis em 2025.
 RF-3. ISENCAO R$ 5.000: NUNCA diga "quem ganha ate R$ 5.000 nao paga imposto" sem explicar que e uma isencao EFETIVA via deducao especial (nao isencao total automatica). Sempre explique a mecanica da deducao complementar de R$ 1.571,19.
 RF-4. FORMULAS E CALCULOS: Nunca publique formulas matematicas de calculo de beneficios, aposentadoria ou tributos sem que estejam na secao DADOS OFICIAIS. Se nao tiver: direcione o usuario para gov.br/receitafederal.
 RF-5. ESCOPO: Este blog e de consultoria IRPF. NAO gere conteudo sobre calculo de aposentadoria pelo INSS, pontuacao previdenciaria, regras de elegibilidade ao INSS, BPC/LOAS ou direito trabalhista. PERMITIDO: deducao de contribuicao INSS no IRPF, aposentado declarando IRPF.

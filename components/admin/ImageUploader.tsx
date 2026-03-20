@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Upload, Copy, Trash2, Check, X, RefreshCw } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 interface ImageItem {
   name: string;
@@ -51,23 +52,43 @@ export default function ImageUploader() {
   const uploadFile = useCallback(async (file: File) => {
     setError(null);
     setUploading(true);
-    setUploadProgress(`Enviando ${file.name}...`);
+    setUploadProgress(`Preparando envio de ${file.name}...`);
 
     try {
-      const fd = new FormData();
-      fd.append("file", file);
+      // Passo 1 — servidor gera URL assinada (request leve, sem arquivo)
+      const signRes = await fetch("/api/upload/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name, type: file.type }),
+      });
 
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Erro no upload");
+      const signData = await signRes.json();
+      if (!signRes.ok) {
+        setError(signData.error || "Erro ao gerar URL de upload");
         return;
       }
 
-      // Prepend new image to gallery
+      const { path, token, publicUrl } = signData as {
+        path: string;
+        token: string;
+        publicUrl: string;
+      };
+
+      // Passo 2 — upload DIRETO ao Supabase Storage (bypassa Vercel, sem limite)
+      setUploadProgress(`Enviando ${file.name}...`);
+
+      const { error: uploadError } = await supabase.storage
+        .from("imagens")
+        .uploadToSignedUrl(path, token, file, { contentType: file.type });
+
+      if (uploadError) {
+        setError(uploadError.message);
+        return;
+      }
+
+      // Prepend na galeria
       setImages((prev) => [
-        { name: data.fileName, url: data.url, size: data.size, type: data.type },
+        { name: path, url: publicUrl, size: file.size, type: file.type },
         ...prev,
       ]);
     } catch {

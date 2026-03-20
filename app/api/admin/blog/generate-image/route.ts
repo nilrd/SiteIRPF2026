@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { groqLlama, MODELS } from "@/lib/llm-providers";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -12,6 +13,42 @@ export const maxDuration = 60;
 const BUCKET = "blog-images";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+/**
+ * Tenta gerar imagem com Gemini 2.0 Flash Experimental (gratuito).
+ * Retorna Buffer da imagem ou null se não disponível / falhar.
+ */
+async function generateImageWithGemini(imagePrompt: string): Promise<Buffer | null> {
+  if (!process.env.GEMINI_API_KEY) return null;
+
+  try {
+    console.log("[Image] Tentando Gemini 2.0 Flash (gratuito)...");
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp-image-generation",
+    });
+
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: imagePrompt }] }],
+      // @ts-expect-error — responseModalities não está no tipo oficial ainda mas é suportado pela API
+      generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+    });
+
+    for (const part of result.response.candidates?.[0]?.content?.parts ?? []) {
+      const inline = (part as { inlineData?: { mimeType?: string; data?: string } }).inlineData;
+      if (inline?.mimeType?.startsWith("image/") && inline.data) {
+        console.log("[Image] Sucesso: Gemini 2.0 Flash");
+        return Buffer.from(inline.data, "base64");
+      }
+    }
+    console.warn("[Image] Gemini retornou resposta sem imagem.");
+    return null;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn("[Image] Gemini falhou:", msg);
+    return null;
+  }
+}
 
 async function ensureBucket() {
   try {
@@ -85,29 +122,38 @@ export async function POST(req: NextRequest) {
       (promptCompletion.choices?.[0]?.message?.content ?? "").trim() ||
       "A Brazilian financial consultant reviewing income tax documents at a modern São Paulo office desk, natural window light, shallow depth of field, photorealistic Sony A7R IV photography";
 
-    // 3. Chamar DALL-E 3
-    const imageResponse = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: dallePrompt,
-      size: "1792x1024",
-      quality: "hd",
-      style: "natural",
-      n: 1,
-    });
+    // 3. Tentar Gemini 2.0 Flash (gratuito) — fallback para DALL-E 3 (pago)
+    let buffer: Buffer | null = await generateImageWithGemini(dallePrompt);
+    let imageSource: "gemini" | "dall-e" = "gemini";
 
-    const imageUrl = imageResponse.data?.[0]?.url;
-    if (!imageUrl) {
-      return NextResponse.json({ error: "DALL-E não retornou imagem" }, { status: 500 });
+    if (!buffer) {
+      // Fallback: DALL-E 3
+      console.log("[Image] Usando DALL-E 3 como fallback...");
+      imageSource = "dall-e";
+      const imageResponse = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: dallePrompt,
+        size: "1792x1024",
+        quality: "hd",
+        style: "natural",
+        n: 1,
+      });
+
+      const imageUrl = imageResponse.data?.[0]?.url;
+      if (!imageUrl) {
+        return NextResponse.json({ error: "DALL-E não retornou imagem" }, { status: 500 });
+      }
+
+      const imgRes = await fetch(imageUrl);
+      if (!imgRes.ok) {
+        return NextResponse.json({ error: "Falha ao baixar imagem do DALL-E" }, { status: 500 });
+      }
+      buffer = Buffer.from(await imgRes.arrayBuffer());
     }
 
-    // 4. Fazer download e upload para Supabase Storage
-    const imgRes = await fetch(imageUrl);
-    if (!imgRes.ok) {
-      return NextResponse.json({ error: "Falha ao baixar imagem do DALL-E" }, { status: 500 });
-    }
+    console.log(`[Image] Fonte usada: ${imageSource}`);
 
-    const buffer = Buffer.from(await imgRes.arrayBuffer());
-    // PONTO 1: usar slug do post como nome do arquivo (substituindo gerações anteriores via upsert)
+    // 4. Upload para Supabase Storage
     const fileName = `${post.slug}.png`;
 
     await ensureBucket();
@@ -136,7 +182,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ imageUrl: publicUrl, prompt: dallePrompt, imageAlt });
+    return NextResponse.json({ imageUrl: publicUrl, prompt: dallePrompt, imageAlt, imageSource });
   } catch (err) {
     console.error("[generate-image]", err);
     const msg = err instanceof Error ? err.message : "Erro interno";

@@ -1,4 +1,4 @@
-import { groqLlama, MODELS } from "./llm-providers";
+import { groqLlama, MODELS, callWithFallback } from "./llm-providers";
 import { prisma } from "./prisma";
 import { IRPF_DATA_CONTEXT } from "./irpf-context";
 
@@ -1194,32 +1194,28 @@ export async function generateBlogPost(
     const customNotice = customKeyword
       ? `\n\nATENCAO MAXIMA: O usuario solicitou especificamente o tema "${customKeyword}". O titulo, o conteudo e todas as secoes DEVEM abordar exclusivamente este tema. NAO desvie para outro assunto mesmo que ele seja mais amplo ou relevante para o IRPF.`
       : "";
-    const completion = await groqLlama.chat.completions.create({
-      model: MODELS.blogGeneration,
-      messages: [
-        { role: "system", content: blogSystemPrompt(selicAtual, research, existingPosts, mandatoryFormat) + customNotice },
-        {
-          role: "user",
-          content: `TEMA OBRIGATORIO DO ARTIGO: "${keyword}". Voce DEVE escrever exclusivamente sobre este tema — nao mude para outro assunto.${
-            secundarias ? ` Keywords secundarias a incluir: ${secundarias}.` : ""
-          } ${extraInstruction || ""} Retorne APENAS o JSON valido, sem markdown.`,
-        },
-      ],
+
+    const systemContent =
+      blogSystemPrompt(selicAtual, research, existingPosts, mandatoryFormat) + customNotice;
+
+    const userContent = `TEMA OBRIGATORIO DO ARTIGO: "${keyword}". Voce DEVE escrever exclusivamente sobre este tema — nao mude para outro assunto.${
+      secundarias ? ` Keywords secundarias a incluir: ${secundarias}.` : ""
+    } ${extraInstruction || ""} Retorne APENAS o JSON valido, sem markdown.`;
+
+    const raw = await callWithFallback(systemContent, userContent, 8000, {
       temperature: 0.35,
-      max_tokens: 8000,
       response_format: { type: "json_object" },
     });
 
-    const raw = completion.choices[0]?.message?.content || "{}";
     // Remove markdown code fences caso o modelo as adicione (ex: ```json\n{...}\n```)
     const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
     try {
       return JSON.parse(cleaned);
     } catch {
-      // Groq retornou JSON inválido — tenta extrair o objeto JSON da resposta
+      // Modelo retornou JSON inválido — tenta extrair o objeto JSON da resposta
       const match = cleaned.match(/\{[\s\S]*\}/);
       if (match) return JSON.parse(match[0]);
-      throw new Error(`Groq retornou resposta não-JSON: ${cleaned.slice(0, 200)}`);
+      throw new Error(`Modelo retornou resposta não-JSON: ${cleaned.slice(0, 200)}`);
     }
   }
 

@@ -67,7 +67,8 @@ export async function POST(req: NextRequest) {
             `- If a person appears: only partial — hands typing, person seen from behind at a desk, silhouette near window\n` +
             `- No AI aesthetics: no perfect symmetry, no glowing elements, no floating objects, no surreal compositions\n` +
             `- Lighting: natural window light, warm office tones\n` +
-            `- Setting: Brazilian urban office, São Paulo style architecture visible through windows when relevant\n\n` +
+            `- Setting: Brazilian urban office, São Paulo style architecture visible through windows when relevant\n` +
+            `- GOOGLE DISCOVER REQUIREMENTS: image must feel like premium editorial photography from a top financial magazine. High visual impact at thumbnail size. Strong contrast between subject and background. One clear focal point, not cluttered. Warm color palette: amber, cream, dark wood tones. No watermarks, no text overlays, no borders. The image must make someone stop scrolling on mobile. Think: how does this look as 400x300px on a phone screen? The key visual element must be clear at that size.\n\n` +
             `POST TITLE (PT-BR): ${post.title}\n` +
             `POST SUMMARY (PT-BR): ${post.summary ?? ""}\n\n` +
             `Based on the title and summary, generate ONE specific, cinematic image prompt in English.\n` +

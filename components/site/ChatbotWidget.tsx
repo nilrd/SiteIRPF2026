@@ -85,43 +85,28 @@ async function speakText(
   const cleaned = cleanForTTS(text);
   if (!cleaned) return;
 
-  // Tentativa 1: Groq PlayAI
-  let res: Response | null = null;
+  // Única fonte de áudio: Groq PlayAI (gratuito, voz Fritz masculina)
   try {
-    const r = await fetch("/api/chatbot/speak", {
+    const res = await fetch("/api/chatbot/speak", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: cleaned }),
     });
-    if (r.ok) res = r;
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      audioEl.src = url;
+      try {
+        await audioEl.play();
+      } catch {
+        // Autoplay bloqueado — exibe botão manual com a URL pronta
+        onBlocked?.(url);
+      }
+      return;
+    }
   } catch { /* Groq indisponível */ }
 
-  // Tentativa 2: OpenAI TTS
-  if (!res) {
-    try {
-      const r = await fetch("/api/chatbot/speak-openai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: cleaned }),
-      });
-      if (r.ok) res = r;
-    } catch { /* OpenAI indisponível */ }
-  }
-
-  if (res) {
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    audioEl.src = url;
-    try {
-      await audioEl.play();
-    } catch {
-      // Autoplay bloqueado pelo navegador — exibe botão manual com a URL pronta
-      onBlocked?.(url);
-    }
-    return;
-  }
-
-  // Ambos os serviços falharam — sinaliza para exibir botão de retry (sem URL)
+  // Groq falhou — sinaliza para exibir botão de retry (sem URL)
   onBlocked?.(null);
 }
 

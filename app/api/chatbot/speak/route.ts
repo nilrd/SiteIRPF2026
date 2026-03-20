@@ -1,30 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { groqLlama } from "@/lib/llm-providers";
+import { cleanTextForTTS } from "@/lib/tts-utils";
 
 export const dynamic = "force-dynamic";
-
-const MAX_TEXT_LENGTH = 1000;
+export const runtime = "nodejs";
+export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const text: unknown = body?.text;
+    const raw: unknown = body?.text;
 
-    if (typeof text !== "string" || text.trim().length === 0) {
+    if (typeof raw !== "string" || raw.trim().length === 0) {
       return NextResponse.json({ error: "Texto ausente." }, { status: 400 });
     }
 
-    if (text.length > MAX_TEXT_LENGTH) {
-      return NextResponse.json(
-        { error: "Texto muito longo para sintetizar." },
-        { status: 400 }
-      );
+    const input = cleanTextForTTS(raw);
+    if (!input) {
+      return NextResponse.json({ error: "Texto vazio após limpeza." }, { status: 400 });
     }
 
     const mp3 = await groqLlama.audio.speech.create({
       model: "playai-tts",
       voice: "Fritz-PlayAI",
-      input: text.trim(),
+      input,
     });
 
     const buffer = Buffer.from(await mp3.arrayBuffer());

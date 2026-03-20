@@ -84,20 +84,45 @@ async function speakText(
 ) {
   const cleaned = cleanForTTS(text);
   if (!cleaned) return;
-  const res = await fetch("/api/chatbot/speak", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: cleaned }),
-  });
-  if (!res.ok) return;
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  audioEl.src = url;
+
+  // Tenta TTS via Groq PlayAI (qualidade superior)
   try {
-    await audioEl.play();
+    const res = await fetch("/api/chatbot/speak", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: cleaned }),
+    });
+    if (res.ok) {
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      audioEl.src = url;
+      try {
+        await audioEl.play();
+        return; // sucesso — para aqui
+      } catch {
+        // Autoplay bloqueado — exibe botao manual
+        onBlocked?.(url);
+        return;
+      }
+    }
   } catch {
-    // Autoplay bloqueado pelo navegador — exibe botao de play manual
-    onBlocked?.(url);
+    // Groq indisponivel — cai no fallback abaixo
+  }
+
+  // Fallback: Web Speech API nativa do navegador (gratuita, sem servidor)
+  if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    window.speechSynthesis.cancel(); // cancela fala anterior se houver
+    const utterance = new SpeechSynthesisUtterance(cleaned);
+    utterance.lang = "pt-BR";
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+    // Prefere voz em portugues se disponivel
+    const voices = window.speechSynthesis.getVoices();
+    const ptVoice = voices.find(
+      (v) => v.lang === "pt-BR" || v.lang === "pt_BR" || v.lang.startsWith("pt")
+    );
+    if (ptVoice) utterance.voice = ptVoice;
+    window.speechSynthesis.speak(utterance);
   }
 }
 

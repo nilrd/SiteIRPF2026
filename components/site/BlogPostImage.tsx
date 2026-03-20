@@ -36,7 +36,7 @@ export default function BlogPostImage({ src, alt, attribution }: BlogPostImagePr
         sizes="(max-width: 768px) 100vw, 33vw"
         onError={() => setBroken(true)}
       />
-      {attribution && (
+      {attribution && !src.includes("supabase.co") && (
         <div
           className="absolute bottom-0 right-0 bg-black/50 px-2 py-1 text-white"
           style={{ fontSize: "10px", lineHeight: 1.4 }}

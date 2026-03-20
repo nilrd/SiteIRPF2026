@@ -383,6 +383,19 @@ function getVisualQuery(keyword: string): string {
   return "finance tax brazil professional document";
 }
 
+// Localizações que devem ser excluídas do Unsplash (evitar fotos asiáticas genéricas)
+const EXCLUDED_LOCATIONS = [
+  "china", "japan", "korea", "taiwan", "hong kong", "beijing",
+  "shanghai", "tokyo", "singapore", "thailand", "vietnam",
+  "indonesia", "malaysia", "philippines", "myanmar",
+];
+
+function isExcludedLocation(location?: string): boolean {
+  if (!location) return false;
+  const loc = location.toLowerCase();
+  return EXCLUDED_LOCATIONS.some((l) => loc.includes(l));
+}
+
 type UnsplashAttribution = {
   photographerName: string;
   photographerUrl: string;
@@ -421,6 +434,8 @@ async function getGroqImageKeywords(title: string, summary: string): Promise<str
             `  'retificação' → 'person reviewing tax forms desk'\n` +
             `  'autônomo freelancer' → 'freelancer laptop home office invoice'\n\n` +
             `POST TITLE: ${title}\n\n` +
+            `IMPORTANT: Prefer objects and scenes commonly found in Brazilian/South American work environments. ` +
+            `Avoid queries that would return East Asian, Chinese, or Japanese stock photos. ` +
             `Return ONLY the search query, nothing else. No quotes.`,
         },
       ],
@@ -462,7 +477,7 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
   for (const query of queries) {
     try {
       const res = await fetch(
-        `https://api.unsplash.com/search/photos?query=${query}&orientation=landscape&content_filter=high&per_page=5`,
+        `https://api.unsplash.com/search/photos?query=${query}&orientation=landscape&content_filter=high&per_page=10`,
         {
           headers: { Authorization: `Client-ID ${accessKey}` },
           next: { revalidate: 0 },
@@ -475,7 +490,7 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
         results?: Array<{
           id?: string;
           urls?: { regular?: string };
-          user?: { name?: string; links?: { html?: string } };
+          user?: { name?: string; links?: { html?: string }; location?: string };
           links?: { html?: string; download_location?: string };
         }>;
       };
@@ -483,8 +498,12 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
       // Se menos de 3 resultados, considerar query fraca — pular para fallback
       if (!searchData.results || searchData.results.length < 3) continue;
 
-      // Escolhe aleatoriamente entre os top resultados (mais variacao)
-      const pool = searchData.results.slice(0, Math.min(5, searchData.results.length));
+      // Filtra fotos de fotógrafos baseados em países asiáticos
+      const filtered = searchData.results.filter(
+        (p) => !isExcludedLocation(p.user?.location)
+      );
+      // Usa pool filtrado se >= 2 resultados; caso contrário usa conjunto original
+      const pool = (filtered.length >= 2 ? filtered : searchData.results).slice(0, 8);
       const data = pool[Math.floor(Math.random() * pool.length)];
 
       const rawUrl = data?.urls?.regular;
@@ -754,6 +773,51 @@ export const FINANCE_CLUSTERS = [
 /* ---- Pool unificado para rotacao automatica ---- */
 export const ALL_CLUSTERS = [...KEYWORD_CLUSTERS, ...FINANCE_CLUSTERS];
 
+/* ---- Templates de formato de título (20 opções — rotação automática) ---- */
+const TITLE_FORMATS = [
+  "N erros que fazem declaração do IRPF cair na malha fina",
+  "N documentos que você precisa reunir antes de declarar o IRPF",
+  "N mitos sobre [tema] no imposto de renda que custarão seu bolso",
+  "N situações em que o brasileiro paga mais imposto sem precisar",
+  "Como declarar [tema] no IRPF sem erro — passo a passo",
+  "Como pagar menos imposto em [tema] de forma totalmente legal",
+  "Por que [tema] é o principal erro dos contribuintes na Receita Federal",
+  "Por que a Receita Federal retém declarações com [tema] e como evitar",
+  "Declaração aprovada ou retida? O que define o destino do seu IRPF",
+  "[Tema no IRPF]: você está declarando certo?",
+  "Malha fina por [tema]: o que fazer agora para regularizar",
+  "Receita Federal confirma mudança em [tema] — entenda o impacto",
+  "Checklist IRPF: tudo para declarar [tema] dentro do prazo",
+  "[Tema A] vs [Tema B] no IRPF: qual a diferença que a Receita cobra",
+  "A verdade sobre [tema] que a maioria dos contribuintes desconhece",
+  "Entenda de uma vez: como [tema] funciona na sua declaração",
+  "Declarou [tema] errado? Veja como retificar antes da Receita notificar",
+  "IRPF [ano]: o que muda em [tema] e o que continua igual",
+  "O contribuinte que [situação] pode perder a restituição — entenda",
+  "Antes do prazo fechar: o que revisar em [tema] na sua declaração",
+] as const;
+
+/** Seleciona formato de título evitando os mais recentemente usados */
+function selectMandatoryTitleFormat(existingPosts: ExistingPostSnapshot[]): string {
+  const recentFormats = new Set(
+    existingPosts.slice(0, 6).map((p) => detectTitleFormat(p.title))
+  );
+  // Map grosseiro: cada template do array para formatos internos
+  const templateFormats: string[] = [
+    "lista-numerada", "lista-numerada", "mitos", "lista-numerada",
+    "pergunta-indireta", "pergunta-indireta", "pergunta-indireta", "pergunta-indireta",
+    "pergunta", "pergunta", "novidade", "novidade",
+    "checklist", "comparativo", "descubra", "descubra",
+    "descubra", "novidade", "descubra", "descubra",
+  ];
+  // Prefere templates cujo formato não apareceu nos recentes
+  const candidates = TITLE_FORMATS.map((t, i) => ({ t, fmt: templateFormats[i] ?? "outro" }))
+    .filter(({ fmt }) => !recentFormats.has(fmt))
+    .map(({ t }) => t);
+  const pool = candidates.length > 0 ? candidates : [...TITLE_FORMATS];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 /* ---- Detecta o formato de titulo de um post ---- */
 function detectTitleFormat(title: string): string {
   if (!title || typeof title !== "string") return "outro";
@@ -805,7 +869,8 @@ function buildFormatDiversityNotice(existingPosts: ExistingPostSnapshot[]): stri
 function blogSystemPrompt(
   selicAtual: number,
   research: ResearchItem[],
-  existingPosts: ExistingPostSnapshot[]
+  existingPosts: ExistingPostSnapshot[],
+  mandatoryFormat: string
 ) {
   const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   const researchBlock = research.length
@@ -879,16 +944,30 @@ RF-6. LEIS: Nunca cite numero de lei sem que esteja na secao DADOS OFICIAIS. Lei
 
 OTIMIZACAO SEO + GOOGLE DISCOVER + ASEO (AI Search Engine Optimization):
 
-REGRA 15 — FORMATO DO TITULO: VARIEDADE INTELIGENTE
+REGRA 15 — FORMATO DO TITULO: VARIEDADE INTELIGENTE (SEGUIR OBRIGATORIAMENTE)
+
+   FORMATO SORTEADO PARA ESTE ARTIGO (USE COMO BASE — adapte ao tema especifico):
+   >> ${mandatoryFormat} <<
+   Adapte o template acima substituindo [tema], [ano], [N] etc pelo conteudo real do artigo.
+   Use numeros concretos quando possivel (ex: N = 5, 7, 8...).
+
+   PROIBIDO ABSOLUTAMENTE nestas estruturas de titulo (NUNCA USE):
+   - "O que voce precisa saber sobre [X]"
+   - "Tudo que voce precisa saber sobre [X]"
+   - "Tudo sobre [X]"
+   - "O que e e como funciona [X]"
+   - "Guia Completo do [X]" (use "Guia definitivo" ou "Guia pratico" se quiser guia)
+   - Qualquer titulo com mais de 70 caracteres
+   Estes padroes sao banidos por serem genericos, terem CTR baixo e aparecerem em massa na concorrencia.
 
    ANALISE DE DIVERSIDADE (gerada automaticamente com base nos posts publicados):
    ${formatDiversityNotice || "Sem historico. Escolha o formato mais adequado ao tema."}
 
-   CATALOGO DE FORMATOS — todos sao validos. Use o que melhor serve o tema E cria contraste com os posts recentes:
+   CATALOGO DE FORMATOS — referencia adicional para variacao:
    A) Lista numerada:    "7 erros que a Receita detecta automaticamente no IRPF 2026"
    B) Pergunta direta:   "Quem e obrigado a declarar o IRPF 2026?"
    C) Como/Por que:      "Como declarar aluguel no IRPF 2026 sem cair na malha fina"
-   D) Guia completo:     "Guia definitivo do IRPF 2026: prazos, tabelas e deducoes"
+   D) Guia definitivo:   "Guia definitivo do IRPF 2026: prazos, tabelas e deducoes"
    E) O que muda:        "O que muda no IRPF 2026 para quem recebe ate R$ 5.000"
    F) Checklist:         "Checklist IRPF 2026: documentos e prazo para nao perder"
    G) Descubra/Entenda:  "Entenda por que tantos brasileiros caem na malha fina"
@@ -896,8 +975,7 @@ REGRA 15 — FORMATO DO TITULO: VARIEDADE INTELIGENTE
    I) Comparativo:       "IRPF 2026 vs 2025: o que mudou na declaracao"
    J) Novidade/Urgente:  "IRPF 2026 comeca em marco: o que fazer antes do prazo"
 
-   REGRA DE OURO: um blog saudavel alterna formatos. Olhe os posts publicados acima e escolha
-   o formato que VOCE nao usaria se ja tivesse usado nos ultimos 3 posts.
+   REGRA DE OURO: siga o FORMATO SORTEADO acima. Um blog saudavel alterna formatos.
    Titulo com dado numerico (R$, %, prazo) dentro do texto aumenta CTR — use quando natural ao tema.
 
 REGRA 16 — PARAGRAFO ABERTURA (featured snippet + Discover card):
@@ -1056,6 +1134,7 @@ export async function generateBlogPost(
   }
 
   const research = await collectResearchContext(keyword);
+  const mandatoryFormat = selectMandatoryTitleFormat(existingPosts);
 
   async function runGeneration(extraInstruction?: string) {
     const customNotice = customKeyword
@@ -1064,7 +1143,7 @@ export async function generateBlogPost(
     const completion = await groqLlama.chat.completions.create({
       model: MODELS.blogGeneration,
       messages: [
-        { role: "system", content: blogSystemPrompt(selicAtual, research, existingPosts) + customNotice },
+        { role: "system", content: blogSystemPrompt(selicAtual, research, existingPosts, mandatoryFormat) + customNotice },
         {
           role: "user",
           content: `TEMA OBRIGATORIO DO ARTIGO: "${keyword}". Voce DEVE escrever exclusivamente sobre este tema — nao mude para outro assunto.${

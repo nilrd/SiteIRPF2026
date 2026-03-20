@@ -64,7 +64,8 @@ export async function POST(req: NextRequest) {
             `- Natural lighting, no digital effects, no holograms, no glows\n` +
             `- No text, no logos, no numbers, no charts overlaid on image\n` +
             `- No obvious AI aesthetics (no geometric patterns, no tech grids)\n` +
-            `- Brazilian context: São Paulo office environments, Brazilian people, Brazilian documents when relevant\n` +
+            `- Brazilian context: São Paulo office environments, Brazilian documents when relevant\n` +
+            `- If showing a person: they MUST have Latin American / South American features — warm olive or brown skin tone, dark hair, typical of São Paulo urban professionals. NEVER South Asian, East Asian, Middle Eastern, or North Indian appearance.\n` +
             `- People must look natural and candid, not posed like stock photos\n` +
             `- No dollar signs or foreign currency — Brazil uses Real (R$)\n` +
             `- Image must visually represent the specific post topic, not generic 'finance' or 'money'\n` +
@@ -129,11 +130,7 @@ export async function POST(req: NextRequest) {
       data: {
         coverImage: publicUrl,
         imageAlt,
-        imageAttribution: JSON.stringify({
-          photographerName: "DALL-E 3 (OpenAI)",
-          photographerUrl: "https://openai.com",
-          photoUrl: publicUrl,
-        }),
+        imageAttribution: null, // DALL-E images don't require Unsplash attribution
         updatedAt: new Date(),
       },
     });

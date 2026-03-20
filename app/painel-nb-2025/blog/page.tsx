@@ -24,6 +24,7 @@ export default function BlogAdminPage() {
   const [generating, setGenerating] = useState(false);
   const [genResult, setGenResult]   = useState<{ title: string; slug: string } | null>(null);
   const [actionMsg, setActionMsg]   = useState<string | null>(null);
+  const [generatingImage, setGeneratingImage] = useState<string | null>(null); // postId em geração
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -94,6 +95,29 @@ export default function BlogAdminPage() {
       setTimeout(() => setActionMsg(null), 3000);
     } catch {
       setActionMsg("Erro ao deletar post.");
+    }
+  }
+
+  async function handleGenerateImage(postId: string) {
+    setGeneratingImage(postId);
+    try {
+      const res = await fetch("/api/admin/blog/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.imageUrl) {
+        setActionMsg(`✅ Imagem IA gerada e salva no post!`);
+      } else {
+        setActionMsg(`❌ Erro: ${data.error || "falha ao gerar imagem"}`);
+      }
+      setTimeout(() => setActionMsg(null), 5000);
+    } catch {
+      setActionMsg("❌ Erro de conexão ao gerar imagem.");
+      setTimeout(() => setActionMsg(null), 5000);
+    } finally {
+      setGeneratingImage(null);
     }
   }
 
@@ -223,6 +247,21 @@ export default function BlogAdminPage() {
                           className="text-xs text-red-400 hover:text-red-200 transition"
                         >
                           Deletar
+                        </button>
+                        <button
+                          onClick={() => handleGenerateImage(post.id)}
+                          disabled={generatingImage === post.id}
+                          title="Gerar imagem com DALL-E 3"
+                          className="text-xs text-purple-300 hover:text-purple-100 transition disabled:opacity-40 shrink-0"
+                        >
+                          {generatingImage === post.id ? (
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-2 h-2 border border-purple-300 border-t-transparent rounded-full animate-spin inline-block" />
+                              Gerando…
+                            </span>
+                          ) : (
+                            "Img IA"
+                          )}
                         </button>
                       </div>
                     </td>

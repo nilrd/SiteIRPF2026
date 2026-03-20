@@ -394,18 +394,57 @@ type ImageResult = {
   attribution: UnsplashAttribution | null;
 };
 
+/** Usa Groq para gerar 3 keywords visuais em ingles para busca no Unsplash.
+ * Retorna null em caso de falha (usar fallback VISUAL_QUERY_MAP).
+ */
+async function getGroqImageKeywords(title: string, summary: string): Promise<string | null> {
+  try {
+    const completion = await groqLlama.chat.completions.create({
+      model: MODELS.blogVerifier, // modelo leve — rapido e barato
+      messages: [
+        {
+          role: "user",
+          content:
+            `You are an image search expert. Given this Portuguese blog post about Brazilian income tax, generate exactly 3 English keywords for an Unsplash photo search.\n` +
+            `Requirements:\n` +
+            `- Keywords must be visual and concrete (objects, scenes, people)\n` +
+            `- Avoid generic terms like 'tax', 'money', 'finance', 'brazil'\n` +
+            `- Think: what scene would a photographer shoot to illustrate this?\n` +
+            `- Return ONLY 3 words separated by spaces, nothing else.\n` +
+            `Title: ${title}\n` +
+            `Summary: ${summary}`,
+        },
+      ],
+      temperature: 0.4,
+      max_tokens: 20,
+    });
+    const raw = (completion.choices?.[0]?.message?.content ?? "").trim();
+    // Valida: exatamente 3 palavras simples em ingles
+    if (/^[a-zA-Z]+ [a-zA-Z]+ [a-zA-Z]+$/.test(raw)) return raw;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /** Busca imagem contextual via Unsplash API.
- * - Usa imageQuery gerado pela IA (especifico ao tema do artigo)
- * - Em caso de falha tenta query generica de financas antes do fallback local
+ * - Usa Groq para gerar 3 keywords visuais especificas (melhor relevancia)
+ * - Fallback: imageQuery da IA → VISUAL_QUERY_MAP → query generica
  * - Triggera o endpoint de download (obrigatorio pela politica da Unsplash)
  * - Retorna URL 1200x630 + dados de atribuicao do fotografo
  */
-async function getTopicSpecificImage(keyword: string): Promise<ImageResult> {
+async function getTopicSpecificImage(keyword: string, title?: string, summary?: string): Promise<ImageResult> {
   const accessKey = process.env.UNSPLASH_ACCESS_KEY;
   if (!accessKey) return { url: getRandomCoverImage(), attribution: null };
 
-  // Tenta primeiro com a query especifica; se falhar, tenta query de fallback financeira
+  // Tenta Groq primeiro para keywords mais relevantes e visuais
+  let groqQuery: string | null = null;
+  if (title && summary) {
+    groqQuery = await getGroqImageKeywords(title, summary);
+  }
+
   const queries = [
+    ...(groqQuery ? [encodeURIComponent(groqQuery)] : []),
     encodeURIComponent(getVisualQuery(keyword)),
     encodeURIComponent("tax return document calculator finance brazil"),
   ];
@@ -1026,7 +1065,12 @@ export async function generateBlogPost(
     typeof parsed.imageQuery === "string" && parsed.imageQuery.trim().length > 5
       ? parsed.imageQuery.trim()
       : keyword;
-  const imageResult = await getTopicSpecificImage(imageSearchTerm);
+  // Passa titulo e resumo para Groq gerar keywords visuais mais relevantes
+  const imageResult = await getTopicSpecificImage(
+    imageSearchTerm,
+    parsed.title || keyword,
+    parsed.summary || ""
+  );
 
   // Segunda chamada Groq (modelo leve) — verifica fatos antes de publicar
   const review = await verificarPost(`${parsed.title || keyword}\n\n${content}`);

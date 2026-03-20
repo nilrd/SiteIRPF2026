@@ -1,10 +1,14 @@
+import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
-import { groqLlama } from "@/lib/llm-providers";
 import { cleanTextForTTS } from "@/lib/tts-utils";
 
+// NOTA: playai-tts do Groq foi desativado em março/2026 (model_decommissioned).
+// Groq não oferece mais TTS — usando OpenAI tts-1 (rápido e de baixo custo).
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 30;
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,10 +24,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Texto vazio após limpeza." }, { status: 400 });
     }
 
-    const mp3 = await groqLlama.audio.speech.create({
-      model: "playai-tts",
-      voice: "Fritz-PlayAI",
+    const mp3 = await openai.audio.speech.create({
+      model: "tts-1",
+      voice: "nova",  // voz feminina natural, excelente em português
       input,
+      speed: 1.05,
     });
 
     const buffer = Buffer.from(await mp3.arrayBuffer());

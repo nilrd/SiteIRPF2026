@@ -68,7 +68,8 @@ export async function POST(req: NextRequest) {
             `- People must look natural and candid, not posed like stock photos\n` +
             `- No dollar signs or foreign currency — Brazil uses Real (R$)\n` +
             `- Image must visually represent the specific post topic, not generic 'finance' or 'money'\n` +
-            `- Aspect ratio: cinematic 16:9, shallow depth of field\n\n` +
+            `- Aspect ratio: cinematic 16:9, shallow depth of field\n` +
+            `- Vary the subject naturally: sometimes a man, sometimes a woman, sometimes both, sometimes no person at all (just documents, desk, objects, office environment). Do not default to always showing a woman. Match the subject to the post topic — a post about deadlines could show a calendar and documents; a post about tax calculation could show hands typing on a laptop with spreadsheets visible.\n\n` +
             `POST TITLE: ${post.title}\n` +
             `POST SUMMARY: ${post.summary ?? ""}\n\n` +
             `Generate a single, specific, detailed image prompt in English. Max 60 words. Return ONLY the prompt, nothing else.`,

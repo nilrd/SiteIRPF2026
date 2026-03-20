@@ -400,27 +400,37 @@ type ImageResult = {
 async function getGroqImageKeywords(title: string, summary: string): Promise<string | null> {
   try {
     const completion = await groqLlama.chat.completions.create({
-      model: MODELS.blogVerifier, // modelo leve — rapido e barato
+      model: MODELS.blogVerifier,
       messages: [
         {
           role: "user",
           content:
-            `You are an image search expert. Given this Portuguese blog post about Brazilian income tax, generate exactly 3 English keywords for an Unsplash photo search.\n` +
-            `Requirements:\n` +
-            `- Keywords must be visual and concrete (objects, scenes, people)\n` +
-            `- Avoid generic terms like 'tax', 'money', 'finance', 'brazil'\n` +
-            `- Think: what scene would a photographer shoot to illustrate this?\n` +
-            `- Return ONLY 3 words separated by spaces, nothing else.\n` +
-            `Title: ${title}\n` +
-            `Summary: ${summary}`,
+            `You are an expert stock photo researcher specializing in Brazilian financial and tax content.\n\n` +
+            `Given this blog post title about Brazilian income tax (IRPF), generate the BEST Unsplash search query to find a relevant, professional photo.\n\n` +
+            `RULES:\n` +
+            `- Query must be in English\n` +
+            `- Use 3 to 5 words maximum\n` +
+            `- Focus on OBJECTS and SCENES visible in the photo\n` +
+            `- NEVER use abstract words: tax, finance, money, economy, brazil, investment, wealth\n` +
+            `- Think: what physical objects appear in a photo that illustrates this topic?\n` +
+            `- Examples:\n` +
+            `  'prazo declaração IRPF' → 'calendar paperwork deadline office'\n` +
+            `  'deduções médicas' → 'doctor prescription medical receipt'\n` +
+            `  'herança doação' → 'family signing documents notary'\n` +
+            `  'malha fina' → 'audit documents magnifying glass desk'\n` +
+            `  'retificação' → 'person reviewing tax forms desk'\n` +
+            `  'autônomo freelancer' → 'freelancer laptop home office invoice'\n\n` +
+            `POST TITLE: ${title}\n\n` +
+            `Return ONLY the search query, nothing else. No quotes.`,
         },
       ],
       temperature: 0.4,
-      max_tokens: 20,
+      max_tokens: 30,
     });
-    const raw = (completion.choices?.[0]?.message?.content ?? "").trim();
-    // Valida: exatamente 3 palavras simples em ingles
-    if (/^[a-zA-Z]+ [a-zA-Z]+ [a-zA-Z]+$/.test(raw)) return raw;
+    const raw = (completion.choices?.[0]?.message?.content ?? "").trim()
+      .replace(/^["']|["']$/g, ""); // remove aspas se o modelo retornar
+    // Valida: 3 a 5 palavras simples em ingles
+    if (/^[a-zA-Z]+( [a-zA-Z]+){2,4}$/.test(raw)) return raw;
     return null;
   } catch {
     return null;
@@ -452,7 +462,7 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
   for (const query of queries) {
     try {
       const res = await fetch(
-        `https://api.unsplash.com/photos/random?query=${query}&orientation=landscape&content_filter=high`,
+        `https://api.unsplash.com/search/photos?query=${query}&orientation=landscape&content_filter=high&per_page=5`,
         {
           headers: { Authorization: `Client-ID ${accessKey}` },
           next: { revalidate: 0 },
@@ -460,14 +470,24 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
       );
       if (!res.ok) continue;
 
-      const data = (await res.json()) as {
-        id?: string;
-        urls?: { regular?: string };
-        user?: { name?: string; links?: { html?: string } };
-        links?: { html?: string; download_location?: string };
+      const searchData = (await res.json()) as {
+        total?: number;
+        results?: Array<{
+          id?: string;
+          urls?: { regular?: string };
+          user?: { name?: string; links?: { html?: string } };
+          links?: { html?: string; download_location?: string };
+        }>;
       };
 
-      const rawUrl = data.urls?.regular;
+      // Se menos de 3 resultados, considerar query fraca — pular para fallback
+      if (!searchData.results || searchData.results.length < 3) continue;
+
+      // Escolhe aleatoriamente entre os top resultados (mais variacao)
+      const pool = searchData.results.slice(0, Math.min(5, searchData.results.length));
+      const data = pool[Math.floor(Math.random() * pool.length)];
+
+      const rawUrl = data?.urls?.regular;
       if (!rawUrl) continue;
 
       const base = rawUrl.split("?")[0];
@@ -492,6 +512,41 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
       // tenta proxima query
     }
   }
+
+  // Fallback inteligente: query generica se nenhuma das anteriores retornou 3+ resultados
+  try {
+    const fallbackRes = await fetch(
+      `https://api.unsplash.com/photos/random?query=${encodeURIComponent("office documents desk professional")}&orientation=landscape&content_filter=high`,
+      {
+        headers: { Authorization: `Client-ID ${accessKey}` },
+        next: { revalidate: 0 },
+      }
+    );
+    if (fallbackRes.ok) {
+      const data = (await fallbackRes.json()) as {
+        urls?: { regular?: string };
+        user?: { name?: string; links?: { html?: string } };
+        links?: { html?: string; download_location?: string };
+      };
+      const rawUrl = data.urls?.regular;
+      if (rawUrl) {
+        const base = rawUrl.split("?")[0];
+        if (data.links?.download_location) {
+          fetch(`${data.links.download_location}&client_id=${accessKey}`, { method: "GET" }).catch(() => {});
+        }
+        return {
+          url: `${base}?auto=format&fit=crop&w=1200&h=630&q=85`,
+          attribution: data.user?.name
+            ? {
+                photographerName: data.user.name,
+                photographerUrl: (data.user.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
+                photoUrl: (data.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
+              }
+            : null,
+        };
+      }
+    }
+  } catch { /* usa cover estatica */ }
 
   return { url: getRandomCoverImage(), attribution: null };
 }

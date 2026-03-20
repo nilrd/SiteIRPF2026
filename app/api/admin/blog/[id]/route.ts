@@ -1,6 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { generateImageAlt } from "@/lib/image-alt";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,19 @@ export async function PATCH(
     }
 
     const body = await req.json();
+
+    // PONTO 3c: se coverImage mudou, regenerar imageAlt automaticamente
+    if (body.coverImage !== undefined) {
+      const current = await prisma.blogPost.findUnique({
+        where: { id: params.id },
+        select: { coverImage: true, title: true },
+      });
+      if (current && body.coverImage !== current.coverImage) {
+        const title = body.title ?? current.title;
+        body.imageAlt = await generateImageAlt(title);
+      }
+    }
+
     const post = await prisma.blogPost.update({
       where: { id: params.id },
       data: body,

@@ -11,6 +11,7 @@ type PostForm = {
   summary: string;
   content: string;
   coverImage: string;
+  imageAlt: string;
   tags: string;
   keywords: string;
   metaTitle: string;
@@ -25,6 +26,7 @@ const EMPTY: PostForm = {
   summary: "",
   content: "",
   coverImage: "",
+  imageAlt: "",
   tags: "",
   keywords: "",
   metaTitle: "",
@@ -55,6 +57,7 @@ export default function EditPostPage() {
           summary: post.summary ?? "",
           content: post.content ?? "",
           coverImage: post.coverImage ?? "",
+          imageAlt: post.imageAlt ?? "",
           tags: (post.tags ?? []).join(", "),
           keywords: (post.keywords ?? []).join(", "),
           metaTitle: post.metaTitle ?? "",
@@ -85,6 +88,7 @@ export default function EditPostPage() {
         summary: form.summary.trim() || null,
         content: form.content,
         coverImage: form.coverImage.trim() || null,
+        imageAlt: form.imageAlt.trim(),
         tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
         keywords: form.keywords.split(",").map((k) => k.trim()).filter(Boolean),
         metaTitle: form.metaTitle.trim() || null,
@@ -329,6 +333,21 @@ export default function EditPostPage() {
                     />
                   </div>
                 )}
+              </div>
+
+              <div>
+                <label className={labelClass}>Alt da Imagem (SEO)</label>
+                <input
+                  type="text"
+                  value={form.imageAlt}
+                  onChange={(e) => set("imageAlt", e.target.value)}
+                  className={inputClass}
+                  placeholder="Profissional calculando imposto de renda 2026"
+                  maxLength={120}
+                />
+                <p className="text-[10px] opacity-30 mt-1">
+                  Auto-gerado pelo Groq ao trocar a imagem · {form.imageAlt.length}/120 chars
+                </p>
               </div>
 
               {/* Card preview */}

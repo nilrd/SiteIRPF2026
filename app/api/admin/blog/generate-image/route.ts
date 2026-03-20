@@ -4,6 +4,7 @@ import OpenAI from "openai";
 import { groqLlama, MODELS } from "@/lib/llm-providers";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
+import { generateImageAlt } from "@/lib/image-alt";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -42,7 +43,7 @@ export async function POST(req: NextRequest) {
     // 1. Buscar título e resumo no banco
     const post = await prisma.blogPost.findUnique({
       where: { id: postId },
-      select: { id: true, title: true, summary: true },
+      select: { id: true, title: true, summary: true, slug: true },
     });
 
     if (!post) {
@@ -56,27 +57,38 @@ export async function POST(req: NextRequest) {
         {
           role: "user",
           content:
-            `Create a DALL-E image generation prompt for this blog post about Brazilian income tax (IRPF). ` +
-            `Style: photorealistic, clean, professional. ` +
-            `No text, no logos, no numbers. ` +
-            `Brazilian context when relevant. Max 40 words.\n` +
-            `Post title: ${post.title}`,
+            `You are an expert art director for a professional Brazilian financial consulting firm. ` +
+            `Create a DALL-E 3 image generation prompt for a blog post cover image.\n\n` +
+            `STRICT RULES — follow all of them:\n` +
+            `- Photorealistic photography style only, shot with Sony A7R IV\n` +
+            `- Natural lighting, no digital effects, no holograms, no glows\n` +
+            `- No text, no logos, no numbers, no charts overlaid on image\n` +
+            `- No obvious AI aesthetics (no geometric patterns, no tech grids)\n` +
+            `- Brazilian context: São Paulo office environments, Brazilian people, Brazilian documents when relevant\n` +
+            `- People must look natural and candid, not posed like stock photos\n` +
+            `- No dollar signs or foreign currency — Brazil uses Real (R$)\n` +
+            `- Image must visually represent the specific post topic, not generic 'finance' or 'money'\n` +
+            `- Aspect ratio: cinematic 16:9, shallow depth of field\n\n` +
+            `POST TITLE: ${post.title}\n` +
+            `POST SUMMARY: ${post.summary ?? ""}\n\n` +
+            `Generate a single, specific, detailed image prompt in English. Max 60 words. Return ONLY the prompt, nothing else.`,
         },
       ],
       temperature: 0.6,
-      max_tokens: 80,
+      max_tokens: 120,
     });
 
     const dallePrompt =
       (promptCompletion.choices?.[0]?.message?.content ?? "").trim() ||
-      "A professional Brazilian financial consultant reviewing tax documents at a modern desk, clean office, warm lighting, photorealistic";
+      "A Brazilian financial consultant reviewing income tax documents at a modern São Paulo office desk, natural window light, shallow depth of field, photorealistic Sony A7R IV photography";
 
     // 3. Chamar DALL-E 3
     const imageResponse = await openai.images.generate({
       model: "dall-e-3",
       prompt: dallePrompt,
       size: "1792x1024",
-      quality: "standard",
+      quality: "hd",
+      style: "natural",
       n: 1,
     });
 
@@ -92,13 +104,14 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await imgRes.arrayBuffer());
-    const fileName = `dalle-${postId}-${Date.now()}.png`;
+    // PONTO 1: usar slug do post como nome do arquivo (substituindo gerações anteriores via upsert)
+    const fileName = `${post.slug}.png`;
 
     await ensureBucket();
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from(BUCKET)
-      .upload(fileName, buffer, { contentType: "image/png", upsert: false });
+      .upload(fileName, buffer, { contentType: "image/png", upsert: true });
 
     if (uploadError) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
@@ -106,11 +119,15 @@ export async function POST(req: NextRequest) {
 
     const publicUrl = supabaseAdmin.storage.from(BUCKET).getPublicUrl(fileName).data.publicUrl;
 
+    // PONTO 3b: gerar imageAlt via Groq
+    const imageAlt = await generateImageAlt(post.title);
+
     // 5. Atualizar campo coverImage no banco
     await prisma.blogPost.update({
       where: { id: postId },
       data: {
         coverImage: publicUrl,
+        imageAlt,
         imageAttribution: JSON.stringify({
           photographerName: "DALL-E 3 (OpenAI)",
           photographerUrl: "https://openai.com",
@@ -120,7 +137,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ imageUrl: publicUrl, prompt: dallePrompt });
+    return NextResponse.json({ imageUrl: publicUrl, prompt: dallePrompt, imageAlt });
   } catch (err) {
     console.error("[generate-image]", err);
     const msg = err instanceof Error ? err.message : "Erro interno";

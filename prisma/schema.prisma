@@ -36,6 +36,7 @@ model BlogPost {
   reviewJson String   @default("") @map("review_json")
   tags       String[]
   coverImage String?
+  imageAlt   String   @default("") @map("image_alt")
   imageAttribution String?  @map("image_attribution")
   published  Boolean  @default(false)
   metaTitle  String?

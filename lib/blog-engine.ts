@@ -1115,6 +1115,7 @@ export async function saveBlogPost(post: Awaited<ReturnType<typeof generateBlogP
       faqsJson: JSON.stringify(post.faqs),
       coverImage: post.coverImage,
       imageAttribution: post.imageAttribution ?? null,
+      imageAlt: post.imageAlt ?? post.title,
       published: post.reviewApproved ?? true,
       reviewJson: post.reviewJson ?? "",
     },

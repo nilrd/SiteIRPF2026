@@ -80,50 +80,49 @@ async function transcribeAudio(blob: Blob): Promise<string> {
 async function speakText(
   text: string,
   audioEl: HTMLAudioElement,
-  onBlocked?: (url: string) => void
+  onBlocked?: (url: string | null) => void
 ) {
   const cleaned = cleanForTTS(text);
   if (!cleaned) return;
 
-  // Tenta TTS via Groq PlayAI (qualidade superior)
+  // Tentativa 1: Groq PlayAI
+  let res: Response | null = null;
   try {
-    const res = await fetch("/api/chatbot/speak", {
+    const r = await fetch("/api/chatbot/speak", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: cleaned }),
     });
-    if (res.ok) {
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      audioEl.src = url;
-      try {
-        await audioEl.play();
-        return; // sucesso — para aqui
-      } catch {
-        // Autoplay bloqueado — exibe botao manual
-        onBlocked?.(url);
-        return;
-      }
-    }
-  } catch {
-    // Groq indisponivel — cai no fallback abaixo
+    if (r.ok) res = r;
+  } catch { /* Groq indisponível */ }
+
+  // Tentativa 2: OpenAI TTS
+  if (!res) {
+    try {
+      const r = await fetch("/api/chatbot/speak-openai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: cleaned }),
+      });
+      if (r.ok) res = r;
+    } catch { /* OpenAI indisponível */ }
   }
 
-  // Fallback: Web Speech API nativa do navegador (gratuita, sem servidor)
-  if (typeof window !== "undefined" && "speechSynthesis" in window) {
-    window.speechSynthesis.cancel(); // cancela fala anterior se houver
-    const utterance = new SpeechSynthesisUtterance(cleaned);
-    utterance.lang = "pt-BR";
-    utterance.rate = 1.05;
-    utterance.pitch = 1.0;
-    // Prefere voz em portugues se disponivel
-    const voices = window.speechSynthesis.getVoices();
-    const ptVoice = voices.find(
-      (v) => v.lang === "pt-BR" || v.lang === "pt_BR" || v.lang.startsWith("pt")
-    );
-    if (ptVoice) utterance.voice = ptVoice;
-    window.speechSynthesis.speak(utterance);
+  if (res) {
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    audioEl.src = url;
+    try {
+      await audioEl.play();
+    } catch {
+      // Autoplay bloqueado pelo navegador — exibe botão manual com a URL pronta
+      onBlocked?.(url);
+    }
+    return;
   }
+
+  // Ambos os serviços falharam — sinaliza para exibir botão de retry (sem URL)
+  onBlocked?.(null);
 }
 
 const QUICK_QUESTIONS = [
@@ -144,6 +143,7 @@ export default function ChatbotWidget() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [audioBlocked, setAudioBlocked] = useState(false);
   const pendingAudioUrlRef = useRef<string | null>(null);
+  const lastAssistantContentRef = useRef(""); // para retry do TTS quando ambos os serviços falham
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -302,6 +302,7 @@ export default function ChatbotWidget() {
         voiceInputRef.current = false; // reset para próxima mensagem
         if (shouldSpeak && assistantContent && audioElRef.current) {
           setAudioBlocked(false);
+          lastAssistantContentRef.current = assistantContent;
           speakText(assistantContent, audioElRef.current, (url) => {
             pendingAudioUrlRef.current = url;
             setAudioBlocked(true);
@@ -333,6 +334,7 @@ export default function ChatbotWidget() {
       if (!audioElRef.current) return;
       audioElRef.current.pause();
       setAudioBlocked(false);
+      lastAssistantContentRef.current = content;
       speakText(content, audioElRef.current, (url) => {
         pendingAudioUrlRef.current = url;
         setAudioBlocked(true);
@@ -536,11 +538,19 @@ export default function ChatbotWidget() {
               {audioBlocked && !isSpeaking && (
                 <button
                   onClick={() => {
-                    if (pendingAudioUrlRef.current && audioElRef.current) {
-                      audioElRef.current.src = pendingAudioUrlRef.current;
-                      audioElRef.current.play()
-                        .then(() => setAudioBlocked(false))
-                        .catch(() => {});
+                    if (!audioElRef.current) return;
+                    const url = pendingAudioUrlRef.current;
+                    setAudioBlocked(false);
+                    if (url) {
+                      // Áudio já gerado mas bloqueado pelo navegador — tocar direto
+                      audioElRef.current.src = url;
+                      audioElRef.current.play().catch(() => setAudioBlocked(true));
+                    } else if (lastAssistantContentRef.current) {
+                      // Ambos os serviços falharam — tentar novamente
+                      speakText(lastAssistantContentRef.current, audioElRef.current, (newUrl) => {
+                        pendingAudioUrlRef.current = newUrl;
+                        setAudioBlocked(true);
+                      });
                     }
                   }}
                   className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-[#C9A84C] border-b border-amber-100 bg-amber-50 hover:bg-amber-100 transition w-full"

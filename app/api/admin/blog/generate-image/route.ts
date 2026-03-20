@@ -57,23 +57,23 @@ export async function POST(req: NextRequest) {
         {
           role: "user",
           content:
-            `You are an expert art director for a professional Brazilian financial consulting firm. ` +
-            `Create a DALL-E 3 image generation prompt for a blog post cover image.\n\n` +
-            `STRICT RULES — follow all of them:\n` +
-            `- Photorealistic photography style only, shot with Sony A7R IV\n` +
-            `- Natural lighting, no digital effects, no holograms, no glows\n` +
-            `- No text, no logos, no numbers, no charts overlaid on image\n` +
-            `- No obvious AI aesthetics (no geometric patterns, no tech grids)\n` +
-            `- Brazilian context: São Paulo office environments, Brazilian documents when relevant\n` +
-            `- If showing a person: they MUST have Latin American / South American features — warm olive or brown skin tone, dark hair, typical of São Paulo urban professionals. NEVER South Asian, East Asian, Middle Eastern, or North Indian appearance.\n` +
-            `- People must look natural and candid, not posed like stock photos\n` +
-            `- No dollar signs or foreign currency — Brazil uses Real (R$)\n` +
-            `- Image must visually represent the specific post topic, not generic 'finance' or 'money'\n` +
-            `- Aspect ratio: cinematic 16:9, shallow depth of field\n` +
-            `- Vary the subject naturally: sometimes a man, sometimes a woman, sometimes both, sometimes no person at all (just documents, desk, objects, office environment). Do not default to always showing a woman. Match the subject to the post topic — a post about deadlines could show a calendar and documents; a post about tax calculation could show hands typing on a laptop with spreadsheets visible.\n\n` +
-            `POST TITLE: ${post.title}\n` +
-            `POST SUMMARY: ${post.summary ?? ""}\n\n` +
-            `Generate a single, specific, detailed image prompt in English. Max 60 words. Return ONLY the prompt, nothing else.`,
+            `You are a creative director for a premium Brazilian financial consulting firm. Create a DALL-E 3 prompt for a blog post cover photo.\n\n` +
+            `STYLE RULES — mandatory:\n` +
+            `- Editorial photography style, like The Economist or Valor Econômico magazine covers\n` +
+            `- Shot on film camera aesthetic: slight grain, natural colors, real depth of field\n` +
+            `- NEVER generate a person looking directly at camera\n` +
+            `- NEVER generate a person as the main subject centered in frame\n` +
+            `- Prefer: close-up of hands working, documents on desk, coffee cup next to papers, computer screen with spreadsheet, pen signing document, calendar with circled date, empty office at dawn, stack of folders, calculator and receipts\n` +
+            `- If a person appears: only partial — hands typing, person seen from behind at a desk, silhouette near window\n` +
+            `- No AI aesthetics: no perfect symmetry, no glowing elements, no floating objects, no surreal compositions\n` +
+            `- Lighting: natural window light, warm office tones\n` +
+            `- Setting: Brazilian urban office, São Paulo style architecture visible through windows when relevant\n\n` +
+            `POST TITLE (PT-BR): ${post.title}\n` +
+            `POST SUMMARY (PT-BR): ${post.summary ?? ""}\n\n` +
+            `Based on the title and summary, generate ONE specific, cinematic image prompt in English.\n` +
+            `Focus on OBJECTS and ATMOSPHERE that represent the topic.\n` +
+            `Max 55 words. Return ONLY the prompt text.`,
+
         },
       ],
       temperature: 0.6,

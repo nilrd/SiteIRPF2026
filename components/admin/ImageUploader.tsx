@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Upload, Copy, Trash2, Check, X, RefreshCw } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 
 interface ImageItem {
   name: string;
@@ -68,21 +67,25 @@ export default function ImageUploader() {
         return;
       }
 
-      const { path, token, publicUrl } = signData as {
+      const { path, signedUrl, publicUrl } = signData as {
         path: string;
-        token: string;
+        signedUrl: string;
         publicUrl: string;
       };
 
-      // Passo 2 — upload DIRETO ao Supabase Storage (bypassa Vercel, sem limite)
+      // Passo 2 — upload DIRETO ao Supabase via signedUrl (bypassa Vercel, sem limite)
+      // Não usa o SDK do Supabase no browser — zero dependência de NEXT_PUBLIC vars
       setUploadProgress(`Enviando ${file.name}...`);
 
-      const { error: uploadError } = await supabase.storage
-        .from("imagens")
-        .uploadToSignedUrl(path, token, file, { contentType: file.type });
+      const uploadRes = await fetch(signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
 
-      if (uploadError) {
-        setError(uploadError.message);
+      if (!uploadRes.ok) {
+        const msg = await uploadRes.text().catch(() => uploadRes.statusText);
+        setError(`Erro no upload: ${msg}`);
         return;
       }
 

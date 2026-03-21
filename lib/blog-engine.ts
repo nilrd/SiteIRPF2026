@@ -1,4 +1,4 @@
-import { groqLlama, MODELS, callWithFallback } from "./llm-providers";
+import { groqLlama, MODELS, callWithFallback, type FallbackResult } from "./llm-providers";
 import { prisma } from "./prisma";
 import { IRPF_DATA_CONTEXT } from "./irpf-context";
 
@@ -870,7 +870,8 @@ function blogSystemPrompt(
   selicAtual: number,
   research: ResearchItem[],
   existingPosts: ExistingPostSnapshot[],
-  mandatoryFormat: string
+  mandatoryFormat: string,
+  compactMode: boolean = false
 ) {
   const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   const researchBlock = research.length
@@ -881,10 +882,38 @@ function blogSystemPrompt(
 
   const existingBlock = existingPosts.length
     ? existingPosts
-        .slice(0, 40)
+        .slice(0, compactMode ? 10 : 40)
         .map((p, i) => `${i + 1}. ${p.title} | slug: ${p.slug}`)
         .join("\n")
     : "Sem historico de posts publicado disponivel.";
+
+  // --- MODO COMPACTO para modelos com contexto pequeno (8b) ---
+  if (compactMode) {
+    return `Ghostwriter de Nilson Brites, consultor IRPF 10+ anos, atendimento 100% online.
+Tom: direto, humano, empático. Parágrafos curtos. Sem emojis.
+
+DADOS IRPF 2026: Prazo 23/03 a 29/05/2026. Obrigatório se rendimentos > R$ 35.584,00. Multa mínima R$ 165,74. Selic ${selicAtual}%.
+Tabela: até R$ 2.428,80 isento; até R$ 2.826,65: 7,5%; até R$ 3.751,05: 15%; até R$ 4.664,68: 22,5%; acima: 27,5%.
+
+REGRAS: Nunca invente dados. Cite fonte oficial. H2 como perguntas. 1 exemplo numérico. 1 tabela HTML.
+Lead: comece com dor/situação real, NUNCA "O IRPF é...". 6 FAQs obrigatórias.
+Formato título: ${mandatoryFormat}. Max 65 chars. Proibido "Tudo sobre X", "O que você precisa saber".
+
+CTA meio do artigo (usar HTML exato):
+<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Ficou com dúvida?</p><p style="margin:0 0 16px;">Nilson Brites atende 100% online. 10+ anos de experiência.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Preciso%20de%20ajuda%20com%20IRPF%202026" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Falar no WhatsApp</a></div>
+
+CTA final (usar HTML exato):
+<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;">Precisa de ajuda?</h3><p style="margin:0 0 24px;">Nilson Brites: declarações novas, atrasadas e retificações.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Quero%20declarar%20meu%20IRPF%202026" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;text-decoration:none;">Declarar meu IRPF agora</a></div>
+
+NUNCA escreva "CTA para WhatsApp:" como texto. Use os blocos HTML acima.
+Nunca "todas as pessoas devem declarar". Nunca cite leis fora de Lei 15.270/2025 e IN RFB 2.255/2025.
+
+PESQUISA: ${researchBlock}
+
+POSTS EXISTENTES (não repetir): ${existingBlock}
+
+SAÍDA: JSON estrito com campos: title, slug, summary, content (HTML min 2500 palavras), tags, keywords, faqs (6), usedSourceUrls, imageQuery (inglês), imageAlt, articleSection, isNewsworthy.`;
+  }
 
   const formatDiversityNotice = buildFormatDiversityNotice(existingPosts);
 
@@ -1198,14 +1227,22 @@ export async function generateBlogPost(
     const systemContent =
       blogSystemPrompt(selicAtual, research, existingPosts, mandatoryFormat) + customNotice;
 
+    // Versão compacta para o modelo 8b (último recurso — contexto menor)
+    const compactSystemContent =
+      blogSystemPrompt(selicAtual, research, existingPosts, mandatoryFormat, true) + customNotice;
+
     const userContent = `TEMA OBRIGATORIO DO ARTIGO: "${keyword}". Voce DEVE escrever exclusivamente sobre este tema — nao mude para outro assunto.${
       secundarias ? ` Keywords secundarias a incluir: ${secundarias}.` : ""
     } ${extraInstruction || ""} Retorne APENAS o JSON valido, sem markdown.`;
 
-    const raw = await callWithFallback(systemContent, userContent, 8000, {
+    const result = await callWithFallback(systemContent, userContent, 8000, {
       temperature: 0.35,
       response_format: { type: "json_object" },
+      compactSystemPrompt: compactSystemContent,
     });
+
+    console.log(`[Blog] Post gerado com modelo: ${result.model}`);
+    const raw = result.text;
 
     // Remove markdown code fences caso o modelo as adicione (ex: ```json\n{...}\n```)
     const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();

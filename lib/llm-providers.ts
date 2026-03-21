@@ -16,43 +16,60 @@ export const MODELS = {
   chatbot: "llama-3.3-70b-versatile",
   adminIA: "llama-3.3-70b-versatile",
   blogGeneration: "llama-3.3-70b-versatile",
-  blogVerifier: "llama-3.1-8b-instant", // verificador factual — rápido e gratuito (~800k tokens/dia separados)
+  blogVerifier: "llama-3.1-8b-instant",
 } as const;
 
-// Cascata de modelos Groq em ordem de preferência
+// Cascata Groq SEM o 8b — este é tratado como último recurso separado
 const GROQ_FALLBACK_MODELS = [
   "llama-3.3-70b-versatile",
   "llama-3.1-70b-versatile",
   "mixtral-8x7b-32768",
-  "llama-3.1-8b-instant",
 ] as const;
+
+// Último recurso Groq (contexto pequeno, prompt compacto obrigatório)
+const GROQ_LAST_RESORT = "llama-3.1-8b-instant";
 
 function isRateLimitOrQuotaError(err: unknown): boolean {
   if (typeof err !== "object" || err === null) return false;
-  const e = err as { status?: number; message?: string };
+  const e = err as { status?: number; message?: string; code?: string };
   return (
     e.status === 429 ||
+    e.status === 413 ||
+    e.code === "rate_limit_exceeded" ||
     e.message?.includes("rate_limit") === true ||
     e.message?.includes("tokens per day") === true ||
     e.message?.includes("exceeded") === true ||
     e.message?.includes("quota") === true ||
-    e.message?.includes("decommissioned") === true
+    e.message?.includes("decommissioned") === true ||
+    e.message?.includes("Request too large") === true ||
+    e.message?.includes("too large") === true
   );
 }
 
+export type FallbackResult = {
+  text: string;
+  model: string;
+};
+
 /**
  * Chama LLM com fallback automático:
- * 1. Tenta cada modelo Groq em cascata (llama-3.3-70b → llama-3.1-70b → mixtral → llama-3.1-8b)
- * 2. Se todos Groq atingirem limite → Gemini 2.0 Flash (1M tokens/dia grátis)
- * 3. Se tudo falhar → lança erro claro
+ * 1. Groq 70b models + mixtral (contexto grande)
+ * 2. Gemini 2.0 Flash (1M tokens/dia, contexto grande)
+ * 3. Groq 8b-instant (último recurso, contexto pequeno)
+ *
+ * @param compactSystemPrompt - versão reduzida do prompt para o modelo 8b (opcional)
  */
 export async function callWithFallback(
   systemPrompt: string,
   userPrompt: string,
   maxTokens: number = 4000,
-  extraOptions?: { temperature?: number; response_format?: { type: "json_object" } }
-): Promise<string> {
-  // --- Cascata Groq ---
+  extraOptions?: {
+    temperature?: number;
+    response_format?: { type: "json_object" };
+    compactSystemPrompt?: string;
+  }
+): Promise<FallbackResult> {
+  // --- 1. Cascata Groq (modelos grandes) ---
   for (const model of GROQ_FALLBACK_MODELS) {
     try {
       console.log(`[LLM] Tentando: ${model}`);
@@ -71,21 +88,21 @@ export async function callWithFallback(
       const text = response.choices[0]?.message?.content;
       if (text) {
         console.log(`[LLM] Sucesso: ${model}`);
-        return text;
+        return { text, model };
       }
     } catch (err) {
       if (isRateLimitOrQuotaError(err)) {
         console.warn(`[LLM] Limite atingido em ${model}, tentando próximo...`);
         continue;
       }
-      throw err; // erro real (auth, rede, etc.) — propaga imediatamente
+      throw err;
     }
   }
 
-  // --- Fallback final: Gemini 2.0 Flash ---
+  // --- 2. Gemini 2.0 Flash (contexto grande, grátis) ---
   if (geminiClient) {
     try {
-      console.log("[LLM] Todos os modelos Groq esgotados. Tentando Gemini 2.0 Flash...");
+      console.log("[LLM] Modelos Groq grandes esgotados. Tentando Gemini 2.0 Flash...");
       const gemini = geminiClient.getGenerativeModel({
         model: "gemini-2.0-flash",
         systemInstruction: systemPrompt,
@@ -94,7 +111,7 @@ export async function callWithFallback(
       const text = result.response.text();
       if (text) {
         console.log("[LLM] Sucesso: Gemini 2.0 Flash");
-        return text;
+        return { text, model: "gemini-2.0-flash" };
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -104,7 +121,33 @@ export async function callWithFallback(
     console.warn("[LLM] GEMINI_API_KEY não configurada — fallback Gemini indisponível.");
   }
 
+  // --- 3. Último recurso: Groq 8b (prompt compacto obrigatório) ---
+  const compactPrompt = extraOptions?.compactSystemPrompt || systemPrompt;
+  try {
+    console.log(`[LLM] Último recurso: ${GROQ_LAST_RESORT} (prompt compacto)`);
+    const response = await groqLlama.chat.completions.create({
+      model: GROQ_LAST_RESORT,
+      messages: [
+        { role: "system", content: compactPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: Math.min(maxTokens, 4000),
+      temperature: extraOptions?.temperature ?? 0.35,
+      ...(extraOptions?.response_format
+        ? { response_format: extraOptions.response_format }
+        : {}),
+    });
+    const text = response.choices[0]?.message?.content;
+    if (text) {
+      console.log(`[LLM] Sucesso: ${GROQ_LAST_RESORT} (compacto)`);
+      return { text, model: GROQ_LAST_RESORT };
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[LLM] ${GROQ_LAST_RESORT} falhou:`, msg);
+  }
+
   throw new Error(
-    "Todos os modelos atingiram o limite de tokens. Tente novamente em alguns minutos ou configure GEMINI_API_KEY como fallback."
+    "Todos os modelos atingiram o limite de tokens. Tente novamente em alguns minutos."
   );
 }

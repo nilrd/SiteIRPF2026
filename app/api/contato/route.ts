@@ -18,25 +18,37 @@ export async function POST(request: Request) {
     const body = await request.json();
     const data = schema.parse(body);
 
-    // Save to DB
-    const contato = await prisma.contato.create({
-      data: {
-        nome: data.nome,
-        email: data.email,
-        telefone: data.telefone || "",
-        mensagem: `${data.servico ? `[${data.servico}] ` : ""}${data.mensagem || ""}`,
-      },
-    });
+    // Save to DB — Contato + Lead (para o painel admin contar corretamente)
+    const [contato] = await Promise.all([
+      prisma.contato.create({
+        data: {
+          nome: data.nome,
+          email: data.email,
+          telefone: data.telefone || "",
+          mensagem: `${data.servico ? `[${data.servico}] ` : ""}${data.mensagem || ""}`,
+        },
+      }),
+      prisma.lead.create({
+        data: {
+          nome: data.nome,
+          email: data.email,
+          telefone: data.telefone || "",
+          origem: "site",
+          status: "novo",
+          mensagem: `${data.servico ? `[${data.servico}] ` : ""}${data.mensagem || ""}`,
+        },
+      }),
+    ]);
 
-    // Domínio irpf.qaplay.com.br verificado no Resend (DKIM + SPF)
-    const fromAddress = "IRPF NSB <noreply@irpf.qaplay.com.br>";
+    // Email — usa FROM_EMAIL do env (onboarding@resend.dev ou domínio verificado)
+    const fromAddress = process.env.FROM_EMAIL || "IRPF NSB <onboarding@resend.dev>";
     const adminEmail = process.env.ADMIN_EMAIL || "nilson.brites@gmail.com";
 
-    // Email de notificação para o admin
+    // EMAIL 1 — Notificação para o Nilson
     const { data: adminData, error: adminError } = await resend.emails.send({
       from: fromAddress,
       to: adminEmail,
-      subject: `Novo contato: ${data.nome}`,
+      subject: `Novo contato via site — ${data.nome}`,
       html: `
         <h2>Novo contato pelo site</h2>
         <p><strong>Nome:</strong> ${data.nome}</p>
@@ -54,11 +66,13 @@ export async function POST(request: Request) {
       console.log("[contato] Email admin enviado. ID:", adminData?.id, "| to:", adminEmail);
     }
 
-    // Email de confirmação para o usuário
+    // EMAIL 2 — Confirmação para o usuário
+    // Nota: com onboarding@resend.dev, só envia para o email da conta Resend.
+    // Quando domínio for verificado (FROM_EMAIL = noreply@irpf.qaplay.com.br), envia para qualquer email.
     const { data: userEmailData, error: userEmailError } = await resend.emails.send({
-      from: "Consultoria IRPF NSB <noreply@irpf.qaplay.com.br>",
+      from: fromAddress,
       to: data.email,
-      subject: "Recebemos seu contato - Consultoria IRPF NSB",
+      subject: "Recebemos seu contato — IRPF NSB",
       html: `
         <h2>Ola, ${data.nome}!</h2>
         <p>Recebemos sua mensagem e entraremos em contato em ate 24 horas.</p>

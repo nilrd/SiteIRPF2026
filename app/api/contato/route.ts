@@ -28,59 +28,50 @@ export async function POST(request: Request) {
       },
     });
 
-    // Email admin — usa FROM_EMAIL do env ou onboarding@resend.dev (plano free)
-    const fromAddress = process.env.FROM_EMAIL || "IRPF NSB <onboarding@resend.dev>";
-    const isTestDomain = fromAddress.includes("resend.dev");
-    const adminEmail = process.env.ADMIN_EMAIL;
+    // Domínio irpf.qaplay.com.br verificado no Resend (DKIM + SPF)
+    const fromAddress = "IRPF NSB <noreply@irpf.qaplay.com.br>";
+    const adminEmail = process.env.ADMIN_EMAIL || "nilson.brites@gmail.com";
 
-    if (adminEmail) {
-      const { data: adminData, error: adminError } = await resend.emails.send({
-        from: fromAddress,
-        to: adminEmail,
-        subject: `Novo contato: ${data.nome}`,
-        html: `
-          <h2>Novo contato pelo site</h2>
-          <p><strong>Nome:</strong> ${data.nome}</p>
-          <p><strong>Email:</strong> ${data.email}</p>
-          <p><strong>Telefone:</strong> ${data.telefone || "Nao informado"}</p>
-          <p><strong>Servico:</strong> ${data.servico || "Nao especificado"}</p>
-          <p><strong>Mensagem:</strong> ${data.mensagem || "Nenhuma"}</p>
-          <br>
-          <a href="https://wa.me/55${(data.telefone || "").replace(/\D/g, "")}">Abrir WhatsApp</a>
-        `,
-      });
-      if (adminError) {
-        console.error("[contato] Falha ao enviar email admin:", JSON.stringify(adminError));
-      } else {
-        console.log("[contato] Email admin enviado. ID:", adminData?.id);
-      }
+    // Email de notificação para o admin
+    const { data: adminData, error: adminError } = await resend.emails.send({
+      from: fromAddress,
+      to: adminEmail,
+      subject: `Novo contato: ${data.nome}`,
+      html: `
+        <h2>Novo contato pelo site</h2>
+        <p><strong>Nome:</strong> ${data.nome}</p>
+        <p><strong>Email:</strong> ${data.email}</p>
+        <p><strong>Telefone:</strong> ${data.telefone || "Nao informado"}</p>
+        <p><strong>Servico:</strong> ${data.servico || "Nao especificado"}</p>
+        <p><strong>Mensagem:</strong> ${data.mensagem || "Nenhuma"}</p>
+        <br>
+        <a href="https://wa.me/55${(data.telefone || "").replace(/\D/g, "")}">Abrir WhatsApp</a>
+      `,
+    });
+    if (adminError) {
+      console.error("[contato] Falha ao enviar email admin:", JSON.stringify(adminError));
     } else {
-      console.warn("[contato] ADMIN_EMAIL não configurada — email de notificação não enviado.");
+      console.log("[contato] Email admin enviado. ID:", adminData?.id, "| to:", adminEmail);
     }
 
-    // Confirmation email to user — só funciona com domínio verificado no Resend
-    // Com onboarding@resend.dev, Resend só permite enviar para o email da conta
-    if (!isTestDomain) {
-      const { data: userEmailData, error: userEmailError } = await resend.emails.send({
-        from: fromAddress,
-        to: data.email,
-        subject: "Recebemos seu contato - Consultoria IRPF NSB",
-        html: `
-          <h2>Ola, ${data.nome}!</h2>
-          <p>Recebemos sua mensagem e entraremos em contato em ate 24 horas.</p>
-          <p>Se preferir atendimento imediato, fale conosco pelo WhatsApp:</p>
-          <a href="https://wa.me/5511940825120">Abrir WhatsApp</a>
-          <br><br>
-          <p>Consultoria IRPF NSB</p>
-        `,
-      });
-      if (userEmailError) {
-        console.error("[contato] Falha ao enviar email confirmação:", JSON.stringify(userEmailError));
-      } else {
-        console.log("[contato] Email confirmação enviado. ID:", userEmailData?.id);
-      }
+    // Email de confirmação para o usuário
+    const { data: userEmailData, error: userEmailError } = await resend.emails.send({
+      from: "Consultoria IRPF NSB <noreply@irpf.qaplay.com.br>",
+      to: data.email,
+      subject: "Recebemos seu contato - Consultoria IRPF NSB",
+      html: `
+        <h2>Ola, ${data.nome}!</h2>
+        <p>Recebemos sua mensagem e entraremos em contato em ate 24 horas.</p>
+        <p>Se preferir atendimento imediato, fale conosco pelo WhatsApp:</p>
+        <a href="https://wa.me/5511940825120">Abrir WhatsApp</a>
+        <br><br>
+        <p>Consultoria IRPF NSB</p>
+      `,
+    });
+    if (userEmailError) {
+      console.error("[contato] Falha ao enviar email confirmação:", JSON.stringify(userEmailError));
     } else {
-      console.log("[contato] Email confirmação ao usuário DESABILITADO (onboarding@resend.dev só envia para conta própria). Verifique domínio em resend.com/domains.");
+      console.log("[contato] Email confirmação enviado. ID:", userEmailData?.id);
     }
 
     return NextResponse.json({ success: true, id: contato.id });

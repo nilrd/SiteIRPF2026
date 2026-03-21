@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Cliente Groq via OpenAI SDK (blog, chatbot, admin IA)
+// Cliente Groq via OpenAI SDK (chatbot, admin IA, blog fallback)
 export const groqLlama = new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
   apiKey: process.env.GROQ_API_KEY,
@@ -15,11 +15,14 @@ export const geminiClient = process.env.GEMINI_API_KEY
 export const MODELS = {
   chatbot: "llama-3.3-70b-versatile",
   adminIA: "llama-3.3-70b-versatile",
-  blogGeneration: "llama-3.3-70b-versatile",
+  blogGeneration: "gemini-2.0-flash",
   blogVerifier: "llama-3.1-8b-instant",
 } as const;
 
-// Cascata Groq SEM o 8b — este é tratado como último recurso separado
+// Modelo Gemini principal para blog (1M tokens/dia grátis, contexto 1M)
+const GEMINI_PRIMARY = "gemini-2.0-flash";
+
+// Cascata Groq de backup (modelos grandes, SEM 8b)
 const GROQ_FALLBACK_MODELS = [
   "llama-3.3-70b-versatile",
   "llama-3.1-70b-versatile",
@@ -53,9 +56,9 @@ export type FallbackResult = {
 
 /**
  * Chama LLM com fallback automático:
- * 1. Groq 70b models + mixtral (contexto grande)
- * 2. Gemini 2.0 Flash (1M tokens/dia, contexto grande)
- * 3. Groq 8b-instant (último recurso, contexto pequeno)
+ * 1. Gemini 2.0 Flash (PRINCIPAL — 1M tokens/dia grátis, contexto 1M)
+ * 2. Groq 70b models + mixtral (backup)
+ * 3. Groq 8b-instant (último recurso, prompt compacto)
  *
  * @param compactSystemPrompt - versão reduzida do prompt para o modelo 8b (opcional)
  */
@@ -69,10 +72,39 @@ export async function callWithFallback(
     compactSystemPrompt?: string;
   }
 ): Promise<FallbackResult> {
-  // --- 1. Cascata Groq (modelos grandes) ---
+  // --- 1. PRINCIPAL: Gemini 2.0 Flash (1M tokens/dia, contexto gigante) ---
+  if (geminiClient) {
+    try {
+      console.log(`[LLM] Tentando modelo principal: ${GEMINI_PRIMARY}`);
+      const gemini = geminiClient.getGenerativeModel({
+        model: GEMINI_PRIMARY,
+        systemInstruction: systemPrompt,
+        generationConfig: {
+          temperature: extraOptions?.temperature ?? 0.35,
+          maxOutputTokens: maxTokens,
+          ...(extraOptions?.response_format?.type === "json_object"
+            ? { responseMimeType: "application/json" }
+            : {}),
+        },
+      });
+      const result = await gemini.generateContent(userPrompt);
+      const text = result.response.text();
+      if (text) {
+        console.log(`[LLM] Sucesso: ${GEMINI_PRIMARY}`);
+        return { text, model: GEMINI_PRIMARY };
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[LLM] ${GEMINI_PRIMARY} falhou: ${msg.slice(0, 150)}`);
+    }
+  } else {
+    console.warn("[LLM] GEMINI_API_KEY não configurada — pulando Gemini, tentando Groq...");
+  }
+
+  // --- 2. BACKUP: Cascata Groq (modelos grandes) ---
   for (const model of GROQ_FALLBACK_MODELS) {
     try {
-      console.log(`[LLM] Tentando: ${model}`);
+      console.log(`[LLM] Tentando backup Groq: ${model}`);
       const response = await groqLlama.chat.completions.create({
         model,
         messages: [
@@ -99,29 +131,7 @@ export async function callWithFallback(
     }
   }
 
-  // --- 2. Gemini 2.0 Flash (contexto grande, grátis) ---
-  if (geminiClient) {
-    try {
-      console.log("[LLM] Modelos Groq grandes esgotados. Tentando Gemini 2.0 Flash...");
-      const gemini = geminiClient.getGenerativeModel({
-        model: "gemini-2.0-flash",
-        systemInstruction: systemPrompt,
-      });
-      const result = await gemini.generateContent(userPrompt);
-      const text = result.response.text();
-      if (text) {
-        console.log("[LLM] Sucesso: Gemini 2.0 Flash");
-        return { text, model: "gemini-2.0-flash" };
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error("[LLM] Gemini 2.0 Flash falhou:", msg);
-    }
-  } else {
-    console.warn("[LLM] GEMINI_API_KEY não configurada — fallback Gemini indisponível.");
-  }
-
-  // --- 3. Último recurso: Groq 8b (prompt compacto obrigatório) ---
+  // --- 3. ÚLTIMO RECURSO: Groq 8b (prompt compacto obrigatório) ---
   const compactPrompt = extraOptions?.compactSystemPrompt || systemPrompt;
   try {
     console.log(`[LLM] Último recurso: ${GROQ_LAST_RESORT} (prompt compacto)`);

@@ -11,7 +11,13 @@ export const resend = {
         return { data: null, error: null };
       }
       const client = new Resend(key);
-      return client.emails.send(params);
+      const { data, error } = await client.emails.send(params);
+      if (error) {
+        console.error("[resend] Erro ao enviar email:", JSON.stringify(error));
+      } else {
+        console.log("[resend] Email enviado com sucesso. ID:", data?.id, "| to:", params.to);
+      }
+      return { data, error };
     },
   },
 };

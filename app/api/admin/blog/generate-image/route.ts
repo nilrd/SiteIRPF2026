@@ -134,16 +134,21 @@ export async function POST(req: NextRequest) {
 
     await ensureBucket();
 
+    // Deletar arquivo anterior explicitamente para forçar invalidação do CDN Supabase.
+    // O upsert sozinho não invalida o cache da CDN — apenas sobrescreve o objeto.
+    await supabaseAdmin.storage.from(BUCKET).remove([fileName]);
+
     const { error: uploadError } = await supabaseAdmin.storage
       .from(BUCKET)
-      .upload(fileName, buffer, { contentType: "image/png", upsert: true });
+      .upload(fileName, buffer, { contentType: "image/png", upsert: false });
 
     if (uploadError) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
-    // Cache-busting: mesmo nome de arquivo (upsert), mas URL versionada para forçar
-    // CDN Supabase e Next.js Image a buscar a nova versão imediatamente
+    // Cache-busting na URL: força Next.js Image optimizer a tratar como recurso novo
+    // (Next.js cacheia imagens otimizadas por minimumCacheTTL — a URL com ?v= diferente
+    // bypassa esse cache e busca a imagem recém-enviada ao storage)
     const baseUrl = supabaseAdmin.storage.from(BUCKET).getPublicUrl(fileName).data.publicUrl;
     const publicUrl = `${baseUrl}?v=${Date.now()}`;
 

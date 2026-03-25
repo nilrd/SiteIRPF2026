@@ -142,7 +142,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
     }
 
-    const publicUrl = supabaseAdmin.storage.from(BUCKET).getPublicUrl(fileName).data.publicUrl;
+    // Cache-busting: mesmo nome de arquivo (upsert), mas URL versionada para forçar
+    // CDN Supabase e Next.js Image a buscar a nova versão imediatamente
+    const baseUrl = supabaseAdmin.storage.from(BUCKET).getPublicUrl(fileName).data.publicUrl;
+    const publicUrl = `${baseUrl}?v=${Date.now()}`;
 
     // PONTO 3b: gerar imageAlt via Groq
     const imageAlt = await generateImageAlt(post.title);

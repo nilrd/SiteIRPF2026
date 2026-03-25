@@ -32,6 +32,7 @@ export default function BlogPostImage({ src, alt, attribution }: BlogPostImagePr
         src={src}
         alt={alt}
         fill
+        quality={95}
         className="object-cover transition duration-500 group-hover:scale-[1.03]"
         sizes="(max-width: 768px) 100vw, 33vw"
         onError={() => setBroken(true)}

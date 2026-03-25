@@ -5,54 +5,56 @@ import { JsonLdBreadcrumb } from "@/components/seo/JsonLd";
 const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá! Quero declarar meu IRPF.")}`;
 
 export const metadata: Metadata = {
-  title: "Servicos | Consultoria IRPF NSB",
+  title: "Serviços | Consultoria IRPF NSB",
   description:
-    "Declaracao IRPF completa, atrasados, retificacao e malha fina. Atendimento 100% online para todo o Brasil.",
+    "Declaração IRPF completa, atrasados, retificação e malha fina. Atendimento 100% online para todo o Brasil.",
+  keywords: ["declaração IRPF", "imposto de renda atrasado", "retificação IRPF", "malha fina", "serviços IRPF online"],
+  alternates: { canonical: "https://irpf.qaplay.com.br/servicos" },
 };
 
 const servicos = [
   {
     num: "01",
-    title: "Declaracao Completa",
-    desc: "Analise minuciosa de todos os rendimentos, deducoes e patrimonio. Maximizamos sua restituicao dentro da legalidade, garantindo conformidade total com a Receita Federal.",
+    title: "Declaração Completa",
+    desc: "Análise minuciosa de todos os rendimentos, deduções e patrimônio. Maximizamos sua restituição dentro da legalidade, garantindo conformidade total com a Receita Federal.",
     items: [
       "Rendimentos de trabalho e investimentos",
-      "Deducoes com saude, educacao e dependentes",
+      "Deduções com saúde, educação e dependentes",
       "Bens e direitos atualizados",
-      "Restituicao maximizada",
+      "Restituição maximizada",
     ],
   },
   {
     num: "02",
     title: "IRPF Atrasado",
-    desc: "Regularizacao de declaracoes em atraso de qualquer ano. Calculamos multas e juros, preparamos a declaracao e orientamos sobre o pagamento para normalizar seu CPF.",
+    desc: "Regularização de declarações em atraso de qualquer ano. Calculamos multas e juros, preparamos a declaração e orientamos sobre o pagamento para normalizar seu CPF.",
     items: [
-      "Declaracoes de anos anteriores",
-      "Calculo preciso de multas e juros",
-      "Regularizacao do CPF",
-      "Orientacao sobre parcelamento",
+      "Declarações de anos anteriores",
+      "Cálculo preciso de multas e juros",
+      "Regularização do CPF",
+      "Orientação sobre parcelamento",
     ],
   },
   {
     num: "03",
-    title: "Retificacao",
-    desc: "Correcao de declaracoes ja entregues com erros, inconsistencias ou informacoes faltantes. Prevencao contra malha fina e pendencias futuras.",
+    title: "Retificação",
+    desc: "Correção de declarações já entregues com erros, inconsistências ou informações faltantes. Prevenção contra malha fina e pendências futuras.",
     items: [
-      "Correcao de valores incorretos",
-      "Inclusao de rendimentos omitidos",
-      "Ajuste de deducoes",
-      "Prazo de ate 5 anos",
+      "Correção de valores incorretos",
+      "Inclusão de rendimentos omitidos",
+      "Ajuste de deduções",
+      "Prazo de até 5 anos",
     ],
   },
   {
     num: "04",
     title: "Malha Fina",
-    desc: "Consultoria especializada para quem caiu na malha fina. Identificamos o motivo da retencao, preparamos a documentacao e acompanhamos ate a resolucao.",
+    desc: "Consultoria especializada para quem caiu na malha fina. Identificamos o motivo da retenção, preparamos a documentação e acompanhamos até a resolução.",
     items: [
-      "Identificacao do motivo da retencao",
-      "Preparacao de documentos comprobatorios",
-      "Retificacao quando necessario",
-      "Acompanhamento ate resolucao",
+      "Identificação do motivo da retenção",
+      "Preparação de documentos comprobatórios",
+      "Retificação quando necessário",
+      "Acompanhamento até resolução",
     ],
   },
 ];
@@ -69,7 +71,7 @@ export default function ServicosPage() {
         <span className="block text-sm uppercase tracking-[0.3em] mb-6 opacity-60">
           Nossas Especialidades
         </span>
-        <h1 className="font-serif text-5xl md:text-7xl mb-16">Servicos</h1>
+        <h1 className="font-serif text-5xl md:text-7xl mb-16">Serviços</h1>
 
         <div className="space-y-20">
           {servicos.map((s) => (

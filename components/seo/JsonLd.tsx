@@ -18,7 +18,7 @@ export function JsonLdWebsite() {
     sameAs: [],
     founder: {
       "@type": "Person",
-      name: "Consultoria IRPF NSB",
+      name: "Nilson Brites",
       jobTitle: "Analista Financeiro",
     },
   };

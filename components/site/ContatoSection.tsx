@@ -15,6 +15,7 @@ export default function ContatoSection() {
       nome: (form.elements.namedItem("nome") as HTMLInputElement).value,
       email: (form.elements.namedItem("email") as HTMLInputElement).value,
       telefone: (form.elements.namedItem("telefone") as HTMLInputElement).value,
+      servico: (form.elements.namedItem("servico") as HTMLSelectElement).value,
       mensagem: (form.elements.namedItem("mensagem") as HTMLTextAreaElement).value,
     };
 

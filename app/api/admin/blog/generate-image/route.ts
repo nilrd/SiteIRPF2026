@@ -50,9 +50,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Post não encontrado" }, { status: 404 });
     }
 
-    // 2. Groq gera o prompt para o DALL-E 3
-    const promptCompletion = await groqLlama.chat.completions.create({
-      model: MODELS.blogVerifier,
+    // 2. GPT-4o gera o prompt para o DALL-E 3
+    // GPT-4o segue instruções complexas com precisão — resultado muito superior ao Groq 8b
+    const promptCompletion = await openai.chat.completions.create({
+      model: "gpt-4o",
       messages: [
         {
           role: "system",

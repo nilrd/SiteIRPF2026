@@ -55,35 +55,55 @@ export async function POST(req: NextRequest) {
       model: MODELS.blogVerifier,
       messages: [
         {
+          role: "system",
+          content:
+            `You are a world-class photo editor at a premium Brazilian financial magazine (Valor Econômico / Exame level). ` +
+            `Your job is to write hyper-specific DALL-E 3 prompts that produce images indistinguishable from real documentary photography.\n\n` +
+
+            `MANDATORY TECHNICAL SPECS — always include ALL of these in every prompt:\n` +
+            `• Camera + lens: choose ONE realistic combo, e.g. "shot on Canon EOS R5, 85mm f/1.4L IS USM" or "Leica M11 50mm f/2 Summicron" or "Hasselblad X2D 100C 80mm f/2.8"\n` +
+            `• Aperture + depth of field: always shallow, e.g. "f/1.6 aperture, razor-thin focus plane, creamy out-of-focus background"\n` +
+            `• Film grain: "Kodak Portra 400 film grain" or "Fujifilm Pro 400H grain and color science"\n` +
+            `• Specific light: never say "natural light" — say EXACTLY: direction + quality + time, e.g. "raking morning light 8:15am through frosted office blinds casting parallel shadow stripes" or "overcast diffused São Paulo skyline light on a rainy Tuesday afternoon"\n` +
+            `• Micro-imperfections: include at least 2 of: "slight chromatic aberration at corners", "minimal lens vignetting", "barely perceptible camera shake on background", "micro-highlight bloom on specular surfaces"\n` +
+            `• Setting specificity: not "desk" but "worn oak desk with visible coffee ring stain and pen scratches", not "office" but "10th floor São Paulo Faria Lima financial district office, Pinheiros rooftops visible through rain-streaked window"\n\n` +
+
+            `SUBJECT — choose ONE authentic scene per topic:\n` +
+            `• Tax documents / IRPF: worn tax return forms with handwritten annotations, official Receita Federal envelope slightly opened, mechanical pencil mid-calculation on a grid notepad, reading glasses resting on top\n` +
+            `• Money / investment: physical R$ bills partially visible in a leather wallet, bank statement printout with coffee stain, old coin collection in wooden box\n` +
+            `• Deadline / urgency: physical wall calendar with March/April dates circled in red pen, smartphone showing 23:47 screen time, desk lamp on in dark office\n` +
+            `• Bureaucracy / forms: stack of yellowed bureaucratic folders with rubber band, stapler beside clipped documents, filing cabinet drawer half-open\n` +
+            `• Person (if needed): ONLY hands or over-shoulder — no face ever — e.g. "accountant's hands in grey suit jacket sleeve, calculator keys mid-press, pinky ring visible"\n\n` +
+
+            `ABSOLUTE PROHIBITIONS — never include any of these:\n` +
+            `✗ Perfect symmetry or centered compositions\n` +
+            `✗ Floating charts, holographic data, glow effects, neon\n` +
+            `✗ Stock-photo smiling faces\n` +
+            `✗ Words: "vibrant", "stunning", "professional", "modern", "sleek", "elegant"\n` +
+            `✗ Any CGI, 3D render, illustration, or vector look\n` +
+            `✗ Generic "office desk" without specific worn details\n\n` +
+
+            `OUTPUT FORMAT: Return ONLY the raw prompt text. No quotes. No preamble. No explanation. Max 75 words.`,
+        },
+        {
           role: "user",
           content:
-            `You are a creative director for a premium Brazilian financial consulting firm. Create a DALL-E 3 prompt for a blog post cover photo.\n\n` +
-            `STYLE RULES — mandatory:\n` +
-            `- Editorial photography style, like The Economist or Valor Econômico magazine covers\n` +
-            `- Shot on film camera aesthetic: slight grain, natural colors, real depth of field\n` +
-            `- NEVER generate a person looking directly at camera\n` +
-            `- NEVER generate a person as the main subject centered in frame\n` +
-            `- Prefer: close-up of hands working, documents on desk, coffee cup next to papers, computer screen with spreadsheet, pen signing document, calendar with circled date, empty office at dawn, stack of folders, calculator and receipts\n` +
-            `- If a person appears: only partial — hands typing, person seen from behind at a desk, silhouette near window\n` +
-            `- No AI aesthetics: no perfect symmetry, no glowing elements, no floating objects, no surreal compositions\n` +
-            `- Lighting: natural window light, warm office tones\n` +
-            `- Setting: Brazilian urban office, São Paulo style architecture visible through windows when relevant\n` +
-            `- GOOGLE DISCOVER REQUIREMENTS: image must feel like premium editorial photography from a top financial magazine. High visual impact at thumbnail size. Strong contrast between subject and background. One clear focal point, not cluttered. Warm color palette: amber, cream, dark wood tones. No watermarks, no text overlays, no borders. The image must make someone stop scrolling on mobile. Think: how does this look as 400x300px on a phone screen? The key visual element must be clear at that size.\n\n` +
-            `POST TITLE (PT-BR): ${post.title}\n` +
-            `POST SUMMARY (PT-BR): ${post.summary ?? ""}\n\n` +
-            `Based on the title and summary, generate ONE specific, cinematic image prompt in English.\n` +
-            `Focus on OBJECTS and ATMOSPHERE that represent the topic.\n` +
-            `Max 55 words. Return ONLY the prompt text.`,
-
+            `Write a DALL-E 3 photographic prompt for this Brazilian tax/finance blog post:\n\n` +
+            `TITLE: ${post.title}\n` +
+            `SUMMARY: ${post.summary ?? ""}\n\n` +
+            `The image must feel like it was taken in Brazil by a documentary photojournalist for Valor Econômico newspaper. ` +
+            `It must look like a real photo from a 35mm camera — not AI-generated. ` +
+            `Pick ONE specific object or scene that visually represents this exact tax/finance topic. ` +
+            `Include full technical camera specs, specific lighting, and at least 2 physical imperfections.`,
         },
       ],
-      temperature: 0.6,
-      max_tokens: 120,
+      temperature: 0.75,
+      max_tokens: 180,
     });
 
     const dallePrompt =
       (promptCompletion.choices?.[0]?.message?.content ?? "").trim() ||
-      "A Brazilian financial consultant reviewing income tax documents at a modern São Paulo office desk, natural window light, shallow depth of field, photorealistic Sony A7R IV photography";
+      `Close-up of weathered hands in a dark navy suit sleeve signing a Receita Federal tax declaration form with a Bic Cristal pen, worn oak desk with visible coffee ring stain, Kodak Portra 400 grain, shot on Leica M11 50mm f/2 Summicron at f/1.8, raking 9am Faria Lima window light casting long shadow across paper, slight chromatic aberration at corners, São Paulo overcast morning`;
 
     // 3. DALL-E 3 — único gerador de imagens (qualidade HD superior ao Gemini)
     console.log("[Image] Gerando com DALL-E 3 HD...");

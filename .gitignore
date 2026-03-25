@@ -11,5 +11,5 @@ E:\npmtemp
 prisma/admin_seed.sql
 prisma/reset_admin_pass.sql
 .agent/
-GROUND_TRUTH_IRPF.mdbody  
-"console.log('Network"  
+# Scripts de teste local (nunca commitar — podem conter chaves)
+scripts/

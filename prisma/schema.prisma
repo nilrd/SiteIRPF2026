@@ -88,3 +88,25 @@ model AdminUser {
 
   @@map("admin_users")
 }
+
+model Analise {
+  id         String   @id @default(cuid())
+  resumo     String
+  dados      String
+  totalPosts Int      @default(0)
+  totalLeads Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@map("analises")
+}
+
+model CampanhaGerada {
+  id         String   @id @default(cuid())
+  nome       String
+  objetivo   String
+  plataforma String
+  dados      String
+  createdAt  DateTime @default(now())
+
+  @@map("campanhas_geradas")
+}

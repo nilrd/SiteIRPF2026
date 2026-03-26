@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
@@ -17,7 +18,8 @@ type Post = {
   reviewJson: string;
 };
 
-export default function BlogAdminPage() {
+function BlogAdminContent() {
+  const searchParams = useSearchParams();
   const [posts, setPosts]           = useState<Post[]>([]);
   const [loading, setLoading]       = useState(true);
   const [keyword, setKeyword]       = useState("");
@@ -25,6 +27,12 @@ export default function BlogAdminPage() {
   const [genResult, setGenResult]   = useState<{ title: string; slug: string } | null>(null);
   const [actionMsg, setActionMsg]   = useState<string | null>(null);
   const [generatingImage, setGeneratingImage] = useState<string | null>(null); // postId em geração
+
+  // Ler keyword/titulo da URL (link vindo do analisador)
+  useEffect(() => {
+    const kw = searchParams.get("keyword") || searchParams.get("titulo") || "";
+    if (kw) setKeyword(kw);
+  }, [searchParams]);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -280,5 +288,17 @@ export default function BlogAdminPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function BlogAdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center opacity-40 text-sm">
+        Carregando...
+      </div>
+    }>
+      <BlogAdminContent />
+    </Suspense>
   );
 }

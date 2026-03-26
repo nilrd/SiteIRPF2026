@@ -22,8 +22,21 @@ interface OportunidadeAd {
   copyCurta: string;
   copyMedia: string;
   storytelling?: string;
+  manchetes?: string[];
+  descricoes?: string[];
+  configuracaoSegmentacao?: {
+    idadeMin?: number;
+    idadeMax?: number;
+    genero?: string;
+    localizacao?: string;
+    interesses?: string[];
+    comportamentos?: string[];
+    publicoNegativo?: string[];
+  };
   keywordsGoogle?: string[];
   orcamentoSugerido?: string;
+  orcamentoFaseTeste?: string;
+  orcamentoFaseEscala?: string;
   formatoRecomendado?: string;
 }
 
@@ -35,6 +48,9 @@ interface PostSugerido {
   urgencia: "alta" | "media" | "baixa";
   angulo?: string;
   cta?: string;
+  esbocoH2?: string[];
+  metaDescricao?: string;
+  introSugerida?: string;
 }
 
 interface Funil {
@@ -111,6 +127,7 @@ export default function AnalisadorPage() {
   const [copied, setCopied] = useState<string | null>(null);
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [loadingHistoricoId, setLoadingHistoricoId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"analise" | "historico">("analise");
 
   useEffect(() => {
@@ -127,6 +144,26 @@ export default function AnalisadorPage() {
       // silent
     } finally {
       setLoadingHistory(false);
+    }
+  }
+
+  async function openHistoricoCompleto(id: string) {
+    setLoadingHistoricoId(id);
+    try {
+      const res = await fetch(`/api/admin/site-analyzer/history/${id}`);
+      const data = await res.json();
+      if (data.analise?.dados) {
+        setAnalysis(data.analise.dados as Analysis);
+        setMeta({
+          totalPosts: data.analise.totalPosts,
+          totalLeads: data.analise.totalLeads,
+        });
+        setActiveTab("analise");
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoadingHistoricoId(null);
     }
   }
 
@@ -363,6 +400,7 @@ export default function AnalisadorPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     {analysis.oportunidadesAds.map((ad, i) => (
                       <div key={i} className="border border-white/10 p-5">
+                        {/* Header */}
                         <div className="flex items-center gap-2 mb-3">
                           <span className="text-[10px] uppercase tracking-widest bg-white text-black px-2 py-0.5">
                             {ad.plataforma}
@@ -374,77 +412,191 @@ export default function AnalisadorPage() {
                           )}
                         </div>
 
+                        {/* Público + Dor */}
                         <div className="text-[10px] uppercase tracking-widest text-white/30 mb-1">
                           Público-alvo
                         </div>
                         <p className="text-xs text-white/60 mb-2">{ad.publico}</p>
                         <p className="text-xs text-white/50 mb-1">{ad.dor}</p>
                         {ad.urgencia && (
-                          <p className="text-xs text-yellow-400/60 mb-3">⚡ {ad.urgencia}</p>
+                          <p className="text-xs text-yellow-400/70 mb-3">⚡ {ad.urgencia}</p>
                         )}
 
+                        {/* Hook */}
                         <div className="text-[10px] uppercase tracking-widest text-[#C6FF00] mb-1">
                           Hook Principal
                         </div>
                         <p className="text-sm text-white font-bold mb-3">{ad.hookPrincipal}</p>
 
-                        <div className="space-y-2">
+                        {/* Manchetes (3 headlines) */}
+                        {ad.manchetes && ad.manchetes.length > 0 && (
+                          <div className="mb-3">
+                            <div className="text-[10px] uppercase tracking-widest text-white/30 mb-1">
+                              Headlines prontas (A/B/C)
+                            </div>
+                            <div className="space-y-1">
+                              {ad.manchetes.map((h, hi) => (
+                                <div key={hi} className="flex items-center gap-2">
+                                  <span className="text-[9px] text-white/30 shrink-0">{["A", "B", "C"][hi]}</span>
+                                  <p className="text-xs text-white/80 font-medium">{h}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Descrições */}
+                        {ad.descricoes && ad.descricoes.length > 0 && (
+                          <div className="mb-3">
+                            <div className="text-[10px] uppercase tracking-widest text-white/30 mb-1">
+                              Descrições (prontas para colar)
+                            </div>
+                            <div className="space-y-1">
+                              {ad.descricoes.map((d, di) => (
+                                <p key={di} className="text-xs text-white/60">
+                                  {di + 1}. {d}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Copies */}
+                        <div className="space-y-2 mb-3">
                           <div>
                             <div className="text-[10px] uppercase tracking-widest text-white/30 mb-1">
-                              Copy Curta (125 chars)
+                              Copy Curta (stories)
                             </div>
                             <p className="text-xs text-white/70 leading-relaxed">{ad.copyCurta}</p>
                           </div>
                           <div>
                             <div className="text-[10px] uppercase tracking-widest text-white/30 mb-1">
-                              Copy Média (250 chars)
+                              Copy Média (feed)
                             </div>
                             <p className="text-xs text-white/70 leading-relaxed">{ad.copyMedia}</p>
                           </div>
                           {ad.storytelling && (
                             <div>
                               <div className="text-[10px] uppercase tracking-widest text-white/30 mb-1">
-                                Storytelling (Facebook)
+                                Storytelling completo (Facebook)
                               </div>
-                              <p className="text-xs text-white/60 leading-relaxed line-clamp-4">
+                              <p className="text-xs text-white/60 leading-relaxed whitespace-pre-line">
                                 {ad.storytelling}
                               </p>
                             </div>
                           )}
-                          {ad.keywordsGoogle && ad.keywordsGoogle.length > 0 && (
-                            <div>
-                              <div className="text-[10px] uppercase tracking-widest text-white/30 mb-1">
-                                Keywords
-                              </div>
-                              <div className="flex flex-wrap gap-1">
-                                {ad.keywordsGoogle.map((kw, ki) => (
-                                  <span
-                                    key={ki}
-                                    className="text-[10px] border border-white/20 px-2 py-0.5 text-white/50"
-                                  >
-                                    {kw}
-                                  </span>
-                                ))}
-                              </div>
+                        </div>
+
+                        {/* Segmentação */}
+                        {ad.configuracaoSegmentacao && (
+                          <div className="border border-white/10 p-3 mb-3">
+                            <div className="text-[10px] uppercase tracking-widest text-white/30 mb-2">
+                              Configuração de Segmentação
                             </div>
+                            {(ad.configuracaoSegmentacao.idadeMin || ad.configuracaoSegmentacao.idadeMax) && (
+                              <p className="text-[10px] text-white/50 mb-1">
+                                Idade: {ad.configuracaoSegmentacao.idadeMin}–{ad.configuracaoSegmentacao.idadeMax} anos |{" "}
+                                {ad.configuracaoSegmentacao.genero}
+                              </p>
+                            )}
+                            {ad.configuracaoSegmentacao.localizacao && (
+                              <p className="text-[10px] text-white/50 mb-2">📍 {ad.configuracaoSegmentacao.localizacao}</p>
+                            )}
+                            {ad.configuracaoSegmentacao.interesses && ad.configuracaoSegmentacao.interesses.length > 0 && (
+                              <div className="mb-2">
+                                <span className="text-[9px] uppercase tracking-widest text-white/25">Interesses: </span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {ad.configuracaoSegmentacao.interesses.map((int, ii) => (
+                                    <span key={ii} className="text-[9px] border border-white/15 px-1.5 py-0.5 text-white/40">
+                                      {int}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {ad.configuracaoSegmentacao.comportamentos && ad.configuracaoSegmentacao.comportamentos.length > 0 && (
+                              <div className="mb-2">
+                                <span className="text-[9px] uppercase tracking-widest text-white/25">Comportamentos: </span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {ad.configuracaoSegmentacao.comportamentos.map((c, ci) => (
+                                    <span key={ci} className="text-[9px] border border-blue-500/20 px-1.5 py-0.5 text-blue-300/50">
+                                      {c}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {ad.configuracaoSegmentacao.publicoNegativo && ad.configuracaoSegmentacao.publicoNegativo.length > 0 && (
+                              <div>
+                                <span className="text-[9px] uppercase tracking-widest text-white/25">Excluir: </span>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {ad.configuracaoSegmentacao.publicoNegativo.map((n, ni) => (
+                                    <span key={ni} className="text-[9px] border border-red-500/20 px-1.5 py-0.5 text-red-300/50">
+                                      {n}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Keywords */}
+                        {ad.keywordsGoogle && ad.keywordsGoogle.length > 0 && (
+                          <div className="mb-3">
+                            <div className="text-[10px] uppercase tracking-widest text-white/30 mb-1">
+                              Keywords Google
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {ad.keywordsGoogle.map((kw, ki) => (
+                                <span key={ki} className="text-[10px] border border-white/20 px-2 py-0.5 text-white/50">
+                                  {kw}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Orçamento */}
+                        <div className="space-y-1 mb-4">
+                          {ad.orcamentoFaseTeste && (
+                            <p className="text-[10px] text-[#C6FF00]/60">
+                              🧪 Fase Teste: {ad.orcamentoFaseTeste}
+                            </p>
                           )}
-                          {ad.orcamentoSugerido && (
-                            <div className="text-[10px] text-[#C6FF00]/70">
+                          {ad.orcamentoFaseEscala && (
+                            <p className="text-[10px] text-[#C6FF00]/80">
+                              🚀 Fase Escala: {ad.orcamentoFaseEscala}
+                            </p>
+                          )}
+                          {!ad.orcamentoFaseTeste && ad.orcamentoSugerido && (
+                            <p className="text-[10px] text-[#C6FF00]/70">
                               💰 {ad.orcamentoSugerido}
-                            </div>
+                            </p>
                           )}
                         </div>
 
                         <button
                           onClick={() =>
                             copyPrompt(
-                              `Plataforma: ${ad.plataforma}\nPúblico: ${ad.publico}\nDor: ${ad.dor}\nHook: ${ad.hookPrincipal}\nCopy curta: ${ad.copyCurta}\nCopy média: ${ad.copyMedia}${ad.storytelling ? `\n\nStorytelling:\n${ad.storytelling}` : ""}`,
+                              [
+                                `Plataforma: ${ad.plataforma}`,
+                                `Público: ${ad.publico}`,
+                                `Dor: ${ad.dor}`,
+                                `Urgência: ${ad.urgencia ?? ""}`,
+                                `Hook: ${ad.hookPrincipal}`,
+                                ad.manchetes?.length ? `\nHeadlines:\n${ad.manchetes.map((h, i) => `${["A","B","C"][i]}. ${h}`).join("\n")}` : "",
+                                ad.descricoes?.length ? `\nDescrições:\n${ad.descricoes.map((d, i) => `${i+1}. ${d}`).join("\n")}` : "",
+                                `\nCopy Curta:\n${ad.copyCurta}`,
+                                `\nCopy Média:\n${ad.copyMedia}`,
+                                ad.storytelling ? `\nStorytelling:\n${ad.storytelling}` : "",
+                              ].filter(Boolean).join("\n"),
                               `ad-${i}`
                             )
                           }
-                          className="mt-4 text-[10px] uppercase tracking-widest text-[#C6FF00] hover:text-white transition"
+                          className="text-[10px] uppercase tracking-widest text-[#C6FF00] hover:text-white transition"
                         >
-                          {copied === `ad-${i}` ? "✓ Copiado!" : "Copiar Ad Completo"}
+                          {copied === `ad-${i}` ? "✓ Copiado!" : "Copiar Tudo →"}
                         </button>
                       </div>
                     ))}
@@ -458,36 +610,65 @@ export default function AnalisadorPage() {
                   <div className="text-[10px] uppercase tracking-widest text-white/40 mb-4">
                     Posts para Criar ({analysis.postsParaCriar.length} sugestões)
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {analysis.postsParaCriar.map((post, i) => (
                       <div key={i} className="border border-white/10 p-4">
                         <div className="flex items-start gap-4">
-                          <span
-                            className={`text-[10px] uppercase tracking-widest shrink-0 mt-0.5 ${urgenciaCor[post.urgencia]}`}
-                          >
+                          <span className={`text-[10px] uppercase tracking-widest shrink-0 mt-0.5 ${urgenciaCor[post.urgencia]}`}>
                             {post.urgencia}
                           </span>
                           <div className="flex-1">
                             <p className="text-sm text-white mb-1 font-medium">{post.titulo}</p>
                             <p className="text-xs text-white/40">{post.intencao}</p>
                             {post.angulo && (
-                              <p className="text-xs text-white/50 mt-1">
-                                Ângulo: {post.angulo}
-                              </p>
+                              <p className="text-xs text-white/50 mt-1">Ângulo: {post.angulo}</p>
                             )}
                             {post.cta && (
                               <p className="text-xs text-[#C6FF00]/60 mt-1">CTA: {post.cta}</p>
                             )}
+                            {/* Esboço H2s */}
+                            {post.esbocoH2 && post.esbocoH2.length > 0 && (
+                              <div className="mt-2 space-y-0.5">
+                                {post.esbocoH2.map((h2, hi) => (
+                                  <p key={hi} className="text-[10px] text-white/30">
+                                    H2 {hi + 1}: {h2}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
+                            {/* Meta description */}
+                            {post.metaDescricao && (
+                              <p className="text-[10px] text-white/25 mt-1 italic">
+                                Meta: {post.metaDescricao}
+                              </p>
+                            )}
+                            {/* Intro sugerida collapsed */}
+                            {post.introSugerida && (
+                              <details className="mt-2">
+                                <summary className="text-[10px] text-white/30 cursor-pointer hover:text-white/60 transition">
+                                  Ver intro sugerida
+                                </summary>
+                                <p className="text-[10px] text-white/50 leading-relaxed mt-1 pl-2 border-l border-white/10">
+                                  {post.introSugerida}
+                                </p>
+                              </details>
+                            )}
                           </div>
-                          <div className="text-right shrink-0">
+                          <div className="text-right shrink-0 space-y-2">
                             <span className="text-[10px] border border-white/20 px-2 py-0.5 text-white/40 block">
                               {post.keyword}
                             </span>
                             {post.volumeEstimado && (
-                              <span className="text-[10px] text-white/30 block mt-1">
+                              <span className="text-[10px] text-white/30 block">
                                 {post.volumeEstimado}
                               </span>
                             )}
+                            <a
+                              href={`/painel-nb-2025/blog?keyword=${encodeURIComponent(post.keyword)}&titulo=${encodeURIComponent(post.titulo)}`}
+                              className="block text-[10px] uppercase tracking-widest text-[#C6FF00] hover:text-white transition mt-1"
+                            >
+                              Gerar no Blog →
+                            </a>
                           </div>
                         </div>
                       </div>
@@ -591,9 +772,16 @@ export default function AnalisadorPage() {
                             {item.resumo}
                           </p>
                         </div>
-                        <div className="shrink-0 text-right space-y-1">
+                        <div className="shrink-0 text-right space-y-2">
                           <div className="text-[10px] text-white/30">{item.totalPosts} posts</div>
                           <div className="text-[10px] text-white/30">{item.totalLeads} leads</div>
+                          <button
+                            onClick={() => openHistoricoCompleto(item.id)}
+                            disabled={loadingHistoricoId === item.id}
+                            className="block text-[10px] uppercase tracking-widest text-[#C6FF00] hover:text-white transition disabled:opacity-40 mt-2"
+                          >
+                            {loadingHistoricoId === item.id ? "Carregando..." : "Ver análise completa →"}
+                          </button>
                         </div>
                       </div>
                     </div>

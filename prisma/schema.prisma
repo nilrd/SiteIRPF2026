@@ -9,20 +9,23 @@ datasource db {
 }
 
 model Lead {
-  id        String   @id @default(cuid())
-  nome      String
-  email     String
-  telefone  String?
-  tipoDecl  String?
-  origem    String   @default("organico")
-  status    String   @default("novo")
-  mensagem  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String    @id @default(cuid())
+  nome         String
+  email        String
+  telefone     String?
+  tipoDecl     String?
+  origem       String    @default("organico")
+  status       String    @default("novo")
+  mensagem     String?
+  emailSeqStep Int       @default(0)
+  emailSeqAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([email])
   @@index([status])
   @@index([createdAt])
+  @@index([emailSeqStep])
   @@map("leads")
 }
 

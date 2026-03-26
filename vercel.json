@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/blog-auto?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/email-sequence?secret=xP9aKm2wR4nQ7vL3hT8uY6sZ",
+      "schedule": "0 10 * * *"
     }
   ]
 }

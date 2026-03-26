@@ -1,10 +1,43 @@
 import Link from "next/link";
 
-const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}`;
+const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá Nilson! Preciso declarar meu IRPF 2026 antes do prazo. Pode me ajudar?")}`;
 
 export default function Footer() {
   return (
     <footer className="bg-preto text-white">
+      {/* Urgency CTA strip */}
+      <div className="border-t border-white/10 border-b border-[#C6FF00]/20 bg-[#C6FF00]/5">
+        <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div>
+            <p className="text-[10px] uppercase tracking-widest text-[#C6FF00] mb-1">
+              ⏳ Tempo Está Acabando
+            </p>
+            <p className="font-black text-xl uppercase">
+              Prazo IRPF 2026 — 29 de Maio de 2026
+            </p>
+            <p className="text-sm text-white/50 mt-1">
+              Multa mínima R$ 165,74 por atraso. CPF irregular após 30 dias sem declarar.
+            </p>
+          </div>
+          <div className="flex gap-3 shrink-0">
+            <a
+              href={WA_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-[#C6FF00] text-black px-6 py-3 font-black uppercase text-xs tracking-widest hover:bg-white transition"
+            >
+              Declarar Agora →
+            </a>
+            <Link
+              href="/declarar-agora"
+              className="border border-white/20 text-white px-6 py-3 font-bold uppercase text-xs tracking-widest hover:border-white transition"
+            >
+              Saiba Mais
+            </Link>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           {/* Col 1 - Brand */}

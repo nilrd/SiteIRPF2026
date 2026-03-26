@@ -3,13 +3,13 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá! Quero declarar meu IRPF.")}`;
+const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá Nilson! Preciso declarar meu IRPF 2026. Pode me ajudar com um orçamento?")}`;
 
 const dataItems = [
   { label: "Experiência", value: "10+ anos" },
   { label: "Atendimento", value: "Todo Brasil" },
   { label: "Formato", value: "100% Online" },
-  { label: "IRPF 2026", value: "16/03 Abertura" },
+  { label: "IRPF 2026", value: "Prazo: 29/05" },
 ];
 
 export default function HeroSection() {
@@ -69,14 +69,22 @@ export default function HeroSection() {
               Declarações novas, atrasadas e retificações para todo o Brasil,
               100% online. Garantimos que nenhuma dedução legal seja perdida.
             </p>
-            <a
-              href={WA_LINK}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-premium px-8 py-4 inline-block uppercase text-xs tracking-widest font-bold"
-            >
-              Declarar Agora
-            </a>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href={WA_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-premium px-8 py-4 inline-block uppercase text-xs tracking-widest font-bold"
+              >
+                Declarar Antes de 29/05 →
+              </a>
+              <a
+                href="/declarar-agora"
+                className="px-8 py-4 inline-block uppercase text-xs tracking-widest font-bold border border-white/30 text-white hover:border-white transition text-center"
+              >
+                Orçamento Gratuito
+              </a>
+            </div>
           </motion.div>
         </div>
 

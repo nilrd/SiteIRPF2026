@@ -22,14 +22,26 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://irpf.qaplay.com.br"),
   title: {
-    default: "Consultoria IRPF NSB | Declaracao de Imposto de Renda",
-    template: "%s | Consultoria IRPF NSB",
+    default: "Declaração IRPF 2026 | Nilson Brites — Prazo 29 de Maio",
+    template: "%s | Nilson Brites IRPF 2026",
   },
   description:
-    "Consultoria especializada em IRPF. Declaracao completa, atrasados, retificacao e malha fina. 100% online, todo o Brasil.",
-  keywords: ["IRPF", "imposto de renda", "declaracao", "restituicao", "malha fina"],
-  authors: [{ name: "Nilson Brites", url: "https://irpf.qaplay.com.br/sobre" }],
-  themeColor: "#2D4033",
+    "Declare seu IRPF 2026 com segurança. Especialista com 10+ anos de experiência, atendimento 100% online para todo o Brasil. Prazo: 29 de maio de 2026. Evite multa mínima de R$ 165,74.",
+  keywords: [
+    "IRPF 2026",
+    "declaração imposto de renda 2026",
+    "prazo IRPF 2026",
+    "declarar imposto de renda online",
+    "declaração IRPF atrasada",
+    "retificação IRPF",
+    "malha fina imposto de renda",
+    "multa IRPF 2026",
+    "declaração IR Nilson Brites",
+    "IRPF 100% online",
+    "restituição imposto de renda 2026",
+  ],
+  authors: [{ name: "Nilson Brites", url: "https://irpf.qaplay.com.br" }],
+  themeColor: "#0A0A0A",
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -39,22 +51,28 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    siteName: "Consultoria IRPF NSB",
+    siteName: "Nilson Brites — Declaração IRPF 2026",
+    title: "Declaração IRPF 2026 | Nilson Brites — Prazo 29 de Maio",
+    description:
+      "Declare seu IRPF 2026 com segurança. Especialista com 10+ anos, 100% online para todo o Brasil. Prazo: 29 de maio. Evite multass.",
     images: [
       {
         url: "/og-image.svg",
         width: 1200,
         height: 630,
-        alt: "Consultoria IRPF NSB — Declaracao de Imposto de Renda",
+        alt: "Nilson Brites — Declaração IRPF 2026 — Prazo 29 de Maio",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Consultoria IRPF NSB | Declaracao de Imposto de Renda",
+    title: "Declaração IRPF 2026 | Nilson Brites — Prazo 29 de Maio",
     description:
-      "Consultoria especializada em IRPF. Declaracao completa, atrasados, retificacao e malha fina. 100% online.",
+      "Declare seu IRPF 2026 com segurança. Especialista com 10+ anos, 100% online. Prazo: 29 de maio de 2026.",
     images: ["/og-image.svg"],
+  },
+  alternates: {
+    canonical: "https://irpf.qaplay.com.br",
   },
   robots: {
     index: true,

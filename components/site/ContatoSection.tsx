@@ -46,11 +46,11 @@ export default function ContatoSection() {
           transition={{ duration: 0.5 }}
         >
           <h2 className="font-serif text-4xl md:text-5xl mb-8">
-            Inicie seu Processo
+            Declare Antes de 29 de Maio
           </h2>
           <p className="opacity-80 mb-12 text-lg">
-            Preencha os dados abaixo para que um consultor entre em contato e
-            avalie seu caso.
+            Prazo IRPF 2026 se encerra em <strong>29 de maio</strong>. Preencha abaixo
+            — retornamos em até 1 hora com orçamento gratuito e sem compromisso.
           </p>
         </motion.div>
 
@@ -134,7 +134,7 @@ export default function ContatoSection() {
               disabled={status === "loading"}
               className="md:col-span-2 bg-white text-verde py-5 uppercase text-xs tracking-widest font-bold hover:bg-white/90 transition disabled:opacity-50"
             >
-              {status === "loading" ? "Enviando..." : "Solicitar Diagnostico"}
+              {status === "loading" ? "Enviando..." : "Quero Declarar Agora — Prazo: 29/05/2026"}
             </button>
             {status === "error" && (
               <p className="md:col-span-2 text-red-300 text-sm text-center">

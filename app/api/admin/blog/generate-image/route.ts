@@ -43,68 +43,113 @@ export async function POST(req: NextRequest) {
     // 1. Buscar título e resumo no banco
     const post = await prisma.blogPost.findUnique({
       where: { id: postId },
-      select: { id: true, title: true, summary: true, slug: true },
+      select: { id: true, title: true, summary: true, slug: true, content: true, tags: true, keywords: true },
     });
 
     if (!post) {
       return NextResponse.json({ error: "Post não encontrado" }, { status: 404 });
     }
 
-    // 2. GPT-4o gera o prompt para o DALL-E 3
-    // GPT-4o segue instruções complexas com precisão — resultado muito superior ao Groq 8b
+    // 2. GPT-4o lê o post completo, decide a cena visual e gera o prompt técnico para o DALL-E 3
     const promptCompletion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content:
-            `You are a world-class photo editor at a premium Brazilian financial magazine (Valor Econômico / Exame level). ` +
-            `Your job is to write hyper-specific DALL-E 3 prompts that produce images indistinguishable from real documentary photography.\n\n` +
+          content: `Você é o diretor de fotografia editorial do maior portal de finanças pessoais do Brasil.
+Sua única função é criar prompts DALL-E 3 que gerem fotografias fotorrealistas, únicas e contextualmente perfeitas para cada post.
 
-            `MANDATORY TECHNICAL SPECS — always include ALL of these in every prompt:\n` +
-            `• Camera + lens: choose ONE realistic combo, e.g. "shot on Canon EOS R5, 85mm f/1.4L IS USM" or "Leica M11 50mm f/2 Summicron" or "Hasselblad X2D 100C 80mm f/2.8"\n` +
-            `• Aperture + depth of field: always shallow, e.g. "f/1.6 aperture, razor-thin focus plane, creamy out-of-focus background"\n` +
-            `• Film grain: "Kodak Portra 400 film grain" or "Fujifilm Pro 400H grain and color science"\n` +
-            `• Specific light: never say "natural light" — say EXACTLY: direction + quality + time, e.g. "raking morning light 8:15am through frosted office blinds casting parallel shadow stripes" or "overcast diffused São Paulo skyline light on a rainy Tuesday afternoon"\n` +
-            `• Micro-imperfections: include at least 2 of: "slight chromatic aberration at corners", "minimal lens vignetting", "barely perceptible camera shake on background", "micro-highlight bloom on specular surfaces"\n` +
-            `• Setting specificity: not "desk" but "worn oak desk with visible coffee ring stain and pen scratches", not "office" but "10th floor São Paulo Faria Lima financial district office, Pinheiros rooftops visible through rain-streaked window"\n\n` +
+═══════════════════════════════════════
+PROCESSO OBRIGATÓRIO — 3 ETAPAS INTERNAS
+═══════════════════════════════════════
 
-            `SUBJECT — choose ONE authentic scene per topic:\n` +
-            `• Tax documents / IRPF: worn tax return forms with handwritten annotations, official Receita Federal envelope slightly opened, mechanical pencil mid-calculation on a grid notepad, reading glasses resting on top\n` +
-            `• Money / investment: physical R$ bills partially visible in a leather wallet, bank statement printout with coffee stain, old coin collection in wooden box\n` +
-            `• Deadline / urgency: physical wall calendar with March/April dates circled in red pen, smartphone showing 23:47 screen time, desk lamp on in dark office\n` +
-            `• Bureaucracy / forms: stack of yellowed bureaucratic folders with rubber band, stapler beside clipped documents, filing cabinet drawer half-open\n` +
-            `• Person (if needed): ONLY hands or over-shoulder — no face ever — e.g. "accountant's hands in grey suit jacket sleeve, calculator keys mid-press, pinky ring visible"\n\n` +
+ETAPA 1 — LEITURA PROFUNDA (raciocine internamente, não escreva):
+• Qual é a emoção central deste post? (alívio? urgência? medo? satisfação? confusão?)
+• Que objeto físico, documento ou cena um brasileiro que viveu essa situação associaria instantaneamente?
+• Existe algum elemento tipicamente brasileiro que personifica este tema?
+• O post é técnico/instrucional ou narrativo/emocional?
 
-            `ABSOLUTE PROHIBITIONS — never include any of these:\n` +
-            `✗ Perfect symmetry or centered compositions\n` +
-            `✗ Floating charts, holographic data, glow effects, neon\n` +
-            `✗ Stock-photo smiling faces\n` +
-            `✗ Words: "vibrant", "stunning", "professional", "modern", "sleek", "elegant"\n` +
-            `✗ Any CGI, 3D render, illustration, or vector look\n` +
-            `✗ Generic "office desk" without specific worn details\n\n` +
+ETAPA 2 — DECISÃO VISUAL (raciocine internamente, não escreva):
+• Presença humana — decida com base no tom do post:
+    → Post técnico/instrucional → APENAS objetos, documentos ou no máximo mãos parcialmente visíveis
+    → Post sobre experiência/ansiedade/prazo/medo → silhueta desfocada ao fundo, ou costas de pessoa
+    → Post sobre conquista/resultado/restituição → ombro ou costas de alguém olhando para algo com alívio
+    → Post sobre dados/tabelas/leis/mudanças → zero presença humana — apenas documentos e objetos
+• Qual é o OBJETO HERÓI desta imagem? (escolha apenas um elemento central)
+• Qual o ambiente específico? (mesa de apartamento em SP? agência bancária? cartório? home office improvisado?)
+• Qual horário e tipo de luz? (manhã com sol lateral duro? tarde nublada difusa? noite com abajur quente?)
 
-            `OUTPUT FORMAT: Return ONLY the raw prompt text. No quotes. No preamble. No explanation. Max 75 words.`,
+ETAPA 3 — COMPOSIÇÃO:
+Escreva o prompt DALL-E 3 em inglês técnico-fotográfico, incluindo todos os elementos das specs abaixo.
+
+═══════════════════════════════════════
+REFERÊNCIAS VISUAIS BRASILEIRAS
+═══════════════════════════════════════
+
+Documentos fiscais autênticos:
+• Formulário DIRPF impresso em papel A4 com cabeçalho "Receita Federal do Brasil"
+• Envelope pardo com brasão do governo federal e código de barras impresso
+• CPF plastificado amarelado com bordas desgastadas e cantos arredondados
+• Comprovante de rendimentos em papel timbrado com carimbo de empresa
+• Declaração de Ajuste Anual com campos preenchidos à caneta esferográfica azul
+• Informe de rendimentos do banco com logotipo desbotado após fotocópia
+
+Dinheiro e finanças:
+• Cédulas de R$ 50 e R$ 100 parcialmente visíveis dentro de carteira de couro marrom surrada
+• Comprovante de Pix em papel térmico levemente amarrotado sobre mesa
+• Extrato bancário da Caixa Econômica ou Bradesco em papel A4 dobrado ao meio
+• Carnê de pagamento com talões rasgados e cola aparente nas bordas
+• Nota fiscal eletrônica impressa com código QR no canto inferior
+
+Ambientes brasileiros autênticos:
+• Mesa de trabalho em apartamento paulistano com janela dando para prédios cinzas
+• Cartório de bairro com balcão de fórmica empoeirado e carimbo ao lado
+• Escritório contábil com armário de aço cinza e pilhas de pastas AZ ao fundo
+• Home office improvisado com notebook antigo sobre mesa de jantar de madeira
+• Sala de espera de agência bancária com cadeiras de plástico laranja e fila
+
+═══════════════════════════════════════
+SPECS TÉCNICAS OBRIGATÓRIAS
+═══════════════════════════════════════
+
+• Câmera + lente: escolha UMA combinação realista
+    ex: "shot on Canon EOS 5D Mark IV, 50mm f/1.4 Sigma Art"
+    ex: "Nikon D750, 35mm f/1.8G ED, slightly off-level hand-held"
+    ex: "Leica M11, 35mm Summicron f/2, worn paint on body"
+• Abertura rasa (f/1.4–f/2.8) com bokeh suave recobrindo o fundo
+• Grão de filme: Kodak Portra 400, Fujifilm Pro 400H, ou Ilford HP5 Plus
+• Luz ESPECÍFICA — nunca escreva "natural light" — especifique: direção + qualidade + horário + local
+    ex: "side light 7:40am through aluminum venetian blinds, east-facing São Paulo apartment"
+    ex: "single incandescent desk lamp 2700K casting warm cone, rest of room in complete darkness"
+    ex: "overcast midday diffused light from north-facing window, flat and slightly clinical"
+• Imperfeições físicas (mínimo 2): leve aberração cromática nas bordas, vinheta mínima, reflexo indesejado em superfície brilhante, micro-vibração imperceptível no fundo, marca de copo sobre papel, pó visível em superfície fosca
+• Ambientação hiper-específica: não "desk" mas "worn melamine desk with dried coffee ring and peeling edge strip"
+
+═══════════════════════════════════════
+REGRAS ABSOLUTAS
+═══════════════════════════════════════
+
+• Qualquer texto visível na imagem — em formulário, envelope, tela, placa — DEVE estar em português brasileiro correto, sem erros ortográficos ou gramaticais
+• A foto deve parecer tirada por fotojornalista documental brasileiro — nunca por banco de imagens americano
+• Composição sempre assimétrica pela regra dos terços, nunca perfeitamente centralizada
+• Cada prompt deve ser absolutamente único para este post — nunca repita cenas genéricas
+• Sem gráficos flutuantes, interfaces holográficas, efeitos digitais ou elementos CGI
+• Sem rostos visíveis — silhuetas desfocadas, costas, ombros e mãos são permitidos quando o tema humano pede
+
+FORMATO DE SAÍDA: Retorne APENAS o texto do prompt em inglês fotográfico, sem aspas, sem prefácio, sem explicação. Máximo 120 palavras.`,
         },
         {
           role: "user",
-          content:
-            `Write a DALL-E 3 photographic prompt for this Brazilian tax/finance blog post:\n\n` +
-            `TITLE: ${post.title}\n` +
-            `SUMMARY: ${post.summary ?? ""}\n\n` +
-            `The image must feel like it was taken in Brazil by a documentary photojournalist for Valor Econômico newspaper. ` +
-            `It must look like a real photo from a 35mm camera — not AI-generated. ` +
-            `Pick ONE specific object or scene that visually represents this exact tax/finance topic. ` +
-            `Include full technical camera specs, specific lighting, and at least 2 physical imperfections.`,
+          content: `Crie o prompt DALL-E 3 para o seguinte post do blog de IRPF brasileiro:\n\nTÍTULO: ${post.title}\nTAGS: ${(post.tags ?? []).join(", ") || "IRPF, imposto de renda"}\nPALAVRAS-CHAVE: ${(post.keywords ?? []).join(", ") || ""}\nRESUMO: ${post.summary ?? ""}\nINÍCIO DO CONTEÚDO:\n${post.content?.slice(0, 600) ?? ""}\n\nSiga as 3 etapas internas obrigatórias ANTES de escrever qualquer coisa. A imagem deve ser 100% única para ESTE post específico — nunca genérica. Qualquer texto visível na imagem deve estar em português brasileiro correto.`,
         },
       ],
-      temperature: 0.75,
-      max_tokens: 180,
+      temperature: 0.8,
+      max_tokens: 250,
     });
 
     const dallePrompt =
       (promptCompletion.choices?.[0]?.message?.content ?? "").trim() ||
-      `Close-up of weathered hands in a dark navy suit sleeve signing a Receita Federal tax declaration form with a Bic Cristal pen, worn oak desk with visible coffee ring stain, Kodak Portra 400 grain, shot on Leica M11 50mm f/2 Summicron at f/1.8, raking 9am Faria Lima window light casting long shadow across paper, slight chromatic aberration at corners, São Paulo overcast morning`;
+      `Hands of a Brazilian accountant in a beige linen shirt sleeve pressing keys on a worn desktop calculator, beside a printed DIRPF form with blue ballpoint pen annotations reading "Declaração de Ajuste Anual — Receita Federal do Brasil", Fujifilm Pro 400H grain, shot on Nikon D750 35mm f/1.8G at f/2, side light 8:20am through half-open aluminum venetian blinds casting striped shadows across paper, worn melamine desk with dried coffee ring and peeling edge strip, slight chromatic aberration at corners, minimal lens vignette`;
 
     // 3. DALL-E 3 — único gerador de imagens (qualidade HD superior ao Gemini)
     console.log("[Image] Gerando com DALL-E 3 HD...");

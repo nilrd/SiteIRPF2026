@@ -16,6 +16,7 @@ type Post = {
   tags: string[];
   createdAt: string;
   reviewJson: string;
+  coverImage: string | null;
 };
 
 function BlogAdminContent() {
@@ -116,11 +117,15 @@ function BlogAdminContent() {
       });
       const data = await res.json();
       if (res.ok && data.imageUrl) {
-        setActionMsg(`✅ Imagem IA gerada e salva no post!`);
+        // Atualiza o estado local imediatamente — sem precisar recarregar a página
+        setPosts((prev) =>
+          prev.map((p) => (p.id === postId ? { ...p, coverImage: data.imageUrl } : p))
+        );
+        setActionMsg(`✅ Imagem gerada e salva! Clique em "Ver" para conferir no site.`);
       } else {
         setActionMsg(`❌ Erro: ${data.error || "falha ao gerar imagem"}`);
       }
-      setTimeout(() => setActionMsg(null), 5000);
+      setTimeout(() => setActionMsg(null), 6000);
     } catch {
       setActionMsg("❌ Erro de conexão ao gerar imagem.");
       setTimeout(() => setActionMsg(null), 5000);
@@ -259,14 +264,20 @@ function BlogAdminContent() {
                         <button
                           onClick={() => handleGenerateImage(post.id)}
                           disabled={generatingImage === post.id}
-                          title="Gerar imagem com DALL-E 3"
-                          className="text-xs text-purple-300 hover:text-purple-100 transition disabled:opacity-40 shrink-0"
+                          title={post.coverImage ? "Regerar imagem com DALL-E 3" : "Gerar imagem com DALL-E 3"}
+                          className={`text-xs transition disabled:opacity-40 shrink-0 ${
+                            post.coverImage
+                              ? "text-green-400 hover:text-green-200"
+                              : "text-purple-300 hover:text-purple-100"
+                          }`}
                         >
                           {generatingImage === post.id ? (
                             <span className="inline-flex items-center gap-1">
-                              <span className="w-2 h-2 border border-purple-300 border-t-transparent rounded-full animate-spin inline-block" />
+                              <span className="w-2 h-2 border border-current border-t-transparent rounded-full animate-spin inline-block" />
                               Gerando…
                             </span>
+                          ) : post.coverImage ? (
+                            "🖼 Regerar"
                           ) : (
                             "Img IA"
                           )}

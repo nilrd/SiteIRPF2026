@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         updatedAt: true,
         reviewJson: true,
+        coverImage: true,
       },
     });
 

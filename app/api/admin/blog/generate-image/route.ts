@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import OpenAI from "openai";
-import { groqLlama, MODELS } from "@/lib/llm-providers";
+import { geminiClient } from "@/lib/llm-providers";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
 import { generateImageAlt } from "@/lib/image-alt";
@@ -11,6 +11,7 @@ export const maxDuration = 60;
 
 const BUCKET = "blog-images";
 
+// GPT-4o: apenas para gerar o prompt visual — não gera imagens
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 async function ensureBucket() {
@@ -142,53 +143,63 @@ FORMATO DE SAÍDA: Retorne APENAS o texto do prompt em inglês fotográfico, sem
         },
         {
           role: "user",
-          content: `Crie o prompt DALL-E 3 para este post:\n\nTÍTULO: ${post.title}\nRESUMO: ${post.summary ?? ""}\nTEMA: ${(post.tags ?? []).slice(0, 3).join(", ") || "IRPF, imposto de renda"}\n\nLembre: MÁXIMO 3 elementos. ZERO texto legível. ZERO marcas de câmera. ZERO cédulas. ZERO pessoas.`,
+          content: `Crie o prompt visual para este post:\n\nTÍTULO: ${post.title}\nRESUMO: ${post.summary ?? ""}\nTEMA: ${(post.tags ?? []).slice(0, 3).join(", ") || "IRPF, imposto de renda"}\n\nLembre: MÁXIMO 3 elementos. ZERO texto legível. ZERO marcas de câmera. ZERO cédulas. ZERO pessoas.`,
         },
       ],
       temperature: 0.6,
       max_tokens: 150,
     });
 
-    const dallePrompt =
+    const imagePrompt =
       (promptCompletion.choices?.[0]?.message?.content ?? "").trim() ||
       `Editorial documentary photography, single golden coin resting on dark wooden desk, silver pen beside blank white document, warm window light from left, shallow depth of field, 35mm film aesthetic, muted earth tones, no text visible anywhere, minimalist composition, photorealistic`;
 
-    // 3. DALL-E 3 — único gerador de imagens (qualidade HD superior ao Gemini)
-    console.log("[Image] Gerando com DALL-E 3 HD...");
-    const imageResponse = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: dallePrompt,
-      size: "1792x1024",
-      quality: "standard",
-      style: "natural",
-      n: 1,
-      response_format: "url",
+    // 3. Gemini 2.5 Flash Image — gerador de imagens (gratuito, sem custo por imagem)
+    console.log("[Image] Gerando com Gemini 2.5 Flash Image...");
+    if (!geminiClient) {
+      return NextResponse.json({ error: "GEMINI_API_KEY não configurada" }, { status: 500 });
+    }
+    const imageModel = geminiClient.getGenerativeModel({
+      model: "gemini-2.5-flash-preview-04-17",
     });
-
-    const imageUrl = imageResponse.data?.[0]?.url;
-    if (!imageUrl) {
-      return NextResponse.json({ error: "DALL-E não retornou imagem" }, { status: 500 });
+    const geminiResult = await imageModel.generateContent({
+      contents: [{ role: "user", parts: [{ text: imagePrompt }] }],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      generationConfig: { responseModalities: ["IMAGE"] } as any,
+    });
+    const candidate = geminiResult.response.candidates?.[0];
+    const imagePart = candidate?.content?.parts?.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (p: any) => p.inlineData
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) as any;
+    if (!imagePart?.inlineData) {
+      return NextResponse.json({ error: "Gemini não retornou imagem" }, { status: 500 });
     }
-
-    const imgRes = await fetch(imageUrl);
-    if (!imgRes.ok) {
-      return NextResponse.json({ error: "Falha ao baixar imagem do DALL-E" }, { status: 500 });
-    }
-    const buffer = Buffer.from(await imgRes.arrayBuffer());
-    console.log("[Image] DALL-E 3 HD gerado com sucesso.");
+    const { data: base64Data, mimeType: imgMimeType } = imagePart.inlineData as {
+      data: string;
+      mimeType: string;
+    };
+    const buffer = Buffer.from(base64Data, "base64");
+    const imgExt = imgMimeType === "image/jpeg" ? "jpg" : "png";
+    console.log(`[Image] Gemini Image gerado com sucesso (${imgMimeType}).`);
 
     // 4. Upload para Supabase Storage
-    const fileName = `${post.slug}.png`;
+    const fileName = `${post.slug}.${imgExt}`;
 
     await ensureBucket();
 
     // Deletar arquivo anterior explicitamente para forçar invalidação do CDN Supabase.
     // O upsert sozinho não invalida o cache da CDN — apenas sobrescreve o objeto.
-    await supabaseAdmin.storage.from(BUCKET).remove([fileName]);
+    // Tenta remover ambas as extensões possíveis (jpg e png) para limpar cache.
+    await Promise.allSettled([
+      supabaseAdmin.storage.from(BUCKET).remove([`${post.slug}.png`]),
+      supabaseAdmin.storage.from(BUCKET).remove([`${post.slug}.jpg`]),
+    ]);
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from(BUCKET)
-      .upload(fileName, buffer, { contentType: "image/png", upsert: false });
+      .upload(fileName, buffer, { contentType: imgMimeType, upsert: false });
 
     if (uploadError) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
@@ -209,12 +220,12 @@ FORMATO DE SAÍDA: Retorne APENAS o texto do prompt em inglês fotográfico, sem
       data: {
         coverImage: publicUrl,
         imageAlt,
-        imageAttribution: null, // DALL-E images don't require Unsplash attribution
+        imageAttribution: null, // Gemini images não requerem atribuição
         updatedAt: new Date(),
       },
     });
 
-    return NextResponse.json({ imageUrl: publicUrl, prompt: dallePrompt, imageAlt, imageSource: "dall-e" });
+    return NextResponse.json({ imageUrl: publicUrl, prompt: imagePrompt, imageAlt, imageSource: "gemini" });
   } catch (err) {
     console.error("[generate-image]", err);
     const msg = err instanceof Error ? err.message : "Erro interno";

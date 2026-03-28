@@ -59,6 +59,14 @@ export async function POST(req: NextRequest) {
           content: `Você é o diretor de fotografia editorial do maior portal de finanças pessoais do Brasil.
 Sua única função é criar prompts DALL-E 3 que gerem fotografias fotorrealistas, únicas e contextualmente perfeitas para cada post.
 
+⚠️ PROIBIÇÕES CRÍTICAS — NUNCA VIOLE (CAUSAM BUGS VISUAIS GRAVES):
+• NUNCA mencione marca de câmera (Canon, Nikon, Leica, Sony, etc) — DALL-E literaliza a câmera como objeto físico na cena
+• NUNCA peça texto legível em documentos, formulários, telas ou envelopes — DALL-E distorce qualquer texto
+• NUNCA inclua cédulas de dinheiro (R$, $, €) — causam distorção visual grave
+• NUNCA inclua pessoas, rostos, mãos ou silhuetas na cena
+• MÁXIMO 3 elementos simultâneos — cenas simples rendem muito melhor
+• Use "35mm film aesthetic" para estética fotográfica, SEM citar marcas
+
 ═══════════════════════════════════════
 PROCESSO OBRIGATÓRIO — 3 ETAPAS INTERNAS
 ═══════════════════════════════════════
@@ -70,11 +78,7 @@ ETAPA 1 — LEITURA PROFUNDA (raciocine internamente, não escreva):
 • O post é técnico/instrucional ou narrativo/emocional?
 
 ETAPA 2 — DECISÃO VISUAL (raciocine internamente, não escreva):
-• Presença humana — decida com base no tom do post:
-    → Post técnico/instrucional → APENAS objetos, documentos ou no máximo mãos parcialmente visíveis
-    → Post sobre experiência/ansiedade/prazo/medo → silhueta desfocada ao fundo, ou costas de pessoa
-    → Post sobre conquista/resultado/restituição → ombro ou costas de alguém olhando para algo com alívio
-    → Post sobre dados/tabelas/leis/mudanças → zero presença humana — apenas documentos e objetos
+• Presença humana: ZERO — apenas objetos e superfícies, sem pessoas, rostos, mãos ou silhuetas em qualquer tipo de post
 • Qual é o OBJETO HERÓI desta imagem? (escolha apenas um elemento central)
 • Qual o ambiente específico? (mesa de apartamento em SP? agência bancária? cartório? home office improvisado?)
 • Qual horário e tipo de luz? (manhã com sol lateral duro? tarde nublada difusa? noite com abajur quente?)
@@ -91,15 +95,14 @@ Documentos fiscais autênticos:
 • Envelope pardo com brasão do governo federal e código de barras impresso
 • CPF plastificado amarelado com bordas desgastadas e cantos arredondados
 • Comprovante de rendimentos em papel timbrado com carimbo de empresa
-• Declaração de Ajuste Anual com campos preenchidos à caneta esferográfica azul
-• Informe de rendimentos do banco com logotipo desbotado após fotocópia
+• Formulário DIRPF impresso em papel branco, campos em branco (SEM texto legível)
+• Documento impresso sem texto legível sobre mesa
 
-Dinheiro e finanças:
-• Cédulas de R$ 50 e R$ 100 parcialmente visíveis dentro de carteira de couro marrom surrada
-• Comprovante de Pix em papel térmico levemente amarrotado sobre mesa
-• Extrato bancário da Caixa Econômica ou Bradesco em papel A4 dobrado ao meio
-• Carnê de pagamento com talões rasgados e cola aparente nas bordas
-• Nota fiscal eletrônica impressa com código QR no canto inferior
+Finanças (sem cédulas, sem texto legível):
+• Moeda metálica dourada ou prateada única sobre superfície (NUNCA cédulas — causam distorção)
+• Calculadora física com teclas numéricas sobre mesa escura
+• Pasta AZ fechada de cor neutra (bege, cinza, preto)
+• Envelope lacrado sem texto visível
 
 Ambientes brasileiros autênticos:
 • Mesa de trabalho em apartamento paulistano com janela dando para prédios cinzas
@@ -112,12 +115,10 @@ Ambientes brasileiros autênticos:
 SPECS TÉCNICAS OBRIGATÓRIAS
 ═══════════════════════════════════════
 
-• Câmera + lente: escolha UMA combinação realista
-    ex: "shot on Canon EOS 5D Mark IV, 50mm f/1.4 Sigma Art"
-    ex: "Nikon D750, 35mm f/1.8G ED, slightly off-level hand-held"
-    ex: "Leica M11, 35mm Summicron f/2, worn paint on body"
-• Abertura rasa (f/1.4–f/2.8) com bokeh suave recobrindo o fundo
-• Grão de filme: Kodak Portra 400, Fujifilm Pro 400H, ou Ilford HP5 Plus
+• Estética fotográfica: use "35mm film aesthetic, documentary style" — NUNCA mencione marcas de câmera (Canon, Nikon, Leica, etc) pois DALL-E coloca a câmera literalmente na cena
+• Profundidade de campo rasa: "shallow depth of field, soft bokeh background"
+• Grão sutil: "subtle film grain" — sem nomear marca de filme
+• PROIBIDO: câmeras, lentes, tripés ou qualquer equipamento fotográfico como objeto na cena
 • Luz ESPECÍFICA — nunca escreva "natural light" — especifique: direção + qualidade + horário + local
     ex: "side light 7:40am through aluminum venetian blinds, east-facing São Paulo apartment"
     ex: "single incandescent desk lamp 2700K casting warm cone, rest of room in complete darkness"
@@ -129,27 +130,28 @@ SPECS TÉCNICAS OBRIGATÓRIAS
 REGRAS ABSOLUTAS
 ═══════════════════════════════════════
 
-• Qualquer texto visível na imagem — em formulário, envelope, tela, placa — DEVE estar em português brasileiro correto, sem erros ortográficos ou gramaticais
+• PROIBIDO qualquer texto, letra ou número legível em qualquer superfície — documentos em branco, telas apagadas, sem preenchimento de qualquer tipo
 • A foto deve parecer tirada por fotojornalista documental brasileiro — nunca por banco de imagens americano
 • Composição sempre assimétrica pela regra dos terços, nunca perfeitamente centralizada
 • Cada prompt deve ser absolutamente único para este post — nunca repita cenas genéricas
 • Sem gráficos flutuantes, interfaces holográficas, efeitos digitais ou elementos CGI
-• Sem rostos visíveis — silhuetas desfocadas, costas, ombros e mãos são permitidos quando o tema humano pede
+• ZERO presença humana — sem rostos, silhuetas, costas, ombros ou mãos
+• MÁXIMO 3 elementos simultâneos na cena — minimalismo produz resultados superiores
 
 FORMATO DE SAÍDA: Retorne APENAS o texto do prompt em inglês fotográfico, sem aspas, sem prefácio, sem explicação. Máximo 120 palavras.`,
         },
         {
           role: "user",
-          content: `Crie o prompt DALL-E 3 para o seguinte post do blog de IRPF brasileiro:\n\nTÍTULO: ${post.title}\nTAGS: ${(post.tags ?? []).join(", ") || "IRPF, imposto de renda"}\nPALAVRAS-CHAVE: ${(post.keywords ?? []).join(", ") || ""}\nRESUMO: ${post.summary ?? ""}\nINÍCIO DO CONTEÚDO:\n${post.content?.slice(0, 600) ?? ""}\n\nSiga as 3 etapas internas obrigatórias ANTES de escrever qualquer coisa. A imagem deve ser 100% única para ESTE post específico — nunca genérica. Qualquer texto visível na imagem deve estar em português brasileiro correto.`,
+          content: `Crie o prompt DALL-E 3 para este post:\n\nTÍTULO: ${post.title}\nRESUMO: ${post.summary ?? ""}\nTEMA: ${(post.tags ?? []).slice(0, 3).join(", ") || "IRPF, imposto de renda"}\n\nLembre: MÁXIMO 3 elementos. ZERO texto legível. ZERO marcas de câmera. ZERO cédulas. ZERO pessoas.`,
         },
       ],
-      temperature: 0.8,
-      max_tokens: 250,
+      temperature: 0.6,
+      max_tokens: 150,
     });
 
     const dallePrompt =
       (promptCompletion.choices?.[0]?.message?.content ?? "").trim() ||
-      `Hands of a Brazilian accountant in a beige linen shirt sleeve pressing keys on a worn desktop calculator, beside a printed DIRPF form with blue ballpoint pen annotations reading "Declaração de Ajuste Anual — Receita Federal do Brasil", Fujifilm Pro 400H grain, shot on Nikon D750 35mm f/1.8G at f/2, side light 8:20am through half-open aluminum venetian blinds casting striped shadows across paper, worn melamine desk with dried coffee ring and peeling edge strip, slight chromatic aberration at corners, minimal lens vignette`;
+      `Editorial documentary photography, single golden coin resting on dark wooden desk, silver pen beside blank white document, warm window light from left, shallow depth of field, 35mm film aesthetic, muted earth tones, no text visible anywhere, minimalist composition, photorealistic`;
 
     // 3. DALL-E 3 — único gerador de imagens (qualidade HD superior ao Gemini)
     console.log("[Image] Gerando com DALL-E 3 HD...");
@@ -157,7 +159,7 @@ FORMATO DE SAÍDA: Retorne APENAS o texto do prompt em inglês fotográfico, sem
       model: "dall-e-3",
       prompt: dallePrompt,
       size: "1792x1024",
-      quality: "hd",
+      quality: "standard",
       style: "natural",
       n: 1,
       response_format: "url",

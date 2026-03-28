@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateBlogPost, saveBlogPost, ALL_CLUSTERS } from "@/lib/blog-engine";
 import { resend } from "@/lib/resend";
+import { feedBrainFromOfficialSources, isKeywordRecent, markKeywordUsed } from "@/lib/knowledge-brain";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Vercel Pro: permite até 60s para geração via Groq
@@ -13,10 +14,24 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Seleciona cluster aleatório do pool completo (IRPF + finanças)
-    const idx = Math.floor(Math.random() * ALL_CLUSTERS.length);
+    // Alimenta o cérebro com fontes oficiais antes de gerar qualquer post.
+    // Respeita TTL — não re-busca se dados ainda válidos.
+    console.log("[Cron] Alimentando cérebro com fontes oficiais...");
+    await feedBrainFromOfficialSources();
+
+    // Seleciona cluster aleatório — evita repetir keyword usada nos últimos 7 dias
+    let idx = Math.floor(Math.random() * ALL_CLUSTERS.length);
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const primary = ALL_CLUSTERS[idx % ALL_CLUSTERS.length]?.primary;
+      if (!primary || !(await isKeywordRecent(primary, 7))) break;
+      console.log(`[Cron] Keyword recente, tentando outro cluster: ${primary}`);
+      idx = Math.floor(Math.random() * ALL_CLUSTERS.length);
+    }
+    const clusterName = ALL_CLUSTERS[idx % ALL_CLUSTERS.length]?.primary ?? "irpf";
     const post = await generateBlogPost(idx);
     const saved = await saveBlogPost(post);
+    // Registra keyword usada para evitar repetição futura
+    void markKeywordUsed(post.keyword, clusterName, saved.id);
 
     // Notifica admin por email
     if (process.env.ADMIN_EMAIL) {

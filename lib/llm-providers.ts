@@ -15,12 +15,12 @@ export const geminiClient = process.env.GEMINI_API_KEY
 export const MODELS = {
   chatbot: "llama-3.3-70b-versatile",
   adminIA: "llama-3.3-70b-versatile",
-  blogGeneration: "gemini-2.0-flash",
+  blogGeneration: "gemini-2.5-flash-preview-04-17",
   blogVerifier: "llama-3.1-8b-instant",
 } as const;
 
-// Modelo Gemini principal para blog (1M tokens/dia grátis, contexto 1M)
-const GEMINI_PRIMARY = "gemini-2.0-flash";
+// Modelo Gemini principal para blog (raciocínio melhorado, contexto 1M)
+const GEMINI_PRIMARY = "gemini-2.5-flash-preview-04-17";
 
 // Cascata Groq de backup (modelos grandes, SEM 8b)
 const GROQ_FALLBACK_MODELS = [

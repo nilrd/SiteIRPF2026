@@ -1,6 +1,7 @@
 import { groqLlama, MODELS, callWithFallback, type FallbackResult } from "./llm-providers";
 import { prisma } from "./prisma";
 import { IRPF_DATA_CONTEXT } from "./irpf-context";
+import { getBrainContext, saveToKnowledge } from "./knowledge-brain";
 
 type ResearchItem = {
   title: string;
@@ -871,7 +872,8 @@ function blogSystemPrompt(
   research: ResearchItem[],
   existingPosts: ExistingPostSnapshot[],
   mandatoryFormat: string,
-  compactMode: boolean = false
+  compactMode: boolean = false,
+  brainContext: string = ""
 ) {
   const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   const researchBlock = research.length
@@ -908,7 +910,7 @@ CTA final (usar HTML exato):
 NUNCA escreva "CTA para WhatsApp:" como texto. Use os blocos HTML acima.
 Nunca "todas as pessoas devem declarar". Nunca cite leis fora de Lei 15.270/2025 e IN RFB 2.255/2025.
 
-PESQUISA: ${researchBlock}
+${brainContext ? `DADOS VERIFICADOS (CÉREBRO):\n${brainContext.substring(0, 600)}\n\n` : ""}PESQUISA: ${researchBlock}
 
 POSTS EXISTENTES (não repetir): ${existingBlock}
 
@@ -1068,7 +1070,14 @@ REGRA 15 — FORMATO DO TÍTULO (SORTEADO — SIGA OBRIGATORIAMENTE)
    I) Comparativo:       "IRPF 2026 vs 2025: o que mudou na declaração"
    J) Novidade/Urgente:  "IRPF 2026 começa em março: o que fazer antes do prazo"
 
+${brainContext ? `═══════════════════════════════════════════
+DADOS VERIFICADOS — CÉREBRO (FONTES CACHEADAS E VERIFICADAS)
 ═══════════════════════════════════════════
+
+Use estes dados prioritariamente — são de fontes verificadas e mais estáveis que o Google News:
+${brainContext}
+
+` : ""}═══════════════════════════════════════════
 DADOS PESQUISADOS NA INTERNET
 ═══════════════════════════════════════════
 
@@ -1217,6 +1226,27 @@ export async function generateBlogPost(
   }
 
   const research = await collectResearchContext(keyword);
+
+  // Busca contexto do cérebro (dados cacheados de fontes oficiais)
+  const brainCtx = await getBrainContext(keyword).catch(() => "");
+
+  // Salva pesquisa realizada no cérebro para acúmulo orgânico de conhecimento
+  void Promise.all(
+    research
+      .filter((item) => item.snippet.length > 100)
+      .slice(0, 6)
+      .map((item) =>
+        saveToKnowledge({
+          url: item.url,
+          title: item.title,
+          content: item.snippet,
+          category: "noticia",
+          year: 2026,
+          ttlDays: 7,
+        })
+      )
+  );
+
   const mandatoryFormat = selectMandatoryTitleFormat(existingPosts);
 
   async function runGeneration(extraInstruction?: string) {
@@ -1225,11 +1255,11 @@ export async function generateBlogPost(
       : "";
 
     const systemContent =
-      blogSystemPrompt(selicAtual, research, existingPosts, mandatoryFormat) + customNotice;
+      blogSystemPrompt(selicAtual, research, existingPosts, mandatoryFormat, false, brainCtx) + customNotice;
 
     // Versão compacta para o modelo 8b (último recurso — contexto menor)
     const compactSystemContent =
-      blogSystemPrompt(selicAtual, research, existingPosts, mandatoryFormat, true) + customNotice;
+      blogSystemPrompt(selicAtual, research, existingPosts, mandatoryFormat, true, brainCtx) + customNotice;
 
     const userContent = `TEMA OBRIGATORIO DO ARTIGO: "${keyword}". Voce DEVE escrever exclusivamente sobre este tema — nao mude para outro assunto.${
       secundarias ? ` Keywords secundarias a incluir: ${secundarias}.` : ""
@@ -1297,6 +1327,7 @@ export async function generateBlogPost(
   const review = await verificarPost(`${parsed.title || keyword}\n\n${content}`);
 
   return {
+    keyword,
     title: parsed.title || keyword,
     slug: baseSlug,
     summary: parsed.summary || "",

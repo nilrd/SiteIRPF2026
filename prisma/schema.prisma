@@ -113,3 +113,31 @@ model CampanhaGerada {
 
   @@map("campanhas_geradas")
 }
+
+model KnowledgeBase {
+  id          String   @id @default(cuid())
+  sourceUrl   String
+  sourceTitle String?
+  content     String   @db.Text
+  category    String
+  year        Int?
+  fetchedAt   DateTime @default(now())
+  expiresAt   DateTime
+  isActive    Boolean  @default(true)
+
+  @@unique([sourceUrl, category])
+  @@index([category, year, isActive])
+  @@map("knowledge_base")
+}
+
+model KeywordHistory {
+  id       String   @id @default(cuid())
+  keyword  String
+  cluster  String
+  postId   String?
+  usedAt   DateTime @default(now())
+
+  @@index([usedAt])
+  @@index([keyword])
+  @@map("keyword_history")
+}

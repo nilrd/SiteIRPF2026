@@ -13,3 +13,6 @@ prisma/reset_admin_pass.sql
 .agent/
 # Scripts de teste local (nunca commitar — podem conter chaves)
 scripts/
+# Arquivos acidentais de terminal
+body
+console.log(*

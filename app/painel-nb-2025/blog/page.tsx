@@ -260,10 +260,10 @@ function BlogAdminContent() {
                         >
                           Deletar
                         </button>
-                        {/* Geração de imagem — 3 modelos */}
-                        {(["dall-e-3", "gemini-imagen", "flux"] as const).map((imgModel) => {
-                          const labels: Record<string, string> = { "dall-e-3": "D3", "gemini-imagen": "Gemi", "flux": "Flux" };
-                          const colors: Record<string, string> = { "dall-e-3": "text-purple-300 hover:text-purple-100", "gemini-imagen": "text-blue-300 hover:text-blue-100", "flux": "text-orange-300 hover:text-orange-100" };
+                        {/* Geração de imagem — DALL-E 3 e Flux */}
+                        {(["dall-e-3", "flux"] as const).map((imgModel) => {
+                          const labels: Record<string, string> = { "dall-e-3": "D3", "flux": "Flux" };
+                          const colors: Record<string, string> = { "dall-e-3": "text-purple-300 hover:text-purple-100", "flux": "text-orange-300 hover:text-orange-100" };
                           const isActive = generatingImage?.postId === post.id && generatingImage.model === imgModel;
                           const isDisabled = generatingImage?.postId === post.id;
                           return (

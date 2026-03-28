@@ -70,6 +70,9 @@ THINKING PROCESS (internal, do not output):
 STYLE RULES:
 - Prefer PEOPLE in real situations over objects alone
 - People from behind, side angle, or hands only — never full faces
+- People must look Brazilian/Latin American (warm skin tones, dark hair)
+- Settings: Brazilian apartment, home office, café in São Paulo, modern Brazilian kitchen
+- NEVER generate people with Middle Eastern appearance or clothing
 - Bright, clean, professional environments (not dark/dramatic)
 - Natural window light, warm tones
 - Editorial stock photo style (Getty Images, Shutterstock premium)
@@ -113,40 +116,7 @@ OUTPUT: only the DALL-E 3 prompt in English. Maximum 80 words. No explanations. 
     let imageSource: string;
     let contentType = "image/png";
 
-    if (model === "gemini-imagen") {
-      // ── Gemini Imagen 3 via REST API ──────────────────────────────────────
-      const geminiKey = process.env.GEMINI_API_KEY;
-      if (!geminiKey) {
-        return NextResponse.json({ error: "GEMINI_API_KEY não configurado no ambiente" }, { status: 400 });
-      }
-      console.log("[Image] Gerando com Gemini Imagen 3...");
-      const imagenRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${geminiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            instances: [{ prompt: imagePrompt }],
-            parameters: { sampleCount: 1, aspectRatio: "16:9" },
-          }),
-        }
-      );
-      if (!imagenRes.ok) {
-        const errText = await imagenRes.text();
-        console.error("[Image] Gemini Imagen error:", errText);
-        return NextResponse.json({ error: `Gemini Imagen error: ${imagenRes.status} — ${errText}` }, { status: 500 });
-      }
-      const imagenData = await imagenRes.json() as { predictions?: { bytesBase64Encoded?: string; mimeType?: string }[] };
-      const prediction = imagenData.predictions?.[0];
-      if (!prediction?.bytesBase64Encoded) {
-        return NextResponse.json({ error: "Gemini Imagen não retornou imagem" }, { status: 500 });
-      }
-      contentType = prediction.mimeType ?? "image/png";
-      buffer = Buffer.from(prediction.bytesBase64Encoded, "base64");
-      imageSource = "gemini-imagen";
-      console.log("[Image] Gemini Imagen 3 gerado com sucesso.");
-
-    } else if (model === "flux") {
+    if (model === "flux") {
       // ── Flux Pro 1.1 via fal.ai REST API ─────────────────────────────────
       const falKey = process.env.FAL_KEY;
       if (!falKey) {

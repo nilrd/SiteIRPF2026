@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import OpenAI from "openai";
-import { geminiClient } from "@/lib/llm-providers";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
 import { generateImageAlt } from "@/lib/image-alt";
@@ -11,7 +10,7 @@ export const maxDuration = 60;
 
 const BUCKET = "blog-images";
 
-// GPT-4o: apenas para gerar o prompt visual — não gera imagens
+// GPT-4o: gera prompt visual — DALL-E 3 Standard: gera a imagem
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 async function ensureBucket() {
@@ -154,52 +153,41 @@ FORMATO DE SAÍDA: Retorne APENAS o texto do prompt em inglês fotográfico, sem
       (promptCompletion.choices?.[0]?.message?.content ?? "").trim() ||
       `Editorial documentary photography, single golden coin resting on dark wooden desk, silver pen beside blank white document, warm window light from left, shallow depth of field, 35mm film aesthetic, muted earth tones, no text visible anywhere, minimalist composition, photorealistic`;
 
-    // 3. Gemini 2.5 Flash Image — gerador de imagens (gratuito, sem custo por imagem)
-    console.log("[Image] Gerando com Gemini 2.5 Flash Image...");
-    if (!geminiClient) {
-      return NextResponse.json({ error: "GEMINI_API_KEY não configurada" }, { status: 500 });
-    }
-    const imageModel = geminiClient.getGenerativeModel({
-      model: "gemini-2.5-flash-preview-04-17",
+    // 3. DALL-E 3 Standard — gerador de imagens
+    console.log("[Image] Gerando com DALL-E 3 Standard...");
+    const imageResponse = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: imagePrompt,
+      size: "1792x1024",
+      quality: "standard",
+      style: "natural",
+      n: 1,
+      response_format: "url",
     });
-    const geminiResult = await imageModel.generateContent({
-      contents: [{ role: "user", parts: [{ text: imagePrompt }] }],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      generationConfig: { responseModalities: ["IMAGE"] } as any,
-    });
-    const candidate = geminiResult.response.candidates?.[0];
-    const imagePart = candidate?.content?.parts?.find(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (p: any) => p.inlineData
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ) as any;
-    if (!imagePart?.inlineData) {
-      return NextResponse.json({ error: "Gemini não retornou imagem" }, { status: 500 });
+
+    const imageUrl = imageResponse.data?.[0]?.url;
+    if (!imageUrl) {
+      return NextResponse.json({ error: "DALL-E não retornou imagem" }, { status: 500 });
     }
-    const { data: base64Data, mimeType: imgMimeType } = imagePart.inlineData as {
-      data: string;
-      mimeType: string;
-    };
-    const buffer = Buffer.from(base64Data, "base64");
-    const imgExt = imgMimeType === "image/jpeg" ? "jpg" : "png";
-    console.log(`[Image] Gemini Image gerado com sucesso (${imgMimeType}).`);
+
+    const imgRes = await fetch(imageUrl);
+    if (!imgRes.ok) {
+      return NextResponse.json({ error: "Falha ao baixar imagem do DALL-E" }, { status: 500 });
+    }
+    const buffer = Buffer.from(await imgRes.arrayBuffer());
+    console.log("[Image] DALL-E 3 Standard gerado com sucesso.");
 
     // 4. Upload para Supabase Storage
-    const fileName = `${post.slug}.${imgExt}`;
+    const fileName = `${post.slug}.png`;
 
     await ensureBucket();
 
     // Deletar arquivo anterior explicitamente para forçar invalidação do CDN Supabase.
-    // O upsert sozinho não invalida o cache da CDN — apenas sobrescreve o objeto.
-    // Tenta remover ambas as extensões possíveis (jpg e png) para limpar cache.
-    await Promise.allSettled([
-      supabaseAdmin.storage.from(BUCKET).remove([`${post.slug}.png`]),
-      supabaseAdmin.storage.from(BUCKET).remove([`${post.slug}.jpg`]),
-    ]);
+    await supabaseAdmin.storage.from(BUCKET).remove([fileName]);
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from(BUCKET)
-      .upload(fileName, buffer, { contentType: imgMimeType, upsert: false });
+      .upload(fileName, buffer, { contentType: "image/png", upsert: false });
 
     if (uploadError) {
       return NextResponse.json({ error: uploadError.message }, { status: 500 });
@@ -220,12 +208,12 @@ FORMATO DE SAÍDA: Retorne APENAS o texto do prompt em inglês fotográfico, sem
       data: {
         coverImage: publicUrl,
         imageAlt,
-        imageAttribution: null, // Gemini images não requerem atribuição
+        imageAttribution: null, // DALL-E images não requerem atribuição Unsplash
         updatedAt: new Date(),
       },
     });
 
-    return NextResponse.json({ imageUrl: publicUrl, prompt: imagePrompt, imageAlt, imageSource: "gemini" });
+    return NextResponse.json({ imageUrl: publicUrl, prompt: imagePrompt, imageAlt, imageSource: "dall-e" });
   } catch (err) {
     console.error("[generate-image]", err);
     const msg = err instanceof Error ? err.message : "Erro interno";

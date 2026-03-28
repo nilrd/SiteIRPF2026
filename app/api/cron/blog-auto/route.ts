@@ -4,7 +4,12 @@ import { resend } from "@/lib/resend";
 import { feedBrainFromOfficialSources, isKeywordRecent, markKeywordUsed } from "@/lib/knowledge-brain";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60; // Vercel Pro: permite até 60s para geração via Groq
+export const maxDuration = 300; // Vercel Pro: até 300s para gerar 8 posts em sequência
+
+const NUM_POSTS = 8;
+const DELAY_BETWEEN_POSTS_MS = 3000;
+
+const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export async function GET(request: Request) {
   try {
@@ -15,60 +20,63 @@ export async function GET(request: Request) {
     }
 
     // Alimenta o cérebro com fontes oficiais antes de gerar qualquer post.
-    // Respeita TTL — não re-busca se dados ainda válidos.
     console.log("[Cron] Alimentando cérebro com fontes oficiais...");
     await feedBrainFromOfficialSources();
 
-    // Seleciona cluster aleatório — evita repetir keyword usada nos últimos 7 dias
-    let idx = Math.floor(Math.random() * ALL_CLUSTERS.length);
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const primary = ALL_CLUSTERS[idx % ALL_CLUSTERS.length]?.primary;
-      if (!primary || !(await isKeywordRecent(primary, 7))) break;
-      console.log(`[Cron] Keyword recente, tentando outro cluster: ${primary}`);
-      idx = Math.floor(Math.random() * ALL_CLUSTERS.length);
-    }
-    const clusterName = ALL_CLUSTERS[idx % ALL_CLUSTERS.length]?.primary ?? "irpf";
-    const post = await generateBlogPost(idx);
-    const saved = await saveBlogPost(post);
-    // Registra keyword usada para evitar repetição futura
-    void markKeywordUsed(post.keyword, clusterName, saved.id);
+    const results: { id: string; title: string; slug: string; published: boolean }[] = [];
+    const errors: { index: number; error: string }[] = [];
 
-    // Notifica admin por email
-    if (process.env.ADMIN_EMAIL) {
-      const statusTag = saved.published ? "✅ PUBLICADO" : "⚠️ RETIDO PARA REVISÃO — não publicado";
-      let reviewInfo = "";
-      if (!saved.published && saved.reviewJson) {
-        try {
-          const rv = JSON.parse(saved.reviewJson) as {
-            nivel_risco?: string;
-            resumo?: string;
-            itens_de_risco?: string[];
-          };
-          reviewInfo = `
-            <p><strong>Nível de risco:</strong> ${rv.nivel_risco || "?"}</p>
-            <p><strong>Motivo:</strong> ${rv.resumo || "?"}</p>
-            ${rv.itens_de_risco?.length ? `<ul>${rv.itens_de_risco.map((i) => `<li>${i}</li>`).join("")}</ul>` : ""}
-            <p>Acesse o painel para revisar e publicar manualmente.</p>`;
-        } catch { /* JSON inválido — ignora */ }
+    for (let i = 0; i < NUM_POSTS; i++) {
+      if (i > 0) await delay(DELAY_BETWEEN_POSTS_MS);
+
+      try {
+        // Seleciona cluster aleatório — evita repetir keyword usada nos últimos 7 dias
+        let idx = Math.floor(Math.random() * ALL_CLUSTERS.length);
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const primary = ALL_CLUSTERS[idx % ALL_CLUSTERS.length]?.primary;
+          if (!primary || !(await isKeywordRecent(primary, 7))) break;
+          console.log(`[Cron][${i + 1}/${NUM_POSTS}] Keyword recente, tentando outro cluster: ${primary}`);
+          idx = Math.floor(Math.random() * ALL_CLUSTERS.length);
+        }
+        const clusterName = ALL_CLUSTERS[idx % ALL_CLUSTERS.length]?.primary ?? "irpf";
+        console.log(`[Cron][${i + 1}/${NUM_POSTS}] Gerando post — cluster: ${clusterName}`);
+        const post = await generateBlogPost(idx);
+        const saved = await saveBlogPost(post);
+        void markKeywordUsed(post.keyword, clusterName, saved.id);
+        results.push({ id: saved.id, title: saved.title, slug: saved.slug, published: saved.published });
+        console.log(`[Cron][${i + 1}/${NUM_POSTS}] ✅ ${saved.published ? "Publicado" : "Retido"}: ${saved.title}`);
+      } catch (postErr) {
+        const msg = postErr instanceof Error ? postErr.message : String(postErr);
+        console.error(`[Cron][${i + 1}/${NUM_POSTS}] ❌ Erro:`, msg);
+        errors.push({ index: i + 1, error: msg });
       }
+    }
+
+    // Notifica admin com resumo de todos os posts gerados
+    if (process.env.ADMIN_EMAIL && results.length > 0) {
+      const published = results.filter((r) => r.published);
+      const retained = results.filter((r) => !r.published);
       await resend.emails.send({
         from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
         to: process.env.ADMIN_EMAIL,
-        subject: `[${saved.published ? "Publicado" : "REVISÃO"}] Post gerado — ${new Date().toLocaleDateString("pt-BR")}`,
+        subject: `[Cron] ${results.length} posts gerados — ${new Date().toLocaleDateString("pt-BR")}`,
         html: `
-          <h2>${statusTag}</h2>
-          <p><strong>${saved.title}</strong></p>
-          ${saved.published
-            ? `<p>Disponivel em: <a href="https://irpf.qaplay.com.br/blog/${saved.slug}">irpf.qaplay.com.br/blog/${saved.slug}</a></p>`
-            : `<p>Post salvo como rascunho aguardando revisão humana.</p>${reviewInfo}`}
-          <p>Para gerenciar, acesse o painel administrativo.</p>
+          <h2>Blog Auto — Relatório do Dia</h2>
+          <p><strong>${published.length} publicados</strong> | ${retained.length} retidos para revisão | ${errors.length} erros</p>
+          <h3>Publicados</h3>
+          <ul>${published.map((p) => `<li><a href="https://irpf.qaplay.com.br/blog/${p.slug}">${p.title}</a></li>`).join("")}</ul>
+          ${retained.length > 0 ? `<h3>Aguardando revisão</h3><ul>${retained.map((p) => `<li>${p.title}</li>`).join("")}</ul>` : ""}
+          ${errors.length > 0 ? `<h3>Erros (${errors.length})</h3><ul>${errors.map((e) => `<li>Post ${e.index}: ${e.error}</li>`).join("")}</ul>` : ""}
+          <p>Acesse o painel para revisar e publicar os rascunhos.</p>
         `,
       });
     }
 
     return NextResponse.json({
       success: true,
-      post: { id: saved.id, title: saved.title, slug: saved.slug },
+      generated: results.length,
+      errors: errors.length,
+      posts: results,
     });
   } catch (error) {
     console.error("Blog cron error:", error);

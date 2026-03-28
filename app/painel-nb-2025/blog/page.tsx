@@ -27,7 +27,7 @@ function BlogAdminContent() {
   const [generating, setGenerating] = useState(false);
   const [genResult, setGenResult]   = useState<{ title: string; slug: string } | null>(null);
   const [actionMsg, setActionMsg]   = useState<string | null>(null);
-  const [generatingImage, setGeneratingImage] = useState<string | null>(null); // postId em geração
+  const [generatingImage, setGeneratingImage] = useState<{ postId: string; model: string } | null>(null);
 
   // Ler keyword/titulo da URL (link vindo do analisador)
   useEffect(() => {
@@ -107,23 +107,22 @@ function BlogAdminContent() {
     }
   }
 
-  async function handleGenerateImage(postId: string) {
-    setGeneratingImage(postId);
+  async function handleGenerateImage(postId: string, model: string) {
+    setGeneratingImage({ postId, model });
     try {
       const res = await fetch("/api/admin/blog/generate-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId }),
+        body: JSON.stringify({ postId, model }),
       });
       const data = await res.json();
       if (res.ok && data.imageUrl) {
-        // Atualiza o estado local imediatamente — sem precisar recarregar a página
         setPosts((prev) =>
           prev.map((p) => (p.id === postId ? { ...p, coverImage: data.imageUrl } : p))
         );
-        setActionMsg(`✅ Imagem gerada e salva! Clique em "Ver" para conferir no site.`);
+        setActionMsg(`✅ Imagem gerada (${model})! Clique em "Ver" para conferir no site.`);
       } else {
-        setActionMsg(`❌ Erro: ${data.error || "falha ao gerar imagem"}`);
+        setActionMsg(`❌ Erro (${model}): ${data.error || "falha ao gerar imagem"}`);
       }
       setTimeout(() => setActionMsg(null), 6000);
     } catch {
@@ -261,27 +260,28 @@ function BlogAdminContent() {
                         >
                           Deletar
                         </button>
-                        <button
-                          onClick={() => handleGenerateImage(post.id)}
-                          disabled={generatingImage === post.id}
-                          title={post.coverImage ? "Regerar imagem com DALL-E 3" : "Gerar imagem com DALL-E 3"}
-                          className={`text-xs transition disabled:opacity-40 shrink-0 ${
-                            post.coverImage
-                              ? "text-green-400 hover:text-green-200"
-                              : "text-purple-300 hover:text-purple-100"
-                          }`}
-                        >
-                          {generatingImage === post.id ? (
-                            <span className="inline-flex items-center gap-1">
-                              <span className="w-2 h-2 border border-current border-t-transparent rounded-full animate-spin inline-block" />
-                              Gerando…
-                            </span>
-                          ) : post.coverImage ? (
-                            "🖼 Regerar"
-                          ) : (
-                            "Img IA"
-                          )}
-                        </button>
+                        {/* Geração de imagem — 3 modelos */}
+                        {(["dall-e-3", "gemini-imagen", "flux"] as const).map((imgModel) => {
+                          const labels: Record<string, string> = { "dall-e-3": "D3", "gemini-imagen": "Gemi", "flux": "Flux" };
+                          const colors: Record<string, string> = { "dall-e-3": "text-purple-300 hover:text-purple-100", "gemini-imagen": "text-blue-300 hover:text-blue-100", "flux": "text-orange-300 hover:text-orange-100" };
+                          const isActive = generatingImage?.postId === post.id && generatingImage.model === imgModel;
+                          const isDisabled = generatingImage?.postId === post.id;
+                          return (
+                            <button
+                              key={imgModel}
+                              onClick={() => handleGenerateImage(post.id, imgModel)}
+                              disabled={isDisabled}
+                              title={`Gerar imagem com ${imgModel}`}
+                              className={`text-xs transition disabled:opacity-40 shrink-0 ${colors[imgModel]}`}
+                            >
+                              {isActive ? (
+                                <span className="inline-flex items-center gap-0.5">
+                                  <span className="w-2 h-2 border border-current border-t-transparent rounded-full animate-spin inline-block" />
+                                </span>
+                              ) : labels[imgModel]}
+                            </button>
+                          );
+                        })}
                       </div>
                     </td>
                   </tr>

@@ -56,37 +56,55 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "system",
-          content: `You are a minimalist editorial art director for a premium Brazilian finance magazine.
-Your only job: write a DALL-E 3 prompt that produces a clean, photorealistic still-life photo.
+          content: `You are a senior photo editor at a top Brazilian financial journalism outlet. You select the perfect editorial stock photo concept for each article to maximize click-through on Google Discover.
 
-ABSOLUTE RULES — NEVER BREAK:
-- No documents, forms, tax papers, envelopes, or screens showing content
-- No banknotes, currency, or anything with printed numbers
-- No cameras, lenses, or photo equipment as objects in the scene
-- No people, faces, hands, or silhouettes
-- No more than 3 objects total
-- No logos, brand names, or readable text anywhere
+Your job: read the article title, summary and keywords, identify the emotional core and main concept, then write a DALL-E 3 prompt for a compelling, contextual editorial photo.
 
-ALLOWED OBJECTS (pick 1-3 that fit the topic):
-gold or silver coin, vintage mechanical calculator, silver ballpoint pen, black ceramic coffee cup, folded reading glasses, closed beige linen folder, metal ruler, closed laptop (screen off, no logos), small succulent plant in terracotta pot
+THINKING PROCESS (internal, do not output):
+1. What is the REAL topic? (stress about taxes? relief of refund? confusion about rules? savings opportunity? deadline urgency?)
+2. What HUMAN SITUATION represents this? (person stressed at desk? happy couple receiving money? professional reviewing documents? family planning budget?)
+3. What OBJECTS reinforce this? (only if no people work better)
 
-MANDATORY STYLE (always include all of these):
-editorial photography, shallow depth of field, warm side lighting from left, dark walnut wood surface, muted earth tones, minimalist composition, 35mm film aesthetic, photorealistic, no text anywhere, high-end finance magazine
+STYLE RULES:
+- Prefer PEOPLE in real situations over objects alone
+- People from behind, side angle, or hands only — never full faces
+- Bright, clean, professional environments (not dark/dramatic)
+- Natural window light, warm tones
+- Editorial stock photo style (Getty Images, Shutterstock premium)
+- Real Brazilian context when possible (home office, apartment, cafe)
+- 35mm film aesthetic, shallow depth of field, photorealistic
 
-OUTPUT: only the English prompt, max 60 words, no explanations, no quotes.`,
+HARD LIMITS:
+- NO camera brand names (Canon, Nikon, etc)
+- NO banknotes or paper money
+- NO text or writing visible
+- NO more than 4 elements in scene
+- NO generic 'just a calculator on desk' concepts
+
+CONCEPT EXAMPLES BY TOPIC:
+- Restituição/refund → person smiling looking at phone/laptop, bright home, relieved expression (from behind or side)
+- Prazo/deadline → person at desk at night, clock visible, urgent atmosphere, hands typing
+- Declaração/filing → hands organizing papers neatly on clean desk, coffee nearby, organized professional feeling
+- Malha fina/audit → person looking concerned at official letter, kitchen table, natural light
+- Deduções/savings → couple at table with notebook planning together, calculator, warm home environment
+- MEI/freelancer → person working laptop in cafe or home office, casual professional setting
+- Investimentos → charts on screen (blurred), person analyzing, professional office setting
+- Criptomoedas → tech environment, multiple screens blurred, modern minimalist desk
+
+OUTPUT: only the DALL-E 3 prompt in English. Maximum 80 words. No explanations. No preamble.`,
         },
         {
           role: "user",
-          content: `Write a DALL-E 3 image prompt for this blog post. Choose 1-2 objects from the allowed list that best represent the topic. Apply all mandatory style words.\n\nPOST TITLE: ${post.title}\nTOPIC: ${(post.tags ?? []).slice(0, 3).join(", ") || "IRPF, imposto de renda"}\n\nRemember: max 3 objects, no text, no people, no documents, no banknotes.`,
+          content: `Article details:\nTITLE: ${post.title}\nSUMMARY: ${post.summary ?? ""}\nKEYWORDS: ${(post.keywords ?? []).slice(0, 5).join(", ")}\nTAGS: ${(post.tags ?? []).slice(0, 3).join(", ")}\n\nThink about the emotional core of this article and write the perfect editorial photo prompt. Remember: contextual and human beats generic objects. The image must make someone stop scrolling.`,
         },
       ],
-      temperature: 0.6,
-      max_tokens: 80,
+      temperature: 0.8,
+      max_tokens: 120,
     });
 
     const imagePrompt =
       (promptCompletion.choices?.[0]?.message?.content ?? "").trim() ||
-      `Single gold coin on dark walnut surface, silver pen beside it, editorial photography, shallow depth of field, warm side lighting from left, muted earth tones, minimalist composition, 35mm film aesthetic, photorealistic, no text anywhere, high-end finance magazine`;
+      `Person from behind sitting at bright home office desk, looking at laptop screen, warm natural window light, shallow depth of field, 35mm film aesthetic, photorealistic, editorial stock photo style, no text visible, Brazilian apartment setting`;
 
     // 3. DALL-E 3 Standard — gerador de imagens
     console.log("[Image] Gerando com DALL-E 3 Standard...");

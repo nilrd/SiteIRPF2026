@@ -76,28 +76,32 @@ export async function POST(
       return NextResponse.json({ error: "Post não encontrado" }, { status: 404 });
     }
 
-    const systemPrompt = `Você é editor sênior de conteúdo tributário brasileiro para o blog do Nilson Brites.
-Corrija o post com base no feedback do administrador.
+    const systemPrompt = `Você é o ghostwriter sênior do Nilson Brites — Analista Financeiro, 10+ anos em IRPF, atendimento 100% online para todo o Brasil.
 
-REGRAS OBRIGATÓRIAS:
-- Idioma: 100% português do Brasil (pt-BR), sem trechos em inglês
-- Manter foco em IRPF 2026 e contexto brasileiro
-- Preservar HTML válido no campo content
-- Melhorar clareza, precisão e conversão sem inventar leis ou números
-- Não remover CTAs do WhatsApp, apenas ajustar se necessário
-- Não alterar o slug (será preservado pelo sistema)
+Sua tarefa é REESCREVER COMPLETAMENTE o post abaixo com base no feedback do administrador.
 
-Retorne APENAS JSON válido com este formato:
+REGRAS ABSOLUTAS:
+1. IDIOMA: 100% português do Brasil (pt-BR) em TODOS os campos — título, resumo, conteúdo, tags, keywords, metaTitle, metaDesc, imageAlt. ZERO palavras em inglês no texto do artigo.
+2. REESCREVA TUDO: título, resumo e o artigo completo do zero. Não reaproveite nada que viole o feedback.
+3. CONTEÚDO MÍNIMO: o campo "content" deve ter no mínimo 2.500 palavras em HTML válido.
+4. FOCO: o artigo deve tratar exclusivamente de IRPF 2026 / imposto de renda no Brasil.
+5. DADOS OFICIAIS: use apenas dados reais — tabela IRPF 2026 (até R$ 2.428,80 isento; 7,5% / 15% / 22,5% / 27,5%), prazo 23/03 a 29/05/2026, multa mínima R$ 165,74. Nunca invente leis ou valores.
+6. ESTRUTURA HTML: use h2 (como perguntas), h3, p, ul, li, table, strong. Parágrafos curtos (máx 4 linhas).
+7. CTAs obrigatórios: mantenha os blocos HTML de CTA para WhatsApp (wa.me/5511940825120).
+8. Tom: direto, humano, empático — como um consultor experiente falando com o cliente.
+9. Não altere o slug (preservado pelo sistema).
+
+Retorne APENAS JSON válido (sem markdown, sem explicações fora do JSON):
 {
-  "title": "...",
-  "summary": "...",
-  "content": "...",
-  "tags": ["..."],
-  "keywords": ["..."],
-  "metaTitle": "...",
-  "metaDesc": "...",
-  "readTime": 8,
-  "imageAlt": "..."
+  "title": "título em pt-BR, máx 65 caracteres, específico ao tema",
+  "summary": "resumo em pt-BR, 150-160 caracteres, com dado numérico",
+  "content": "HTML completo do artigo reescrito em pt-BR, mínimo 2500 palavras",
+  "tags": ["tag1 pt-BR", "tag2 pt-BR"],
+  "keywords": ["keyword-principal", "keyword-secundaria"],
+  "metaTitle": "meta título pt-BR para Google, máx 60 caracteres",
+  "metaDesc": "meta descrição pt-BR, máx 160 caracteres, com dado numérico",
+  "readTime": 10,
+  "imageAlt": "descrição da imagem em pt-BR para acessibilidade"
 }`;
 
     const userPrompt = `FEEDBACK DO ADMIN (o que está errado):\n${issue}\n\n` +
@@ -111,9 +115,9 @@ Retorne APENAS JSON válido com este formato:
       `Tempo de leitura: ${post.readTime}\n` +
       `ImageAlt: ${post.imageAlt ?? ""}\n\n` +
       `HTML atual:\n${post.content}\n\n` +
-      `Tarefa: devolva uma versão corrigida completa em JSON estrito.`;
+      `TAREFA: Reescreva COMPLETAMENTE o post acima em português do Brasil (pt-BR), corrigindo TODOS os problemas indicados no feedback. O campo "content" deve ter no mínimo 2.500 palavras. Devolva apenas o JSON estrito, sem backticks ou explicações fora do JSON.`;
 
-    const llm = await callWithFallback(systemPrompt, userPrompt, 7000, {
+    const llm = await callWithFallback(systemPrompt, userPrompt, 14000, {
       temperature: 0.2,
       response_format: { type: "json_object" },
     });
@@ -143,9 +147,11 @@ Retorne APENAS JSON válido com este formato:
       );
     }
 
+    const modelFriendly = llm.model.startsWith("gemini") ? "Gemini" : "Groq Llama";
+
     return NextResponse.json({
       success: true,
-      model: llm.model,
+      model: modelFriendly,
       corrected,
     });
   } catch (err) {

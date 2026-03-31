@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
@@ -37,11 +37,12 @@ const EMPTY: PostForm = {
 
 export default function EditPostPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
 
   const [form, setForm] = useState<PostForm>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [fixing, setFixing] = useState(false);
+  const [fixIssue, setFixIssue] = useState("");
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [activeTab, setActiveTab] = useState<"content" | "seo" | "settings">("content");
 
@@ -78,37 +79,143 @@ export default function EditPostPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  function buildPayload(source: PostForm, forcePublished?: boolean) {
+    return {
+      title: source.title.trim(),
+      slug: source.slug.trim(),
+      summary: source.summary.trim() || null,
+      content: source.content,
+      coverImage: source.coverImage.trim() || null,
+      imageAlt: source.imageAlt.trim(),
+      tags: source.tags.split(",").map((t) => t.trim()).filter(Boolean),
+      keywords: source.keywords.split(",").map((k) => k.trim()).filter(Boolean),
+      metaTitle: source.metaTitle.trim() || null,
+      metaDesc: source.metaDesc.trim() || null,
+      readTime: Number(source.readTime),
+      published: typeof forcePublished === "boolean" ? forcePublished : source.published,
+    };
+  }
+
+  async function patchPost(payload: ReturnType<typeof buildPayload>) {
+    const res = await fetch(`/api/admin/blog/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error("Erro ao salvar");
+  }
+
+  type CorrectedDraft = {
+    title?: string;
+    summary?: string;
+    content?: string;
+    tags?: string[];
+    keywords?: string[];
+    metaTitle?: string;
+    metaDesc?: string;
+    readTime?: number;
+    imageAlt?: string;
+  };
+
+  function mergeCorrectedDraft(corrected: CorrectedDraft): PostForm {
+    return {
+      ...form,
+      title: corrected.title ?? form.title,
+      summary: corrected.summary ?? form.summary,
+      content: corrected.content ?? form.content,
+      tags: Array.isArray(corrected.tags) ? corrected.tags.join(", ") : form.tags,
+      keywords: Array.isArray(corrected.keywords) ? corrected.keywords.join(", ") : form.keywords,
+      metaTitle: corrected.metaTitle ?? form.metaTitle,
+      metaDesc: corrected.metaDesc ?? form.metaDesc,
+      readTime: Number.isFinite(Number(corrected.readTime)) ? Number(corrected.readTime) : form.readTime,
+      imageAlt: corrected.imageAlt ?? form.imageAlt,
+    };
+  }
+
   async function handleSave() {
     setSaving(true);
     setMsg(null);
     try {
-      const payload = {
-        title: form.title.trim(),
-        slug: form.slug.trim(),
-        summary: form.summary.trim() || null,
-        content: form.content,
-        coverImage: form.coverImage.trim() || null,
-        imageAlt: form.imageAlt.trim(),
-        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
-        keywords: form.keywords.split(",").map((k) => k.trim()).filter(Boolean),
-        metaTitle: form.metaTitle.trim() || null,
-        metaDesc: form.metaDesc.trim() || null,
-        readTime: Number(form.readTime),
-        published: form.published,
-      };
-
-      const res = await fetch(`/api/admin/blog/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error("Erro ao salvar");
+      await patchPost(buildPayload(form));
       setMsg({ text: "Post salvo com sucesso!", ok: true });
       setTimeout(() => setMsg(null), 3000);
     } catch {
       setMsg({ text: "Erro ao salvar post.", ok: false });
     } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleFixWithAI() {
+    if (!fixIssue.trim()) {
+      setMsg({ text: "Descreva primeiro o que está errado no post.", ok: false });
+      return;
+    }
+
+    setFixing(true);
+    setMsg(null);
+
+    try {
+      const res = await fetch(`/api/admin/blog/${id}/fix`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ issue: fixIssue.trim() }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.corrected) {
+        throw new Error(data?.error || "Falha ao corrigir");
+      }
+
+      setForm(mergeCorrectedDraft(data.corrected));
+
+      setMsg({ text: `Rascunho corrigido com IA (${data.model || "modelo"}). Revise e clique em Salvar.`, ok: true });
+      setTimeout(() => setMsg(null), 5000);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao corrigir com IA.";
+      setMsg({ text: message, ok: false });
+    } finally {
+      setFixing(false);
+    }
+  }
+
+  async function handleFixAndSave(shouldPublish: boolean) {
+    if (!fixIssue.trim()) {
+      setMsg({ text: "Descreva primeiro o que está errado no post.", ok: false });
+      return;
+    }
+
+    setFixing(true);
+    setSaving(true);
+    setMsg(null);
+
+    try {
+      const res = await fetch(`/api/admin/blog/${id}/fix`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ issue: fixIssue.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.corrected) {
+        throw new Error(data?.error || "Falha ao corrigir");
+      }
+
+      const nextForm = mergeCorrectedDraft(data.corrected);
+      setForm({ ...nextForm, published: shouldPublish ? true : nextForm.published });
+
+      await patchPost(buildPayload(nextForm, shouldPublish ? true : undefined));
+
+      if (shouldPublish) {
+        setMsg({ text: `Post corrigido, salvo e publicado com IA (${data.model || "modelo"}).`, ok: true });
+      } else {
+        setMsg({ text: `Post corrigido e salvo com IA (${data.model || "modelo"}).`, ok: true });
+      }
+      setTimeout(() => setMsg(null), 5000);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao corrigir e salvar.";
+      setMsg({ text: message, ok: false });
+    } finally {
+      setFixing(false);
       setSaving(false);
     }
   }
@@ -193,6 +300,45 @@ export default function EditPostPage() {
 
               {activeTab === "content" && (
                 <div className="space-y-6">
+                  <div className="border border-white/10 bg-white/[0.02] p-4">
+                    <label className={labelClass}>Corrigir post com IA</label>
+                    <textarea
+                      value={fixIssue}
+                      onChange={(e) => setFixIssue(e.target.value)}
+                      rows={3}
+                      className="w-full bg-transparent border border-white/15 p-3 outline-none focus:border-white/40 transition text-white text-sm resize-y"
+                      placeholder="Ex: O artigo está em inglês e sem foco em deduções de saúde e educação no IRPF 2026. Corrigir para pt-BR e reforçar regras oficiais."
+                    />
+                    <div className="flex items-center justify-between mt-3">
+                      <p className="text-[10px] opacity-40">
+                        A IA aplica as correções no formulário atual. Nada é publicado automaticamente.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleFixWithAI}
+                          disabled={fixing || loading || saving}
+                          className="bg-yellow-300 text-black px-3 py-2 uppercase text-[10px] tracking-widest font-bold hover:bg-yellow-200 transition disabled:opacity-50"
+                        >
+                          {fixing ? "Corrigindo..." : "Corrigir com IA"}
+                        </button>
+                        <button
+                          onClick={() => handleFixAndSave(false)}
+                          disabled={fixing || loading || saving}
+                          className="bg-white text-black px-3 py-2 uppercase text-[10px] tracking-widest font-bold hover:bg-white/90 transition disabled:opacity-50"
+                        >
+                          Corrigir e Salvar
+                        </button>
+                        <button
+                          onClick={() => handleFixAndSave(true)}
+                          disabled={fixing || loading || saving}
+                          className="bg-green-400 text-black px-3 py-2 uppercase text-[10px] tracking-widest font-bold hover:bg-green-300 transition disabled:opacity-50"
+                        >
+                          Corrigir e Publicar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
                     <label className={labelClass}>Título</label>
                     <input

@@ -243,6 +243,52 @@ function normalizeText(input: string): string {
     .trim();
 }
 
+function stripHtmlAndUrls(input: string): string {
+  return input
+    .replace(/https?:\/\/\S+/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+type LanguageCheck = {
+  isPortuguese: boolean;
+  portugueseHits: number;
+  englishHits: number;
+};
+
+function countWordHits(text: string, words: string[]): number {
+  let hits = 0;
+  for (const word of words) {
+    const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`\\b${escaped}\\b`, "gi");
+    const matches = text.match(re);
+    hits += matches ? matches.length : 0;
+  }
+  return hits;
+}
+
+function detectPortugueseContent(sample: string): LanguageCheck {
+  const text = stripHtmlAndUrls(sample).toLowerCase();
+  const portugueseWords = [
+    "de", "para", "com", "que", "nao", "não", "voce", "você", "seu", "sua",
+    "declaracao", "declaração", "imposto", "renda", "receita", "federal", "prazo",
+    "deducao", "dedução", "educacao", "educação", "saude", "saúde", "malha", "fina",
+    "restituicao", "restituição", "como", "quando", "brasil", "contribuinte",
+  ];
+  const englishWords = [
+    "the", "and", "for", "with", "that", "this", "from", "into", "your", "you",
+    "income", "tax", "deduction", "deadline", "refund", "federal", "return", "guide",
+    "how", "what", "when", "should", "must", "can", "article", "tips",
+  ];
+
+  const portugueseHits = countWordHits(text, portugueseWords);
+  const englishHits = countWordHits(text, englishWords);
+  const isPortuguese = portugueseHits >= 12 && portugueseHits >= englishHits * 1.2;
+
+  return { isPortuguese, portugueseHits, englishHits };
+}
+
 function tokenSet(input: string): Set<string> {
   const tokens = normalizeText(input)
     .split(" ")
@@ -893,6 +939,7 @@ function blogSystemPrompt(
   if (compactMode) {
     return `Ghostwriter de Nilson Brites, consultor IRPF 10+ anos, atendimento 100% online.
 Tom: direto, humano, empático. Parágrafos curtos. Sem emojis.
+IDIOMA OBRIGATÓRIO: português do Brasil (pt-BR) em 100% do conteúdo, sem trechos em inglês.
 
 DADOS IRPF 2026: Prazo 23/03 a 29/05/2026. Obrigatório se rendimentos > R$ 35.584,00. Multa mínima R$ 165,74. Selic ${selicAtual}%.
 Tabela: até R$ 2.428,80 isento; até R$ 2.826,65: 7,5%; até R$ 3.751,05: 15%; até R$ 4.664,68: 22,5%; acima: 27,5%.
@@ -922,6 +969,7 @@ SAÍDA: JSON estrito com campos: title, slug, summary, content (HTML min 2500 pa
   return `${IRPF_DATA_CONTEXT}
 
 Você é o ghostwriter do Nilson Brites — Analista Financeiro com mais de 10 anos de experiência em declaração de IRPF, atendendo brasileiros de todo o país 100% online.
+IDIOMA OBRIGATÓRIO: português do Brasil (pt-BR) em 100% do conteúdo, sem trechos em inglês.
 
 ESCREVA EXATAMENTE COMO ELE FALARIA: direto, humano, sem jargão acadêmico, com a autoridade de quem já resolveu milhares de casos reais.
 O blog existe para CONVERTER LEITORES EM CLIENTES — não apenas para informar.
@@ -1163,6 +1211,7 @@ async function verificarPost(content: string): Promise<PostReview> {
 4. Formulas matematicas de calculo sem base legal citada
 5. Afirmacoes absolutas de obrigatoriedade ("todos devem declarar")
 6. Conteudo fora do IRPF: calculo de aposentadoria INSS, pontuacao previdenciaria, FGTS, CLT
+7. Idioma diferente de portugues do Brasil (ingles total ou parcial)
 
 Retorne APENAS JSON valido:
 {
@@ -1287,6 +1336,26 @@ export async function generateBlogPost(
   }
 
   let parsed = await runGeneration();
+
+  // Trava de idioma: se vier em inglês, força regeneração em pt-BR.
+  let languageCheck = detectPortugueseContent(
+    `${parsed?.title || ""}\n${parsed?.summary || ""}\n${parsed?.content || ""}`.slice(0, 12000)
+  );
+  if (!languageCheck.isPortuguese) {
+    parsed = await runGeneration(
+      "REGENERE O ARTIGO IMEDIATAMENTE EM PORTUGUES DO BRASIL. O post anterior saiu em ingles e foi rejeitado. Retorne TODO o JSON em pt-BR, incluindo title, summary, content e FAQs."
+    );
+
+    languageCheck = detectPortugueseContent(
+      `${parsed?.title || ""}\n${parsed?.summary || ""}\n${parsed?.content || ""}`.slice(0, 12000)
+    );
+  }
+
+  if (!languageCheck.isPortuguese) {
+    throw new Error(
+      `Idioma invalido para publicacao (ptHits=${languageCheck.portugueseHits}, enHits=${languageCheck.englishHits}). Post bloqueado.`
+    );
+  }
 
   if (parsed?.title && isTitleTooSimilar(parsed.title, existingTitles)) {
     parsed = await runGeneration(

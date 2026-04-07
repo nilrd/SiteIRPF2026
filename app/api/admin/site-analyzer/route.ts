@@ -67,6 +67,72 @@ export async function POST(req: NextRequest) {
       prisma.lead.count(),
     ]);
 
+    // Analytics reais — last 30 days
+    const since30d = new Date(Date.now() - 30 * 86400000);
+    let analyticsBlock = "=== ANALYTICS REAL (sem dados ainda — sistema acabou de ser instalado) ===\n";
+    try {
+      const [pvCount, sessionRows, waClicks, ctaClicks, topPages, topRefs, devices, utms] =
+        await Promise.all([
+          prisma.analyticsEvent.count({ where: { type: "pageview", createdAt: { gte: since30d } } }),
+          prisma.analyticsEvent.groupBy({
+            by: ["sessionId"],
+            where: { type: "pageview", createdAt: { gte: since30d } },
+            _count: { id: true },
+          }),
+          prisma.analyticsEvent.count({ where: { type: "whatsapp_click", createdAt: { gte: since30d } } }),
+          prisma.analyticsEvent.count({ where: { type: "cta_click", createdAt: { gte: since30d } } }),
+          prisma.analyticsEvent.groupBy({
+            by: ["page"],
+            where: { type: "pageview", createdAt: { gte: since30d } },
+            _count: { id: true },
+            orderBy: { _count: { id: "desc" } },
+            take: 10,
+          }),
+          prisma.analyticsEvent.groupBy({
+            by: ["referrer"],
+            where: { type: "pageview", referrer: { not: null }, createdAt: { gte: since30d } },
+            _count: { id: true },
+            orderBy: { _count: { id: "desc" } },
+            take: 5,
+          }),
+          prisma.analyticsEvent.groupBy({
+            by: ["device"],
+            where: { type: "pageview", createdAt: { gte: since30d } },
+            _count: { id: true },
+            orderBy: { _count: { id: "desc" } },
+          }),
+          prisma.analyticsEvent.groupBy({
+            by: ["utmSource", "utmCampaign"],
+            where: { type: "pageview", utmSource: { not: null }, createdAt: { gte: since30d } },
+            _count: { id: true },
+            orderBy: { _count: { id: "desc" } },
+            take: 5,
+          }),
+        ]);
+
+      const sessions = sessionRows.length;
+      const convRate = pvCount > 0 ? ((totalLeads / pvCount) * 100).toFixed(2) : "0.00";
+      const waConvRate = pvCount > 0 ? ((waClicks / pvCount) * 100).toFixed(2) : "0.00";
+
+      analyticsBlock = `=== ANALYTICS REAL DO SITE (últimos 30 dias) ===
+Pageviews: ${pvCount} | Sessões únicas: ${sessions} | WhatsApp clicks: ${waClicks} | CTA clicks: ${ctaClicks}
+Taxa de conversão (leads/pageviews): ${convRate}% | Taxa WhatsApp click: ${waConvRate}%
+
+TOP PÁGINAS:
+${topPages.map((p) => `  ${p.page}: ${p._count.id} views`).join("\n") || "  (ainda sem dados)"}
+
+FONTES DE TRÁFEGO (referrers):
+${topRefs.map((r) => `  ${r.referrer}: ${r._count.id}`).join("\n") || "  (tráfego direto / orgânico / dados indisponíveis)"}
+
+DISPOSITIVOS:
+${devices.map((d) => `  ${d.device ?? "desconhecido"}: ${d._count.id}`).join("\n") || "  (sem dados)"}
+
+CAMPANHAS UTM:
+${utms.map((u) => `  ${u.utmSource}/${u.utmCampaign ?? "sem-campanha"}: ${u._count.id} visitas`).join("\n") || "  (nenhuma campanha UTM registrada)"}`;
+    } catch {
+      // analytics table might not have data yet — graceful degradation
+    }
+
     const lowViewsPosts = posts.filter((p) => p.views < 10).length;
     const blogSummary = posts
       .map(
@@ -100,6 +166,8 @@ ${leadSummary || "Nenhum lead registrado ainda"}
 
 === CONTATOS VIA FORMULÁRIO ===
 Total: ${contatos}
+
+${analyticsBlock}
 
 === DATA DE HOJE ===
 ${new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}

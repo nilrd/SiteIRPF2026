@@ -4,6 +4,7 @@ import Footer from "@/components/site/Footer";
 import WhatsAppFloat from "@/components/site/WhatsAppFloat";
 import ChatbotWidget from "@/components/site/ChatbotWidget";
 import { JsonLdWebsite } from "@/components/seo/JsonLd";
+import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://irpf.qaplay.com.br"),
@@ -32,6 +33,7 @@ export default function SiteLayout({
   return (
     <>
       <JsonLdWebsite />
+      <AnalyticsTracker />
       <Navbar />
       <main>{children}</main>
       <Footer />

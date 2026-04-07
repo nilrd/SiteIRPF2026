@@ -3,6 +3,26 @@
 import { useState, useEffect } from "react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
+/* ── Analytics Types ────────────────────────────────────────── */
+interface AnalyticsOverview {
+  pageviews30d: number;
+  sessions30d: number;
+  pageviews7d: number;
+  waClicks30d: number;
+  ctaClicks30d: number;
+  avgTimeOnPageSec: number;
+}
+interface AnalyticsData {
+  overview: AnalyticsOverview;
+  topPages: { page: string; views: number }[];
+  topReferrers: { referrer: string; views: number }[];
+  deviceBreakdown: { device: string; count: number }[];
+  countryBreakdown: { country: string; count: number }[];
+  avgScrollByPage: { page: string; avgScroll: number; events: number }[];
+  topCtaClicks: { element: string; type: string; count: number }[];
+  utmSources: { utmSource: string | null; utmCampaign: string | null; visits: number }[];
+}
+
 /* ── Types ─────────────────────────────────────────────────── */
 interface Problema {
   area: string;
@@ -128,7 +148,28 @@ export default function AnalisadorPage() {
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [loadingHistoricoId, setLoadingHistoricoId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"analise" | "historico">("analise");
+  const [activeTab, setActiveTab] = useState<"analise" | "historico" | "metricas">("analise");
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+
+  useEffect(() => {
+    fetchHistorico();
+  }, []);
+
+  async function fetchAnalytics() {
+    setLoadingAnalytics(true);
+    try {
+      const res = await fetch("/api/admin/analytics");
+      if (res.ok) {
+        const data = await res.json();
+        setAnalytics(data);
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  }
 
   useEffect(() => {
     fetchHistorico();
@@ -218,10 +259,13 @@ export default function AnalisadorPage() {
 
           {/* Tabs */}
           <div className="flex gap-4 mb-8 border-b border-white/10">
-            {(["analise", "historico"] as const).map((tab) => (
+            {(["analise", "metricas", "historico"] as const).map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => {
+                  setActiveTab(tab);
+                  if (tab === "metricas" && !analytics) fetchAnalytics();
+                }}
                 className={`pb-3 text-xs uppercase tracking-widest transition border-b-2 ${
                   activeTab === tab
                     ? "border-[#C6FF00] text-[#C6FF00]"
@@ -230,6 +274,8 @@ export default function AnalisadorPage() {
               >
                 {tab === "analise"
                   ? "Análise Atual"
+                  : tab === "metricas"
+                  ? "Métricas Reais"
                   : `Histórico${historico.length > 0 ? ` (${historico.length})` : ""}`}
               </button>
             ))}
@@ -724,6 +770,226 @@ export default function AnalisadorPage() {
                     </div>
                   </div>
                 )}
+            </div>
+          )}
+
+          {/* ── Tab: Métricas Reais ── */}
+          {activeTab === "metricas" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] uppercase tracking-widest text-white/40">
+                  Analytics do site — últimos 30 dias (dados reais do banco)
+                </div>
+                <button
+                  onClick={fetchAnalytics}
+                  disabled={loadingAnalytics}
+                  className="text-[10px] uppercase tracking-widest text-[#C6FF00] hover:text-white transition disabled:opacity-40"
+                >
+                  {loadingAnalytics ? "Atualizando..." : "↻ Atualizar"}
+                </button>
+              </div>
+
+              {loadingAnalytics && (
+                <div className="border border-white/10 p-12 text-center text-white/30 text-sm">
+                  Carregando dados de analytics...
+                </div>
+              )}
+
+              {!loadingAnalytics && !analytics && (
+                <div className="border border-white/10 p-12 text-center">
+                  <p className="text-white/30 text-sm mb-1">Nenhum dado ainda.</p>
+                  <p className="text-white/20 text-xs">Os dados aparecem assim que visitantes acessarem o site.</p>
+                </div>
+              )}
+
+              {analytics && (
+                <>
+                  {/* Overview cards */}
+                  <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+                    {[
+                      { label: "Pageviews 30d", value: analytics.overview.pageviews30d.toLocaleString("pt-BR") },
+                      { label: "Sessões 30d", value: analytics.overview.sessions30d.toLocaleString("pt-BR") },
+                      { label: "Pageviews 7d", value: analytics.overview.pageviews7d.toLocaleString("pt-BR") },
+                      { label: "WA Clicks 30d", value: analytics.overview.waClicks30d.toLocaleString("pt-BR"), accent: true },
+                      { label: "CTA Clicks 30d", value: analytics.overview.ctaClicks30d.toLocaleString("pt-BR") },
+                      {
+                        label: "Tempo médio",
+                        value:
+                          analytics.overview.avgTimeOnPageSec >= 60
+                            ? `${Math.floor(analytics.overview.avgTimeOnPageSec / 60)}m${analytics.overview.avgTimeOnPageSec % 60}s`
+                            : `${analytics.overview.avgTimeOnPageSec}s`,
+                      },
+                    ].map((card) => (
+                      <div
+                        key={card.label}
+                        className={`border p-4 text-center ${card.accent ? "border-[#C6FF00]/40 bg-[#C6FF00]/5" : "border-white/10"}`}
+                      >
+                        <div className="text-[9px] uppercase tracking-widest text-white/30 mb-1">{card.label}</div>
+                        <div className={`text-2xl font-bold ${card.accent ? "text-[#C6FF00]" : ""}`}>{card.value}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Top páginas */}
+                    <div className="border border-white/10 p-5">
+                      <div className="text-[10px] uppercase tracking-widest text-white/40 mb-4">
+                        Páginas mais visitadas
+                      </div>
+                      <div className="space-y-2">
+                        {analytics.topPages.length === 0 && (
+                          <p className="text-white/20 text-xs">Sem dados ainda</p>
+                        )}
+                        {analytics.topPages.map((p, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span className="text-[9px] text-white/25 w-4 shrink-0">{i + 1}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs text-white/70 truncate">{p.page}</div>
+                              <div
+                                className="h-1 bg-white/10 mt-1"
+                                style={{
+                                  width: `${Math.round((p.views / (analytics.topPages[0]?.views || 1)) * 100)}%`,
+                                  background: "#C6FF00",
+                                  opacity: 0.4,
+                                }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-white/50 shrink-0">{p.views}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Fontes de tráfego */}
+                    <div className="border border-white/10 p-5">
+                      <div className="text-[10px] uppercase tracking-widest text-white/40 mb-4">
+                        Fontes de tráfego (referrers)
+                      </div>
+                      <div className="space-y-2">
+                        {analytics.topReferrers.length === 0 && (
+                          <p className="text-white/20 text-xs">Tráfego direto ou sem dados UTM ainda</p>
+                        )}
+                        {analytics.topReferrers.map((r, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <span className="text-[9px] text-white/25 w-4 shrink-0">{i + 1}</span>
+                            <span className="flex-1 text-xs text-white/60 truncate">{r.referrer}</span>
+                            <span className="text-[10px] text-white/50 shrink-0">{r.views}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Dispositivos */}
+                    <div className="border border-white/10 p-5">
+                      <div className="text-[10px] uppercase tracking-widest text-white/40 mb-4">
+                        Dispositivos
+                      </div>
+                      <div className="space-y-3">
+                        {analytics.deviceBreakdown.length === 0 && (
+                          <p className="text-white/20 text-xs">Sem dados ainda</p>
+                        )}
+                        {(() => {
+                          const total = analytics.deviceBreakdown.reduce((s, d) => s + d.count, 0) || 1;
+                          return analytics.deviceBreakdown.map((d, i) => (
+                            <div key={i}>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-white/60 capitalize">{d.device}</span>
+                                <span className="text-white/40">
+                                  {Math.round((d.count / total) * 100)}% ({d.count})
+                                </span>
+                              </div>
+                              <div className="h-1.5 bg-white/10">
+                                <div
+                                  className="h-full bg-[#C6FF00]/50"
+                                  style={{ width: `${Math.round((d.count / total) * 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+
+                    {/* CTAs mais clicados */}
+                    <div className="border border-white/10 p-5">
+                      <div className="text-[10px] uppercase tracking-widest text-white/40 mb-4">
+                        CTAs e WhatsApp mais clicados
+                      </div>
+                      <div className="space-y-2">
+                        {analytics.topCtaClicks.length === 0 && (
+                          <p className="text-white/20 text-xs">Nenhum clique em CTA registrado ainda</p>
+                        )}
+                        {analytics.topCtaClicks.map((c, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <span
+                              className={`text-[9px] px-1.5 py-0.5 shrink-0 mt-0.5 ${
+                                c.type === "whatsapp_click"
+                                  ? "bg-green-500/20 text-green-400"
+                                  : "bg-white/10 text-white/40"
+                              }`}
+                            >
+                              {c.type === "whatsapp_click" ? "WA" : "CTA"}
+                            </span>
+                            <span className="flex-1 text-xs text-white/60 leading-relaxed">{c.element}</span>
+                            <span className="text-[10px] text-white/50 shrink-0">{c.count}x</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Scroll depth por página */}
+                    {analytics.avgScrollByPage.length > 0 && (
+                      <div className="border border-white/10 p-5">
+                        <div className="text-[10px] uppercase tracking-widest text-white/40 mb-4">
+                          Profundidade de scroll médio (por página)
+                        </div>
+                        <div className="space-y-2">
+                          {analytics.avgScrollByPage.map((s, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="text-[9px] text-white/25 w-4 shrink-0">{i + 1}</span>
+                              <span className="flex-1 text-xs text-white/60 truncate">{s.page}</span>
+                              <span
+                                className={`text-[10px] shrink-0 ${
+                                  s.avgScroll >= 75
+                                    ? "text-[#C6FF00]"
+                                    : s.avgScroll >= 50
+                                    ? "text-yellow-400"
+                                    : "text-white/40"
+                                }`}
+                              >
+                                {s.avgScroll}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Campanhas UTM */}
+                    {analytics.utmSources.length > 0 && (
+                      <div className="border border-white/10 p-5">
+                        <div className="text-[10px] uppercase tracking-widest text-white/40 mb-4">
+                          Campanhas (UTM)
+                        </div>
+                        <div className="space-y-2">
+                          {analytics.utmSources.map((u, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="text-[9px] text-white/25 w-4 shrink-0">{i + 1}</span>
+                              <div className="flex-1 min-w-0">
+                                <span className="text-xs text-white/70">{u.utmSource}</span>
+                                {u.utmCampaign && (
+                                  <span className="text-[9px] text-white/30 ml-1">/ {u.utmCampaign}</span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-white/50 shrink-0">{u.visits}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           )}
 

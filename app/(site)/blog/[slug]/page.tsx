@@ -70,6 +70,11 @@ export default async function BlogPostPage({ params }: Props) {
   const post = await getPost(params.slug);
   if (!post || !post.published) notFound();
 
+  // Increment view count (fire-and-forget — never blocks render)
+  void prisma.blogPost
+    .update({ where: { id: post.id }, data: { views: { increment: 1 } } })
+    .catch(() => {});
+
   const faqs: { question: string; answer: string }[] =
     (() => { try { return JSON.parse(post.faqsJson || "[]"); } catch { return []; } })();
 

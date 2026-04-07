@@ -142,3 +142,34 @@ model KeywordHistory {
   @@index([keyword])
   @@map("keyword_history")
 }
+
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  sessionId   String
+  type        String
+  page        String
+  referrer    String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmContent  String?
+  utmTerm     String?
+  scrollDepth Int?
+  timeOnPage  Int?
+  element     String?
+  country     String?
+  region      String?
+  city        String?
+  device      String?
+  browser     String?
+  os          String?
+  screenW     Int?
+  screenH     Int?
+  createdAt   DateTime @default(now())
+
+  @@index([type])
+  @@index([page])
+  @@index([createdAt])
+  @@index([sessionId])
+  @@map("analytics_events")
+}

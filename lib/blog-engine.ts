@@ -1338,6 +1338,7 @@ export async function generateBlogPost(
   let parsed = await runGeneration();
 
   // Trava de idioma: se vier em inglês, força regeneração em pt-BR.
+  let forceUnpublished = false;
   let languageCheck = detectPortugueseContent(
     `${parsed?.title || ""}\n${parsed?.summary || ""}\n${parsed?.content || ""}`.slice(0, 12000)
   );
@@ -1352,8 +1353,10 @@ export async function generateBlogPost(
   }
 
   if (!languageCheck.isPortuguese) {
-    throw new Error(
-      `Idioma invalido para publicacao (ptHits=${languageCheck.portugueseHits}, enHits=${languageCheck.englishHits}). Post bloqueado.`
+    // Não lança exceção — salva como rascunho para revisão manual
+    forceUnpublished = true;
+    console.warn(
+      `[Blog] Idioma suspeito após 2 tentativas (ptHits=${languageCheck.portugueseHits}, enHits=${languageCheck.englishHits}). Salvando como rascunho para revisão.`
     );
   }
 
@@ -1411,7 +1414,7 @@ export async function generateBlogPost(
     imageAlt: (typeof parsed.imageAlt === "string" && parsed.imageAlt ? parsed.imageAlt : null) ?? (parsed.title || keyword),
     articleSection: (typeof parsed.articleSection === "string" ? parsed.articleSection : null) ?? "IRPF",
     isNewsworthy: typeof parsed.isNewsworthy === "boolean" ? parsed.isNewsworthy : false,
-    reviewApproved: review.aprovado,
+    reviewApproved: forceUnpublished ? false : review.aprovado,
     reviewJson: JSON.stringify(review),
   };
 }

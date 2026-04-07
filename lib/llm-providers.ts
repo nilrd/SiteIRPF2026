@@ -123,11 +123,9 @@ export async function callWithFallback(
         return { text, model };
       }
     } catch (err) {
-      if (isRateLimitOrQuotaError(err)) {
-        console.warn(`[LLM] Limite atingido em ${model}, tentando próximo...`);
-        continue;
-      }
-      throw err;
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[LLM] ${model} falhou (${msg.slice(0, 120)}), tentando próximo...`);
+      continue;
     }
   }
 

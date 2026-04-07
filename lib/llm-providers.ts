@@ -255,6 +255,6 @@ export async function callWithFallback(
   }
 
   throw new Error(
-    `Todos os modelos LLM falharam. Modelos mortos nesta instância: [${[...deadModels].join(", ")}]. Tente novamente em alguns minutos.`
+    `Todos os modelos LLM falharam. Modelos mortos nesta instância: [${Array.from(deadModels).join(", ")}]. Tente novamente em alguns minutos.`
   );
 }

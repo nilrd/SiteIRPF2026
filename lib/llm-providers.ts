@@ -1,8 +1,18 @@
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Cliente Groq via OpenAI SDK (chatbot, admin IA, blog fallback)
-export const groqLlama = new OpenAI({
+// Clientes Groq — key1 principal + key2 fallback (rate limit independente por chave)
+const groqClients: Array<{ client: OpenAI; label: string }> = [
+  ...(process.env.GROQ_API_KEY
+    ? [{ client: new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY }), label: "key1" }]
+    : []),
+  ...(process.env.GROQ_API_KEY_2
+    ? [{ client: new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY_2 }), label: "key2" }]
+    : []),
+];
+
+// Compatibilidade com código legado que usa groqLlama diretamente (chatbot, verifier)
+export const groqLlama = groqClients[0]?.client ?? new OpenAI({
   baseURL: "https://api.groq.com/openai/v1",
   apiKey: process.env.GROQ_API_KEY,
 });
@@ -340,45 +350,63 @@ export async function callWithFallback(
     }
   }
 
-  // ── 4. GROQ CASCADE (128k+ ctx todos, compact prompt, tokens/min limitado) ─
+  // ── 4. GROQ CASCADE (modelo × chave1 → chave2, 128k+ ctx, compact prompt) ──
+  // Rate limit por chave é independente — key2 assume quando key1 atinge 429/TPM.
   const groqMaxTokens = Math.min(maxTokens, 4000);
 
-  for (const model of GROQ_FALLBACK_MODELS) {
-    if (deadModels.has(model)) {
-      console.log(`[LLM] Pulando Groq ${model} (marcado morto)`);
-      continue;
-    }
-    try {
-      console.log(`[LLM] Tentando Groq: ${model}`);
-      const response = await groqLlama.chat.completions.create({
-        model,
-        messages: [
-          { role: "system", content: compactSystem },
-          { role: "user", content: compactUser },
-        ],
-        max_tokens: groqMaxTokens,
-        temperature: extraOptions?.temperature ?? 0.35,
-        ...(extraOptions?.response_format
-          ? { response_format: extraOptions.response_format }
-          : {}),
-      });
-      const raw = response.choices[0]?.message?.content;
-      const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
-      if (validated) {
-        console.log(`[LLM] Sucesso: ${model} (Groq)`);
-        return { text: validated, model };
-      } else if (raw) {
-        console.warn(`[LLM] Groq ${model} retornou JSON inválido — continuando cascade`);
+  if (groqClients.length > 0) {
+    for (const model of GROQ_FALLBACK_MODELS) {
+      const modelKey = `groq:${model}`;
+      if (deadModels.has(modelKey)) {
+        console.log(`[LLM] Pulando Groq ${model} (marcado morto em todas as chaves)`);
+        continue;
       }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const errType = classifyError(err);
-      if (errType === "dead") {
-        deadModels.add(model);
-        console.warn(`[LLM] Groq ${model} MORTO: ${msg.slice(0, 100)}`);
-      } else {
-        console.warn(`[LLM] Groq ${model} falhou [${errType}]: ${msg.slice(0, 120)}`);
+      let allKeysFailed = true;
+      for (const { client, label } of groqClients) {
+        const clientKey = `groq:${model}:${label}`;
+        if (deadModels.has(clientKey)) continue;
+        try {
+          console.log(`[LLM] Tentando Groq: ${model} [${label}]`);
+          const response = await client.chat.completions.create({
+            model,
+            messages: [
+              { role: "system", content: compactSystem },
+              { role: "user", content: compactUser },
+            ],
+            max_tokens: groqMaxTokens,
+            temperature: extraOptions?.temperature ?? 0.35,
+            ...(extraOptions?.response_format
+              ? { response_format: extraOptions.response_format }
+              : {}),
+          });
+          const raw = response.choices[0]?.message?.content;
+          const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+          if (validated) {
+            console.log(`[LLM] Sucesso: ${model} [${label}] (Groq)`);
+            return { text: validated, model };
+          } else if (raw) {
+            console.warn(`[LLM] Groq ${model} [${label}] retornou JSON inválido — tentando próxima chave`);
+          }
+          allKeysFailed = false; // respondeu, mesmo que inválido
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          const errType = classifyError(err);
+          if (errType === "dead") {
+            // Modelo morto nesta chave — se ambas derem dead, marca o modelo inteiro
+            deadModels.add(clientKey);
+            console.warn(`[LLM] Groq ${model} [${label}] MORTO: ${msg.slice(0, 100)}`);
+          } else if (errType === "size_limit") {
+            // Rate limit nesta chave — tenta a próxima
+            console.warn(`[LLM] Groq ${model} [${label}] rate limit [${label}]: ${msg.slice(0, 100)}`);
+          } else {
+            console.warn(`[LLM] Groq ${model} [${label}] falhou [${errType}]: ${msg.slice(0, 120)}`);
+          }
+        }
       }
+      // Se todas as chaves deram dead para este modelo, marca o modelo como morto
+      const allDead = groqClients.every(({ label }) => deadModels.has(`groq:${model}:${label}`));
+      if (allDead) deadModels.add(modelKey);
+      void allKeysFailed; // suprime lint
     }
   }
 

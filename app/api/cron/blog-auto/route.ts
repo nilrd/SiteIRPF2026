@@ -4,10 +4,13 @@ import { resend } from "@/lib/resend";
 import { feedBrainFromOfficialSources, isKeywordRecent, markKeywordUsed } from "@/lib/knowledge-brain";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // Vercel Pro: até 300s para gerar 8 posts em sequência
+export const maxDuration = 300; // Vercel Pro: até 300s para gerar posts em sequência
 
-const NUM_POSTS = 8;
+const NUM_POSTS = 6; // Reduzido de 8→6: orçamento de ~240s (6×30s + delays + brain)
 const DELAY_BETWEEN_POSTS_MS = 3000;
+// Orçamento de tempo: aborta o loop se restar < 45s para o maxDuration
+// Evita que Vercel mate a função no meio de uma geração e perca o post
+const MAX_CRON_MS = 240_000; // 240s → 60s de margem para o maxDuration de 300s
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -25,9 +28,17 @@ export async function GET(request: Request) {
 
     const results: { id: string; title: string; slug: string; published: boolean }[] = [];
     const errors: { index: number; error: string }[] = [];
+    const cronStart = Date.now();
 
     for (let i = 0; i < NUM_POSTS; i++) {
       if (i > 0) await delay(DELAY_BETWEEN_POSTS_MS);
+
+      // Orçamento de tempo: se restar < 45s, aborta graciosamente antes de Vercel matar
+      const elapsed = Date.now() - cronStart;
+      if (elapsed > MAX_CRON_MS) {
+        console.warn(`[Cron] Orçamento de ${MAX_CRON_MS / 1000}s atingido após ${i} posts (${Math.round(elapsed / 1000)}s). Encerrando.`);
+        break;
+      }
 
       try {
         // Seleciona cluster aleatório — evita repetir keyword usada nos últimos 7 dias

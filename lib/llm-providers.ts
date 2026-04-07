@@ -108,8 +108,9 @@ const GEMINI_MODELS = [
 ] as const;
 
 // Timeout por request: evita hang de 40-60s em modelos sobrecarregados.
-// gemini-2.5-flash [key1] ficou 49s antes de falhar — este corta em 35s.
-const GEMINI_TIMEOUT_MS = 35_000;
+// gemini-2.5-flash [key1] ficou 49s antes de falhar — este corta em 30s.
+// flash-lite gerou com sucesso em 19s → 30s dá 11s de margem segura.
+const GEMINI_TIMEOUT_MS = 30_000;
 
 // ─── TIER 2: MISTRAL CASCADE ──────────────────────────────────────────────────
 // 128k contexto, prompt completo (sem truncamento necessário).

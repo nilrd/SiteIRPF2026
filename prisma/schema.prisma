@@ -37,6 +37,7 @@ model BlogPost {
   content    String
   faqsJson   String   @default("[]")
   reviewJson String   @default("") @map("review_json")
+  aiModel    String   @default("") @map("ai_model")
   tags       String[]
   coverImage String?
   imageAlt   String   @default("") @map("image_alt")

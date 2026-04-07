@@ -17,6 +17,7 @@ type Post = {
   createdAt: string;
   reviewJson: string;
   coverImage: string | null;
+  aiModel: string | null;
 };
 
 function BlogAdminContent() {
@@ -195,6 +196,7 @@ function BlogAdminContent() {
               <thead>
                 <tr className="border-b border-white/10 text-left">
                   <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Titulo</th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Modelo IA</th>
                   <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Status</th>
                   <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Views</th>
                   <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Leitura</th>
@@ -208,6 +210,38 @@ function BlogAdminContent() {
                     <td className="py-3 pr-4 max-w-xs">
                       <span className="block font-medium">{post.title}</span>
                       <span className="block text-[10px] opacity-40 mt-0.5">{post.slug}</span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      {(() => {
+                        const m = post.aiModel || "";
+                        const isGemini = m.includes("gemini");
+                        const isMistral = m.includes("mistral");
+                        const isGithub = m.includes("Llama") || m.includes("Meta-") || m.includes("Phi");
+                        const isGroq = m.includes("llama") || m.includes("kimi") || m.includes("qwen") || m.includes("maverick");
+                        const isOpenAI = m.includes("gpt");
+                        const color = isGemini
+                          ? "bg-blue-500/20 text-blue-300"
+                          : isMistral
+                          ? "bg-orange-500/20 text-orange-300"
+                          : isGithub
+                          ? "bg-purple-500/20 text-purple-300"
+                          : isGroq
+                          ? "bg-green-500/20 text-green-300"
+                          : isOpenAI
+                          ? "bg-yellow-500/20 text-yellow-300"
+                          : "bg-white/10 text-white/40";
+                        const label = m
+                          ? m.replace("gemini-", "G:").replace("-latest", "").replace("mistral-", "M:").replace("Meta-Llama-", "GH:Llama-").replace("-Instruct", "").replace("moonshotai/", "").replace("meta-llama/", "")
+                          : "—";
+                        return (
+                          <span
+                            title={m || "desconhecido"}
+                            className={`text-[10px] font-mono px-2 py-1 ${color} whitespace-nowrap`}
+                          >
+                            {label.length > 22 ? label.slice(0, 22) + "…" : label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 pr-4">
                       {(() => {

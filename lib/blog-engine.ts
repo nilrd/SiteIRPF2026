@@ -1322,10 +1322,10 @@ export async function generateBlogPost(
 
     console.log(`[Blog] Post gerado com modelo: ${result.model}`);
     // callWithFallback já garante JSON limpo e válido (sem fences, sem truncamento)
-    return JSON.parse(result.text);
+    return { data: JSON.parse(result.text), model: result.model };
   }
 
-  let parsed = await runGeneration();
+  let { data: parsed, model: aiModel } = await runGeneration();
 
   // Trava de idioma: se vier em inglês, força regeneração em pt-BR.
   let forceUnpublished = false;
@@ -1333,9 +1333,9 @@ export async function generateBlogPost(
     `${parsed?.title || ""}\n${parsed?.summary || ""}\n${parsed?.content || ""}`.slice(0, 12000)
   );
   if (!languageCheck.isPortuguese) {
-    parsed = await runGeneration(
+    ({ data: parsed, model: aiModel } = await runGeneration(
       "REGENERE O ARTIGO IMEDIATAMENTE EM PORTUGUES DO BRASIL. O post anterior saiu em ingles e foi rejeitado. Retorne TODO o JSON em pt-BR, incluindo title, summary, content e FAQs."
-    );
+    ));
 
     languageCheck = detectPortugueseContent(
       `${parsed?.title || ""}\n${parsed?.summary || ""}\n${parsed?.content || ""}`.slice(0, 12000)
@@ -1351,9 +1351,9 @@ export async function generateBlogPost(
   }
 
   if (parsed?.title && isTitleTooSimilar(parsed.title, existingTitles)) {
-    parsed = await runGeneration(
+    ({ data: parsed, model: aiModel } = await runGeneration(
       "O titulo proposto ficou parecido com outro post existente. Gere NOVO titulo e NOVO angulo editorial com foco em curiosidade legitima e alto CTR, sem sensacionalismo."
-    );
+    ));
   }
 
   // Slug sanitizado: remove acentos e caracteres especiais
@@ -1406,6 +1406,7 @@ export async function generateBlogPost(
     isNewsworthy: typeof parsed.isNewsworthy === "boolean" ? parsed.isNewsworthy : false,
     reviewApproved: forceUnpublished ? false : review.aprovado,
     reviewJson: JSON.stringify(review),
+    aiModel,
   };
 }
 
@@ -1432,6 +1433,7 @@ export async function saveBlogPost(post: Awaited<ReturnType<typeof generateBlogP
       imageAlt: post.imageAlt ?? post.title,
       published: post.reviewApproved ?? true,
       reviewJson: post.reviewJson ?? "",
+      aiModel: post.aiModel ?? "",
     },
   });
 }

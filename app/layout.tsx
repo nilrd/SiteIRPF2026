@@ -1,5 +1,5 @@
 import "@/app/globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
 import Script from "next/script";
 import { JsonLdWebSite } from "@/components/seo/JsonLd";
@@ -41,7 +41,6 @@ export const metadata: Metadata = {
     "restituição imposto de renda 2026",
   ],
   authors: [{ name: "Nilson Brites", url: "https://irpf.qaplay.com.br" }],
-  themeColor: "#0A0A0A",
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -85,6 +84,10 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0A0A0A",
 };
 
 export default function RootLayout({

@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
         updatedAt: true,
         reviewJson: true,
         coverImage: true,
+        aiModel: true,
       },
     });
 

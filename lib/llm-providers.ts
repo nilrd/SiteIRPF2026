@@ -21,6 +21,11 @@ const geminiClients: Array<{ client: GoogleGenerativeAI; label: string }> = [
 // Mantém compatibilidade com código legado que usa geminiClient diretamente
 export const geminiClient = geminiClients[0]?.client ?? null;
 
+// Cliente OpenAI direto (fallback tier 3 — GPT-4o-mini, só quando Gemini + Groq falharem)
+const openaiDirectClient = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
+
 export const MODELS = {
   chatbot: "llama-3.3-70b-versatile",
   adminIA: "llama-3.3-70b-versatile",
@@ -112,6 +117,30 @@ function safeTrim(text: string, maxChars: number): string {
   return text.slice(0, maxChars) + "\n[CONTEÚDO TRUNCADO PARA CABER NO LIMITE DO MODELO]";
 }
 
+/**
+ * Limpa fences markdown e valida JSON.
+ * Retorna o texto limpo se válido (ou se JSON não é exigido), ou null se JSON inválido/truncado.
+ * Garante que o cascade nunca retorne JSON corrompido.
+ */
+function cleanAndValidateJson(text: string, requireJson: boolean): string | null {
+  const t = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+  if (!requireJson) return t;
+  try {
+    JSON.parse(t);
+    return t;
+  } catch {
+    // Tenta extrair objeto JSON do texto (ex: modelo adicionou prefácio antes do JSON)
+    const match = t.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        JSON.parse(match[0]);
+        return match[0];
+      } catch { /* JSON truncado mesmo */ }
+    }
+    return null; // cascade deve continuar para próximo modelo
+  }
+}
+
 export type FallbackResult = {
   text: string;
   model: string;
@@ -141,12 +170,9 @@ export async function callWithFallback(
     temperature?: number;
     response_format?: { type: "json_object" };
     compactSystemPrompt?: string;
-    geminiMaxTokens?: number; // sobrescreve maxTokens só para Gemini (evita truncamento por thinking)
   }
 ): Promise<FallbackResult> {
-  // Gemini 2.5-flash usa thinking interno que consome tokens do maxOutputTokens.
-  // Garantimos mínimo de 32768 para que o JSON do artigo nunca seja truncado.
-  const geminiOutputTokens = extraOptions?.geminiMaxTokens ?? Math.max(maxTokens, 32768);
+  const requireJson = extraOptions?.response_format?.type === "json_object";
   // ── 1. GEMINI CASCADE (itera por modelo × chave) ───────────────────────────
   // Ordem: modelo1/chave1 → modelo1/chave2 → modelo2/chave1 → modelo2/chave2 → ...
   if (geminiClients.length > 0) {
@@ -163,17 +189,19 @@ export async function callWithFallback(
             systemInstruction: systemPrompt,
             generationConfig: {
               temperature: extraOptions?.temperature ?? 0.35,
-              maxOutputTokens: geminiOutputTokens,
-              ...(extraOptions?.response_format?.type === "json_object"
-                ? { responseMimeType: "application/json" }
-                : {}),
+              // Sem maxOutputTokens: Gemini usa o máximo que precisar (até 65k+)
+              // Thinking tokens não competem com output tokens assim
+              ...(requireJson ? { responseMimeType: "application/json" } : {}),
             },
           });
           const result = await gemini.generateContent(userPrompt);
-          const text = result.response.text();
-          if (text) {
+          const raw = result.response.text();
+          const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+          if (validated) {
             console.log(`[LLM] Sucesso: ${model} [${label}]`);
-            return { text, model: `${model}` };
+            return { text: validated, model: `${model}` };
+          } else if (raw) {
+            console.warn(`[LLM] ${model} [${label}] retornou JSON inválido/truncado — continuando cascade`);
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
@@ -220,10 +248,13 @@ export async function callWithFallback(
           ? { response_format: extraOptions.response_format }
           : {}),
       });
-      const text = response.choices[0]?.message?.content;
-      if (text) {
+      const raw = response.choices[0]?.message?.content;
+      const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+      if (validated) {
         console.log(`[LLM] Sucesso: ${model}`);
-        return { text, model };
+        return { text: validated, model };
+      } else if (raw) {
+        console.warn(`[LLM] ${model} retornou JSON inválido/truncado — continuando cascade`);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -237,7 +268,46 @@ export async function callWithFallback(
     }
   }
 
-  // ── 3. ÚLTIMO RECURSO: 8b (ultra-compacto, tokens limitados) ──────────────
+  // ── 3. OPENAI CASCADE (fallback pago — GPT-4o-mini, só quando Gemini + Groq falharem) ──
+  if (openaiDirectClient) {
+    const oaiModels = ["gpt-4o-mini", "gpt-3.5-turbo"] as const;
+    const oaiSystem = safeTrim(
+      extraOptions?.compactSystemPrompt ?? systemPrompt,
+      GROQ_SYSTEM_MAX_CHARS
+    );
+    const oaiUser = safeTrim(userPrompt, GROQ_USER_MAX_CHARS);
+    for (const model of oaiModels) {
+      try {
+        console.log(`[LLM] Tentando OpenAI: ${model}`);
+        const response = await openaiDirectClient.chat.completions.create({
+          model,
+          messages: [
+            { role: "system", content: oaiSystem },
+            { role: "user", content: oaiUser },
+          ],
+          max_tokens: Math.min(maxTokens, 4096),
+          temperature: extraOptions?.temperature ?? 0.35,
+          ...(extraOptions?.response_format
+            ? { response_format: extraOptions.response_format }
+            : {}),
+        });
+        const raw = response.choices[0]?.message?.content;
+        const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+        if (validated) {
+          console.log(`[LLM] Sucesso: ${model} (OpenAI)`);
+          return { text: validated, model };
+        } else if (raw) {
+          console.warn(`[LLM] ${model} retornou JSON inválido — continuando cascade`);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const errType = classifyError(err);
+        console.warn(`[LLM] OpenAI ${model} falhou [${errType}]: ${msg.slice(0, 120)}`);
+      }
+    }
+  }
+
+  // ── 4. ÚLTIMO RECURSO: 8b (ultra-compacto, tokens limitados) ──────────────
   if (!deadModels.has(GROQ_LAST_RESORT)) {
     const lastSystem = safeTrim(
       extraOptions?.compactSystemPrompt ?? systemPrompt,
@@ -258,10 +328,13 @@ export async function callWithFallback(
           ? { response_format: extraOptions.response_format }
           : {}),
       });
-      const text = response.choices[0]?.message?.content;
-      if (text) {
+      const raw = response.choices[0]?.message?.content;
+      const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+      if (validated) {
         console.log(`[LLM] Sucesso: ${GROQ_LAST_RESORT}`);
-        return { text, model: GROQ_LAST_RESORT };
+        return { text: validated, model: GROQ_LAST_RESORT };
+      } else if (raw) {
+        console.warn(`[LLM] ${GROQ_LAST_RESORT} retornou JSON inválido — sem mais fallbacks`);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

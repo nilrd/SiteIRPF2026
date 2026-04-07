@@ -1321,18 +1321,8 @@ export async function generateBlogPost(
     });
 
     console.log(`[Blog] Post gerado com modelo: ${result.model}`);
-    const raw = result.text;
-
-    // Remove markdown code fences caso o modelo as adicione (ex: ```json\n{...}\n```)
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
-    try {
-      return JSON.parse(cleaned);
-    } catch {
-      // Modelo retornou JSON inválido — tenta extrair o objeto JSON da resposta
-      const match = cleaned.match(/\{[\s\S]*\}/);
-      if (match) return JSON.parse(match[0]);
-      throw new Error(`Modelo retornou resposta não-JSON: ${cleaned.slice(0, 200)}`);
-    }
+    // callWithFallback já garante JSON limpo e válido (sem fences, sem truncamento)
+    return JSON.parse(result.text);
   }
 
   let parsed = await runGeneration();

@@ -141,8 +141,12 @@ export async function callWithFallback(
     temperature?: number;
     response_format?: { type: "json_object" };
     compactSystemPrompt?: string;
+    geminiMaxTokens?: number; // sobrescreve maxTokens só para Gemini (evita truncamento por thinking)
   }
 ): Promise<FallbackResult> {
+  // Gemini 2.5-flash usa thinking interno que consome tokens do maxOutputTokens.
+  // Garantimos mínimo de 32768 para que o JSON do artigo nunca seja truncado.
+  const geminiOutputTokens = extraOptions?.geminiMaxTokens ?? Math.max(maxTokens, 32768);
   // ── 1. GEMINI CASCADE (itera por modelo × chave) ───────────────────────────
   // Ordem: modelo1/chave1 → modelo1/chave2 → modelo2/chave1 → modelo2/chave2 → ...
   if (geminiClients.length > 0) {
@@ -159,7 +163,7 @@ export async function callWithFallback(
             systemInstruction: systemPrompt,
             generationConfig: {
               temperature: extraOptions?.temperature ?? 0.35,
-              maxOutputTokens: maxTokens,
+              maxOutputTokens: geminiOutputTokens,
               ...(extraOptions?.response_format?.type === "json_object"
                 ? { responseMimeType: "application/json" }
                 : {}),

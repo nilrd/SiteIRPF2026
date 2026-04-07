@@ -17,14 +17,15 @@ export const groqLlama = groqClients[0]?.client ?? new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-// Clientes Gemini — chave principal + chave de backup (contas diferentes)
-// Se a chave 1 atingir cota/RPM ou falhar, a chave 2 assume automaticamente
+// Clientes Gemini — key2 PRIMEIRO (projeto diferente = cota independente).
+// key2 tem prioridade pois é menos provável de ter atingido o RPM.
+// Se a doc diz: limites são por PROJETO, não por chave — key2 = projeto alternativo.
 const geminiClients: Array<{ client: GoogleGenerativeAI; label: string }> = [
-  ...(process.env.GEMINI_API_KEY
-    ? [{ client: new GoogleGenerativeAI(process.env.GEMINI_API_KEY), label: "key1" }]
-    : []),
   ...(process.env.GEMINI_API_KEY_2
     ? [{ client: new GoogleGenerativeAI(process.env.GEMINI_API_KEY_2), label: "key2" }]
+    : []),
+  ...(process.env.GEMINI_API_KEY
+    ? [{ client: new GoogleGenerativeAI(process.env.GEMINI_API_KEY), label: "key1" }]
     : []),
 ];
 
@@ -67,13 +68,48 @@ export const MODELS = {
 // Evita retentar modelos confirmados descontinuados/inexistentes na mesma instância.
 const deadModels = new Set<string>();
 
+// ─── RATE-LIMIT COOLDOWN CACHE ────────────────────────────────────────────────
+// Chave: "${model}:${label}" → timestamp (ms) até quando a chave está bloqueada.
+// Evita retentar uma chave dentro da janela RPM (1 minuto) após receber 429.
+// RPM limits: flash-lite = 10 RPM (janela 6s), flash = 5 RPM (janela 12s).
+const rateLimitedKeys = new Map<string, number>();
+
+function isRateLimited(key: string): boolean {
+  const until = rateLimitedKeys.get(key);
+  if (!until) return false;
+  if (Date.now() >= until) {
+    rateLimitedKeys.delete(key);
+    return false;
+  }
+  return true;
+}
+
+function markRateLimited(key: string, retryAfterMs: number = 65_000): void {
+  rateLimitedKeys.set(key, Date.now() + retryAfterMs);
+  console.warn(`[LLM] ${key} em cooldown de rate-limit por ${Math.round(retryAfterMs / 1000)}s`);
+}
+
+function parseRetryAfterMs(err: unknown): number {
+  const msg = err instanceof Error ? err.message : String(err);
+  // Extrai "retry after N seconds" / "retryDelay: Ns" do corpo do erro
+  const match = msg.match(/retry.{1,15}?(\d+)\s*s/i);
+  if (match) return parseInt(match[1], 10) * 1_000 + 2_000; // +2s buffer
+  return 65_000; // default: 65s — garante reinício da janela RPM de 1 minuto
+}
+
 // ─── TIER 1: GEMINI CASCADE ───────────────────────────────────────────────────
 // Modelos GA estáveis, contexto 1M tokens, sem cap de output tokens.
+// ORDEM por RPM disponível: flash-lite (10 RPM) > flash (5 RPM) > 2.0-flash
+// Começar pelo modelo com MAIOR RPM preserva cota do flash para conteúdo crítico.
 const GEMINI_MODELS = [
-  "gemini-2.5-flash",      // GA jun/2025 — principal
-  "gemini-2.5-flash-lite", // GA jul/2025 — backup leve
-  "gemini-2.0-flash",      // GA — último backup Gemini
+  "gemini-2.5-flash-lite", // 10 RPM free tier — mais rápido, PRIMEIRO
+  "gemini-2.5-flash",      // 5 RPM free tier — mais capaz, segundo
+  "gemini-2.0-flash",      // GA estável — último backup Gemini
 ] as const;
+
+// Timeout por request: evita hang de 40-60s em modelos sobrecarregados.
+// gemini-2.5-flash [key1] ficou 49s antes de falhar — este corta em 35s.
+const GEMINI_TIMEOUT_MS = 35_000;
 
 // ─── TIER 2: MISTRAL CASCADE ──────────────────────────────────────────────────
 // 128k contexto, prompt completo (sem truncamento necessário).
@@ -220,6 +256,13 @@ export async function callWithFallback(
         continue;
       }
       for (const { client, label } of geminiClients) {
+        const keyId = `${model}:${label}`;
+        // Pula chave ainda em cooldown de rate-limit (preserva RPM da janela ativa)
+        if (isRateLimited(keyId)) {
+          const remaining = Math.round(((rateLimitedKeys.get(keyId) ?? 0) - Date.now()) / 1000);
+          console.log(`[LLM] Pulando Gemini ${model} [${label}] — cooldown por mais ${remaining}s`);
+          continue;
+        }
         try {
           console.log(`[LLM] Tentando Gemini: ${model} [${label}]`);
           const gemini = client.getGenerativeModel({
@@ -227,12 +270,20 @@ export async function callWithFallback(
             systemInstruction: systemPrompt,
             generationConfig: {
               temperature: extraOptions?.temperature ?? 0.35,
-              // Sem maxOutputTokens: Gemini usa o máximo que precisar (até 65k+)
-              // Thinking tokens não competem com output tokens assim
+              // Sem maxOutputTokens: Gemini usa o máximo necessário (até 65k+)
               ...(requireJson ? { responseMimeType: "application/json" } : {}),
             },
           });
-          const result = await gemini.generateContent(userPrompt);
+          // Timeout explícito: evita hang de 40-60s em modelos sobrecarregados
+          const result = await Promise.race([
+            gemini.generateContent(userPrompt),
+            new Promise<never>((_, reject) =>
+              setTimeout(
+                () => reject(new Error(`Gemini timeout após ${GEMINI_TIMEOUT_MS / 1000}s`)),
+                GEMINI_TIMEOUT_MS
+              )
+            ),
+          ]);
           const raw = result.response.text();
           const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
           if (validated) {
@@ -248,10 +299,14 @@ export async function callWithFallback(
             deadModels.add(model);
             console.warn(`[LLM] ${model} MORTO (descontinuado): ${msg.slice(0, 100)}`);
             break; // modelo morto — não tenta a segunda chave para ele
+          } else if (errType === "size_limit") {
+            // 429 rate limit — marcar cooldown isolado por chave+modelo
+            markRateLimited(keyId, parseRetryAfterMs(err));
+            console.warn(`[LLM] ${model} [${label}] rate limit: ${msg.slice(0, 100)}`);
           } else {
             console.warn(`[LLM] ${model} [${label}] falhou [${errType}]: ${msg.slice(0, 100)}`);
-            // continua para próxima chave
           }
+          // continua para próxima chave em todos os casos não-dead
         }
       }
     }

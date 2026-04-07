@@ -7,10 +7,19 @@ export const groqLlama = new OpenAI({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-// Cliente Gemini — disponível apenas se GEMINI_API_KEY estiver configurada
-export const geminiClient = process.env.GEMINI_API_KEY
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-  : null;
+// Clientes Gemini — chave principal + chave de backup (contas diferentes)
+// Se a chave 1 atingir cota/RPM ou falhar, a chave 2 assume automaticamente
+const geminiClients: Array<{ client: GoogleGenerativeAI; label: string }> = [
+  ...(process.env.GEMINI_API_KEY
+    ? [{ client: new GoogleGenerativeAI(process.env.GEMINI_API_KEY), label: "key1" }]
+    : []),
+  ...(process.env.GEMINI_API_KEY_2
+    ? [{ client: new GoogleGenerativeAI(process.env.GEMINI_API_KEY_2), label: "key2" }]
+    : []),
+];
+
+// Mantém compatibilidade com código legado que usa geminiClient diretamente
+export const geminiClient = geminiClients[0]?.client ?? null;
 
 export const MODELS = {
   chatbot: "llama-3.3-70b-versatile",
@@ -134,46 +143,50 @@ export async function callWithFallback(
     compactSystemPrompt?: string;
   }
 ): Promise<FallbackResult> {
-  // ── 1. GEMINI CASCADE ──────────────────────────────────────────────────────
-  if (geminiClient) {
+  // ── 1. GEMINI CASCADE (itera por modelo × chave) ───────────────────────────
+  // Ordem: modelo1/chave1 → modelo1/chave2 → modelo2/chave1 → modelo2/chave2 → ...
+  if (geminiClients.length > 0) {
     for (const model of GEMINI_MODELS) {
       if (deadModels.has(model)) {
         console.log(`[LLM] Pulando ${model} (marcado morto nesta instância)`);
         continue;
       }
-      try {
-        console.log(`[LLM] Tentando Gemini: ${model}`);
-        const gemini = geminiClient.getGenerativeModel({
-          model,
-          systemInstruction: systemPrompt,
-          generationConfig: {
-            temperature: extraOptions?.temperature ?? 0.35,
-            maxOutputTokens: maxTokens,
-            ...(extraOptions?.response_format?.type === "json_object"
-              ? { responseMimeType: "application/json" }
-              : {}),
-          },
-        });
-        const result = await gemini.generateContent(userPrompt);
-        const text = result.response.text();
-        if (text) {
-          console.log(`[LLM] Sucesso: ${model}`);
-          return { text, model };
+      for (const { client, label } of geminiClients) {
+        try {
+          console.log(`[LLM] Tentando Gemini: ${model} [${label}]`);
+          const gemini = client.getGenerativeModel({
+            model,
+            systemInstruction: systemPrompt,
+            generationConfig: {
+              temperature: extraOptions?.temperature ?? 0.35,
+              maxOutputTokens: maxTokens,
+              ...(extraOptions?.response_format?.type === "json_object"
+                ? { responseMimeType: "application/json" }
+                : {}),
+            },
+          });
+          const result = await gemini.generateContent(userPrompt);
+          const text = result.response.text();
+          if (text) {
+            console.log(`[LLM] Sucesso: ${model} [${label}]`);
+            return { text, model: `${model}` };
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          const errType = classifyError(err);
+          if (errType === "dead") {
+            deadModels.add(model);
+            console.warn(`[LLM] ${model} MORTO (descontinuado): ${msg.slice(0, 100)}`);
+            break; // modelo morto — não tenta a segunda chave para ele
+          } else {
+            console.warn(`[LLM] ${model} [${label}] falhou [${errType}]: ${msg.slice(0, 100)}`);
+            // continua para próxima chave
+          }
         }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const errType = classifyError(err);
-        if (errType === "dead") {
-          deadModels.add(model);
-          console.warn(`[LLM] ${model} MORTO (descontinuado): ${msg.slice(0, 100)}`);
-        } else {
-          console.warn(`[LLM] ${model} falhou [${errType}]: ${msg.slice(0, 120)}`);
-        }
-        // Sempre continua para próximo modelo
       }
     }
   } else {
-    console.warn("[LLM] GEMINI_API_KEY não configurada — usando Groq diretamente...");
+    console.warn("[LLM] Nenhuma GEMINI_API_KEY configurada — usando Groq diretamente...");
   }
 
   // ── 2. GROQ CASCADE (prompt compacto + chars truncados) ───────────────────

@@ -21,7 +21,26 @@ const geminiClients: Array<{ client: GoogleGenerativeAI; label: string }> = [
 // Mantém compatibilidade com código legado que usa geminiClient diretamente
 export const geminiClient = geminiClients[0]?.client ?? null;
 
-// Cliente OpenAI direto (fallback tier 3 — GPT-4o-mini, só quando Gemini + Groq falharem)
+// ─── TIER 2: MISTRAL (freemium — 128k contexto, 1B tokens/mês grátis) ────────
+// Usa API OpenAI-compatível. Melhor modelo: mistral-large-latest (128k contexto).
+const mistralClient = process.env.MISTRAL_API_KEY
+  ? new OpenAI({
+      baseURL: "https://api.mistral.ai/v1",
+      apiKey: process.env.MISTRAL_API_KEY,
+    })
+  : null;
+
+// ─── TIER 3: GITHUB MODELS (grátis via Azure inference — conta adm.lestebarbearia) ──
+// Nota: limites de tokens por request — usa compact prompt.
+// Endpoint OpenAI-compatível: https://models.inference.ai.azure.com
+const githubModelsClient = process.env.GITHUB_MODELS_TOKEN
+  ? new OpenAI({
+      baseURL: "https://models.inference.ai.azure.com",
+      apiKey: process.env.GITHUB_MODELS_TOKEN,
+    })
+  : null;
+
+// ─── TIER 5: OPENAI (pago — último recurso antes de lançar erro) ─────────────
 const openaiDirectClient = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
@@ -30,7 +49,7 @@ export const MODELS = {
   chatbot: "llama-3.3-70b-versatile",
   adminIA: "llama-3.3-70b-versatile",
   blogGeneration: "gemini-2.5-flash",
-  blogVerifier: "llama-3.1-8b-instant",
+  blogVerifier: "llama-3.3-70b-versatile",
 } as const;
 
 // ─── DEAD MODEL CACHE ─────────────────────────────────────────────────────────
@@ -38,31 +57,40 @@ export const MODELS = {
 // Evita retentar modelos confirmados descontinuados/inexistentes na mesma instância.
 const deadModels = new Set<string>();
 
-// ─── GEMINI CASCADE ───────────────────────────────────────────────────────────
-// Apenas modelos GA estáveis (sem data de expiração no ID).
-// Se um modelo retornar 404/deprecated, o próximo é tentado automaticamente (RN3).
+// ─── TIER 1: GEMINI CASCADE ───────────────────────────────────────────────────
+// Modelos GA estáveis, contexto 1M tokens, sem cap de output tokens.
 const GEMINI_MODELS = [
-  "gemini-2.5-flash",      // GA desde jun/2025 — principal (sem descontinuação prevista)
-  "gemini-2.5-flash-lite", // GA desde jul/2025 — leve e rápido
-  "gemini-2.0-flash",      // GA (aposentadoria prevista jun/2026 — backup temporário)
+  "gemini-2.5-flash",      // GA jun/2025 — principal
+  "gemini-2.5-flash-lite", // GA jul/2025 — backup leve
+  "gemini-2.0-flash",      // GA — último backup Gemini
 ] as const;
 
-// ─── GROQ CASCADE ─────────────────────────────────────────────────────────────
-// Apenas modelos confirmados ativos. Prompt compacto obrigatório (RN5/RN6).
-// llama-3.1-70b-versatile e mixtral-8x7b-32768 foram descontinuados pela Groq.
+// ─── TIER 2: MISTRAL CASCADE ──────────────────────────────────────────────────
+// 128k contexto, prompt completo (sem truncamento necessário).
+const MISTRAL_MODELS = [
+  "mistral-large-latest",  // 128k ctx — melhor qualidade Mistral
+] as const;
+
+// ─── TIER 3: GITHUB MODELS CASCADE ───────────────────────────────────────────
+// Modelos 70B+ com 128k contexto. Limites por request → usa compact prompt.
+const GITHUB_MODELS_LIST = [
+  "Meta-Llama-3.1-405B-Instruct", // 128k ctx — modelo mais poderoso grátis
+  "Llama-3.3-70B-Instruct",       // 128k ctx — rápido e capaz
+] as const;
+
+// ─── TIER 4: GROQ CASCADE ─────────────────────────────────────────────────────
+// Todos os modelos com 128k+ contexto. Compact prompt obrigatório (limite TPM).
+// REMOVIDOS: llama3-70b-8192 (8k ctx) e llama-3.1-8b-instant (modelo pequeno).
 const GROQ_FALLBACK_MODELS = [
-  "llama-3.3-70b-versatile", // Ativo — melhor qualidade disponível no plano on_demand
-  "llama3-70b-8192",         // Ativo — Llama 3 original (contexto 8k)
+  "llama-3.3-70b-versatile",                       // 128k ctx — 12k tokens/min
+  "moonshotai/kimi-k2-instruct",                   // 1M ctx — Kimi K2, 10k tokens/min
+  "meta-llama/llama-4-maverick-17b-128e-instruct", // 128k ctx — Llama 4 MoE
+  "qwen/qwen3-32b",                                // 128k ctx — Qwen3 32B
 ] as const;
 
-// Último recurso: modelo mais leve, prompt ultra-compacto obrigatório (RN7)
-const GROQ_LAST_RESORT = "llama-3.1-8b-instant";
-
-// Limites de chars para prompts Groq (evita 413 TPM nos planos on_demand) — RN6/RN7
-const GROQ_SYSTEM_MAX_CHARS = 12_000;            // ≈ 3 000 tokens
-const GROQ_USER_MAX_CHARS = 6_000;               // ≈ 1 500 tokens
-const GROQ_LAST_RESORT_SYSTEM_MAX_CHARS = 3_000; // ≈ 750 tokens
-const GROQ_LAST_RESORT_USER_MAX_CHARS = 2_000;   // ≈ 500 tokens
+// Limites de chars para prompts Groq/GitHub/OpenAI (evita 413 TPM) — RN6
+const GROQ_SYSTEM_MAX_CHARS = 12_000; // ≈ 3 000 tokens
+const GROQ_USER_MAX_CHARS = 6_000;    // ≈ 1 500 tokens
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -153,14 +181,14 @@ export type FallbackResult = {
  *    - 404/deprecated → modelo marcado como morto na instância, próximo tentado (RN3)
  *    - Prompt completo enviado (contexto 1M tokens)
  *
- * 2. Groq cascade (llama-3.3-70b-versatile → llama3-70b-8192)
- *    - Sempre usa compactSystemPrompt se disponível (RN5)
- *    - System cap 12.000 chars, user cap 6.000 chars (RN6)
+ * 2. Mistral (mistral-large-latest — 128k ctx, freemium, prompt completo)
+ * 3. GitHub Models (Llama 405B, Llama 3.3 70B — 128k ctx, compact prompt)
+ * 4. Groq (llama-3.3-70b, kimi-k2, llama-4-maverick, qwen3-32b — 128k+ ctx, compact prompt)
+ * 5. OpenAI gpt-4o-mini (pago — backup final, compact prompt)
  *
- * 3. Último recurso: llama-3.1-8b-instant
- *    - System cap 3.000 chars, user cap 2.000 chars, maxTokens cap 2.000 (RN7)
+ * Todos os modelos têm 128k+ contexto. Modelos pequenos/baixo contexto removidos.
  *
- * @param compactSystemPrompt — versão reduzida do system prompt para fallbacks Groq
+ * @param compactSystemPrompt — versão reduzida do system prompt para tiers 3/4/5
  */
 export async function callWithFallback(
   systemPrompt: string,
@@ -221,17 +249,103 @@ export async function callWithFallback(
     console.warn("[LLM] Nenhuma GEMINI_API_KEY configurada — usando Groq diretamente...");
   }
 
-  // ── 2. GROQ CASCADE (prompt compacto + chars truncados) ───────────────────
-  const groqSystem = safeTrim(
+  // Prompt compacto reutilizado pelos tiers 3/4/5 (GitHub Models, Groq, OpenAI)
+  const compactSystem = safeTrim(
     extraOptions?.compactSystemPrompt ?? systemPrompt,
     GROQ_SYSTEM_MAX_CHARS
   );
-  const groqUser = safeTrim(userPrompt, GROQ_USER_MAX_CHARS);
+  const compactUser = safeTrim(userPrompt, GROQ_USER_MAX_CHARS);
+
+  // ── 2. MISTRAL CASCADE (128k ctx, prompt completo, freemium) ─────────────
+  if (mistralClient) {
+    for (const model of MISTRAL_MODELS) {
+      if (deadModels.has(model)) {
+        console.log(`[LLM] Pulando Mistral ${model} (marcado morto)`);
+        continue;
+      }
+      try {
+        console.log(`[LLM] Tentando Mistral: ${model}`);
+        const response = await mistralClient.chat.completions.create({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          max_tokens: maxTokens,
+          temperature: extraOptions?.temperature ?? 0.35,
+          ...(extraOptions?.response_format
+            ? { response_format: extraOptions.response_format }
+            : {}),
+        });
+        const raw = response.choices[0]?.message?.content;
+        const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+        if (validated) {
+          console.log(`[LLM] Sucesso: ${model} (Mistral)`);
+          return { text: validated, model };
+        } else if (raw) {
+          console.warn(`[LLM] Mistral ${model} retornou JSON inválido — continuando cascade`);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const errType = classifyError(err);
+        if (errType === "dead") {
+          deadModels.add(model);
+          console.warn(`[LLM] Mistral ${model} MORTO: ${msg.slice(0, 100)}`);
+        } else {
+          console.warn(`[LLM] Mistral ${model} falhou [${errType}]: ${msg.slice(0, 120)}`);
+        }
+      }
+    }
+  }
+
+  // ── 3. GITHUB MODELS CASCADE (128k ctx, compact prompt, grátis) ──────────
+  if (githubModelsClient) {
+    for (const model of GITHUB_MODELS_LIST) {
+      if (deadModels.has(model)) {
+        console.log(`[LLM] Pulando GitHub ${model} (marcado morto)`);
+        continue;
+      }
+      try {
+        console.log(`[LLM] Tentando GitHub Models: ${model}`);
+        const response = await githubModelsClient.chat.completions.create({
+          model,
+          messages: [
+            { role: "system", content: compactSystem },
+            { role: "user", content: compactUser },
+          ],
+          max_tokens: Math.min(maxTokens, 4096),
+          temperature: extraOptions?.temperature ?? 0.35,
+          ...(extraOptions?.response_format
+            ? { response_format: extraOptions.response_format }
+            : {}),
+        });
+        const raw = response.choices[0]?.message?.content;
+        const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+        if (validated) {
+          console.log(`[LLM] Sucesso: ${model} (GitHub Models)`);
+          return { text: validated, model };
+        } else if (raw) {
+          console.warn(`[LLM] GitHub ${model} retornou JSON inválido — continuando cascade`);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const errType = classifyError(err);
+        if (errType === "dead") {
+          deadModels.add(model);
+          console.warn(`[LLM] GitHub ${model} MORTO: ${msg.slice(0, 100)}`);
+        } else {
+          console.warn(`[LLM] GitHub ${model} falhou [${errType}]: ${msg.slice(0, 120)}`);
+        }
+      }
+    }
+  }
+
+  // ── 4. GROQ CASCADE (128k+ ctx todos, compact prompt, tokens/min limitado) ─
   const groqMaxTokens = Math.min(maxTokens, 4000);
 
   for (const model of GROQ_FALLBACK_MODELS) {
     if (deadModels.has(model)) {
-      console.log(`[LLM] Pulando ${model} (marcado morto nesta instância)`);
+      console.log(`[LLM] Pulando Groq ${model} (marcado morto)`);
       continue;
     }
     try {
@@ -239,8 +353,8 @@ export async function callWithFallback(
       const response = await groqLlama.chat.completions.create({
         model,
         messages: [
-          { role: "system", content: groqSystem },
-          { role: "user", content: groqUser },
+          { role: "system", content: compactSystem },
+          { role: "user", content: compactUser },
         ],
         max_tokens: groqMaxTokens,
         temperature: extraOptions?.temperature ?? 0.35,
@@ -251,39 +365,34 @@ export async function callWithFallback(
       const raw = response.choices[0]?.message?.content;
       const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
       if (validated) {
-        console.log(`[LLM] Sucesso: ${model}`);
+        console.log(`[LLM] Sucesso: ${model} (Groq)`);
         return { text: validated, model };
       } else if (raw) {
-        console.warn(`[LLM] ${model} retornou JSON inválido/truncado — continuando cascade`);
+        console.warn(`[LLM] Groq ${model} retornou JSON inválido — continuando cascade`);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       const errType = classifyError(err);
       if (errType === "dead") {
         deadModels.add(model);
-        console.warn(`[LLM] ${model} MORTO: ${msg.slice(0, 100)}`);
+        console.warn(`[LLM] Groq ${model} MORTO: ${msg.slice(0, 100)}`);
       } else {
-        console.warn(`[LLM] ${model} falhou [${errType}]: ${msg.slice(0, 120)}`);
+        console.warn(`[LLM] Groq ${model} falhou [${errType}]: ${msg.slice(0, 120)}`);
       }
     }
   }
 
-  // ── 3. OPENAI CASCADE (fallback pago — GPT-4o-mini, só quando Gemini + Groq falharem) ──
+  // ── 5. OPENAI (pago — backup final antes de lançar erro) ──────────────────
   if (openaiDirectClient) {
-    const oaiModels = ["gpt-4o-mini", "gpt-3.5-turbo"] as const;
-    const oaiSystem = safeTrim(
-      extraOptions?.compactSystemPrompt ?? systemPrompt,
-      GROQ_SYSTEM_MAX_CHARS
-    );
-    const oaiUser = safeTrim(userPrompt, GROQ_USER_MAX_CHARS);
+    const oaiModels = ["gpt-4o-mini"] as const;
     for (const model of oaiModels) {
       try {
         console.log(`[LLM] Tentando OpenAI: ${model}`);
         const response = await openaiDirectClient.chat.completions.create({
           model,
           messages: [
-            { role: "system", content: oaiSystem },
-            { role: "user", content: oaiUser },
+            { role: "system", content: compactSystem },
+            { role: "user", content: compactUser },
           ],
           max_tokens: Math.min(maxTokens, 4096),
           temperature: extraOptions?.temperature ?? 0.35,
@@ -297,50 +406,13 @@ export async function callWithFallback(
           console.log(`[LLM] Sucesso: ${model} (OpenAI)`);
           return { text: validated, model };
         } else if (raw) {
-          console.warn(`[LLM] ${model} retornou JSON inválido — continuando cascade`);
+          console.warn(`[LLM] OpenAI ${model} retornou JSON inválido — sem mais fallbacks`);
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         const errType = classifyError(err);
         console.warn(`[LLM] OpenAI ${model} falhou [${errType}]: ${msg.slice(0, 120)}`);
       }
-    }
-  }
-
-  // ── 4. ÚLTIMO RECURSO: 8b (ultra-compacto, tokens limitados) ──────────────
-  if (!deadModels.has(GROQ_LAST_RESORT)) {
-    const lastSystem = safeTrim(
-      extraOptions?.compactSystemPrompt ?? systemPrompt,
-      GROQ_LAST_RESORT_SYSTEM_MAX_CHARS
-    );
-    const lastUser = safeTrim(userPrompt, GROQ_LAST_RESORT_USER_MAX_CHARS);
-    try {
-      console.log(`[LLM] Último recurso: ${GROQ_LAST_RESORT}`);
-      const response = await groqLlama.chat.completions.create({
-        model: GROQ_LAST_RESORT,
-        messages: [
-          { role: "system", content: lastSystem },
-          { role: "user", content: lastUser },
-        ],
-        max_tokens: Math.min(maxTokens, 2000),
-        temperature: extraOptions?.temperature ?? 0.35,
-        ...(extraOptions?.response_format
-          ? { response_format: extraOptions.response_format }
-          : {}),
-      });
-      const raw = response.choices[0]?.message?.content;
-      const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
-      if (validated) {
-        console.log(`[LLM] Sucesso: ${GROQ_LAST_RESORT}`);
-        return { text: validated, model: GROQ_LAST_RESORT };
-      } else if (raw) {
-        console.warn(`[LLM] ${GROQ_LAST_RESORT} retornou JSON inválido — sem mais fallbacks`);
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      const errType = classifyError(err);
-      if (errType === "dead") deadModels.add(GROQ_LAST_RESORT);
-      console.error(`[LLM] ${GROQ_LAST_RESORT} falhou [${errType}]: ${msg.slice(0, 150)}`);
     }
   }
 

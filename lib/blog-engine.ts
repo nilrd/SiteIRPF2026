@@ -1314,7 +1314,7 @@ export async function generateBlogPost(
       secundarias ? ` Keywords secundarias a incluir: ${secundarias}.` : ""
     } ${extraInstruction || ""} Retorne APENAS o JSON valido, sem markdown.`;
 
-    const result = await callWithFallback(systemContent, userContent, 16000, {
+    const result = await callWithFallback(systemContent, userContent, 10000, {
       temperature: 0.35,
       response_format: { type: "json_object" },
       compactSystemPrompt: compactSystemContent,

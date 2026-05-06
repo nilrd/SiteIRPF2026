@@ -19,6 +19,9 @@
     },
     "app/api/cron/blog-mei/route.ts": {
       "maxDuration": 180
+    },
+    "app/api/admin/blog/generate-image/route.ts": {
+      "maxDuration": 300
     }
   }
 }

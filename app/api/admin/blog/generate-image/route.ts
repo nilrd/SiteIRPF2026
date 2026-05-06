@@ -6,7 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { generateImageAlt } from "@/lib/image-alt";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const BUCKET = "blog-images";
 
@@ -155,7 +155,7 @@ OUTPUT: only the image prompt in English. Maximum 100 words. No explanations. No
         model: "gpt-image-1",
         prompt: imagePrompt,
         size: "1536x1024",
-        quality: "high",
+        quality: "medium",
         n: 1,
       });
 

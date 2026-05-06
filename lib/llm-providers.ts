@@ -516,8 +516,8 @@ export async function callWithFallback(
 }
 
 // ─── callWithFallbackMei ──────────────────────────────────────────────────────
-// Pipeline MEI isolado: geminiMei (GEMINI_API_KEY_MEI) → groqMei (GROQ_API_KEY_MEI).
-// Usa chaves dedicadas para não consumir cota do blog IRPF.
+// Pipeline MEI isolado: geminiMei (dedicada) → geminiClients (principal) → groqMei.
+// Garante que Gemini sempre é tentado antes do Groq, mesmo sem chave MEI dedicada.
 const MEI_GEMINI_TIMEOUT_MS = 55_000;
 
 export async function callWithFallbackMei(
@@ -527,47 +527,58 @@ export async function callWithFallbackMei(
 ): Promise<FallbackResult> {
   const requireJson = options?.response_format?.type === "json_object";
 
-  // ── 1. Gemini MEI (chave dedicada) ────────────────────────────────────────
-  if (geminiMei) {
-    const model = MODELS.blogGeneration; // gemini-2.5-flash
-    const keyId = `mei:${model}`;
-    if (!isRateLimited(keyId)) {
-      try {
-        console.log(`[MEI LLM] Tentando Gemini: ${model} [mei]`);
-        const gemini = geminiMei.getGenerativeModel({
-          model,
-          systemInstruction: systemPrompt,
-          generationConfig: {
-            temperature: options?.temperature ?? 0.35,
-            ...(requireJson ? { responseMimeType: "application/json" } : {}),
-          },
-        });
-        const result = await Promise.race([
-          gemini.generateContent(userPrompt),
-          new Promise<never>((_, reject) =>
-            setTimeout(
-              () => reject(new Error(`Gemini MEI timeout após ${MEI_GEMINI_TIMEOUT_MS / 1000}s`)),
-              MEI_GEMINI_TIMEOUT_MS
-            )
-          ),
-        ]);
-        const raw = result.response.text();
-        const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
-        if (validated) {
-          console.log(`[MEI LLM] Sucesso: ${model} [mei]`);
-          return { text: validated, model };
-        }
-        console.warn(`[MEI LLM] ${model} retornou conteúdo inválido — fallback para groqMei`);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const errType = classifyError(err);
-        if (errType === "size_limit") markRateLimited(keyId, 65_000);
-        console.warn(`[MEI LLM] Gemini MEI falhou [${errType}]: ${msg.slice(0, 120)}`);
-      }
-    } else {
+  // Constrói lista de clientes Gemini para tentar: MEI dedicada primeiro, depois principais
+  type GeminiEntry = { client: GoogleGenerativeAI; label: string };
+  const geminiCandidates: GeminiEntry[] = [
+    ...(geminiMei ? [{ client: geminiMei, label: "mei" }] : []),
+    ...geminiClients,
+  ];
+
+  // ── 1. Gemini cascade (MEI → principal) ───────────────────────────────────
+  const model = MODELS.blogGeneration; // gemini-2.5-flash
+  for (const { client, label } of geminiCandidates) {
+    const keyId = `mei:${model}:${label}`;
+    if (isRateLimited(keyId)) {
       const remaining = Math.round(((rateLimitedKeys.get(keyId) ?? 0) - Date.now()) / 1000);
-      console.log(`[MEI LLM] Gemini MEI em cooldown por mais ${remaining}s — usando groqMei`);
+      console.log(`[MEI LLM] Gemini [${label}] cooldown por mais ${remaining}s — próximo`);
+      continue;
     }
+    try {
+      console.log(`[MEI LLM] Tentando Gemini: ${model} [${label}]`);
+      const gemini = client.getGenerativeModel({
+        model,
+        systemInstruction: systemPrompt,
+        generationConfig: {
+          temperature: options?.temperature ?? 0.35,
+          ...(requireJson ? { responseMimeType: "application/json" } : {}),
+        },
+      });
+      const result = await Promise.race([
+        gemini.generateContent(userPrompt),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`Gemini [${label}] timeout após ${MEI_GEMINI_TIMEOUT_MS / 1000}s`)),
+            MEI_GEMINI_TIMEOUT_MS
+          )
+        ),
+      ]);
+      const raw = result.response.text();
+      const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+      if (validated) {
+        console.log(`[MEI LLM] Sucesso: ${model} [${label}]`);
+        return { text: validated, model };
+      }
+      console.warn(`[MEI LLM] ${model} [${label}] retornou conteúdo inválido — próximo`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const errType = classifyError(err);
+      if (errType === "size_limit") markRateLimited(keyId, 65_000);
+      console.warn(`[MEI LLM] Gemini [${label}] falhou [${errType}]: ${msg.slice(0, 120)}`);
+    }
+  }
+
+  if (geminiCandidates.length === 0) {
+    console.warn("[MEI LLM] Nenhuma GEMINI_API_KEY configurada — usando groqMei diretamente");
   }
 
   // ── 2. Groq MEI (chave dedicada) — fallback ───────────────────────────────

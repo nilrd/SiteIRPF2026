@@ -15,6 +15,233 @@ import {
 
 export const ALL_MEI_CLUSTERS = [...MEI_KEYWORD_CLUSTERS, ...DESENROLA_KEYWORD_CLUSTERS];
 
+// ─── Tipos de imagem (isolados — sem importar blog-engine) ───────────────────
+type UnsplashAttribution = { photographerName: string; photographerUrl: string; photoUrl: string };
+type ImageResult = { url: string; attribution: UnsplashAttribution | null };
+type ResearchItem = { title: string; url: string; snippet: string };
+
+// ─── Imagens de capa estáticas para MEI (fallback final) ────────────────────
+const MEI_COVER_IMAGES = [
+  "https://images.unsplash.com/photo-1664575602554-2087b04935a5?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&h=630&q=80",
+  "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&h=630&q=80",
+];
+function getRandomMeiCoverImage(): string {
+  return MEI_COVER_IMAGES[Math.floor(Math.random() * MEI_COVER_IMAGES.length)];
+}
+
+// ─── Mapa keyword MEI → visual query Unsplash (inglês) ──────────────────────
+const MEI_VISUAL_QUERY_MAP: Record<string, string> = {
+  "mei": "small business entrepreneur office laptop",
+  "dasn": "tax form deadline calendar documents",
+  "divida": "debt documents finance stress notebook",
+  "cancelamento": "closing business documents office",
+  "abertura": "new business registration documents",
+  "desenrola": "debt relief financial agreement signing",
+  "parcelamento": "installments payment agreement finance",
+  "empreendedor": "entrepreneur small business startup office",
+  "das": "tax payment receipt documents",
+  "simei": "small business tax simplified",
+  "cnpj": "business registration document certificate",
+  "faturamento": "invoice billing small business",
+  "irpf": "tax documents calculator professional",
+  "nota fiscal": "invoice receipt business documents",
+  "regularizar": "documents compliance checklist office",
+};
+
+function getMeiVisualQuery(keyword: string): string {
+  const lower = keyword
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  for (const [key, query] of Object.entries(MEI_VISUAL_QUERY_MAP)) {
+    if (lower.includes(key)) return query;
+  }
+  return "small business entrepreneur office brazil";
+}
+
+const MEI_EXCLUDED_LOCATIONS = [
+  "china", "japan", "korea", "taiwan", "hong kong", "beijing",
+  "shanghai", "tokyo", "singapore", "thailand", "vietnam",
+];
+function isMeiExcludedLocation(location?: string): boolean {
+  if (!location) return false;
+  const loc = location.toLowerCase();
+  return MEI_EXCLUDED_LOCATIONS.some((l) => loc.includes(l));
+}
+
+/** Usa groqMei para gerar keywords visuais em inglês para busca no Unsplash. */
+async function getMeiImageKeywords(title: string): Promise<string | null> {
+  try {
+    const completion = await groqMei.chat.completions.create({
+      model: MODELS.blogVerifier,
+      messages: [{
+        role: "user",
+        content:
+          `You are a stock photo researcher for Brazilian MEI (Microempreendedor Individual) content.\n` +
+          `Given this blog post title about MEI/Desenrola Brasil, generate the BEST Unsplash search query.\n\n` +
+          `RULES:\n` +
+          `- Query must be in English\n` +
+          `- Use 3 to 5 words maximum\n` +
+          `- Focus on OBJECTS and SCENES visible in photos\n` +
+          `- NEVER use abstract words: tax, finance, money, brazil, mei\n` +
+          `- Examples:\n` +
+          `  'DASN-SIMEI prazo 2026' → 'calendar documents deadline office'\n` +
+          `  'abrir MEI passo a passo' → 'new business registration documents'\n` +
+          `  'dívidas MEI Desenrola' → 'debt relief agreement signing documents'\n` +
+          `  'cancelar MEI' → 'closing business documents office'\n\n` +
+          `POST TITLE: ${title}\n\n` +
+          `Return ONLY the search query, nothing else.`,
+      }],
+      temperature: 0.4,
+      max_tokens: 30,
+    });
+    const raw = (completion.choices?.[0]?.message?.content ?? "").trim().replace(/^["']|["']$/g, "");
+    if (/^[a-zA-Z]+( [a-zA-Z]+){2,4}$/.test(raw)) return raw;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Busca imagem no Unsplash para post MEI. */
+async function getMeiCoverImage(keyword: string, title?: string): Promise<ImageResult> {
+  const accessKey = process.env.UNSPLASH_ACCESS_KEY;
+  if (!accessKey) return { url: getRandomMeiCoverImage(), attribution: null };
+
+  const groqQuery = title ? await getMeiImageKeywords(title) : null;
+
+  const queries = [
+    ...(groqQuery ? [encodeURIComponent(groqQuery)] : []),
+    encodeURIComponent(getMeiVisualQuery(keyword)),
+    encodeURIComponent("small business entrepreneur office professional"),
+  ];
+
+  for (const query of queries) {
+    try {
+      const res = await fetch(
+        `https://api.unsplash.com/search/photos?query=${query}&orientation=landscape&content_filter=high&per_page=10`,
+        { headers: { Authorization: `Client-ID ${accessKey}` }, next: { revalidate: 0 } }
+      );
+      if (!res.ok) continue;
+      const searchData = (await res.json()) as {
+        results?: Array<{
+          id?: string;
+          urls?: { regular?: string };
+          user?: { name?: string; links?: { html?: string }; location?: string };
+          links?: { html?: string; download_location?: string };
+        }>;
+      };
+      if (!searchData.results || searchData.results.length < 3) continue;
+
+      const filtered = searchData.results.filter((p) => !isMeiExcludedLocation(p.user?.location));
+      const pool = (filtered.length >= 2 ? filtered : searchData.results).slice(0, 8);
+      const data = pool[Math.floor(Math.random() * pool.length)];
+      const rawUrl = data?.urls?.regular;
+      if (!rawUrl) continue;
+
+      const finalUrl = `${rawUrl.split("?")[0]}?auto=format&fit=crop&w=1200&h=630&q=85`;
+      if (data.links?.download_location) {
+        fetch(`${data.links.download_location}&client_id=${accessKey}`, { method: "GET" }).catch(() => {});
+      }
+      const attribution: UnsplashAttribution | null = data.user?.name
+        ? {
+            photographerName: data.user.name,
+            photographerUrl: (data.user.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
+            photoUrl: (data.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
+          }
+        : null;
+      return { url: finalUrl, attribution };
+    } catch { /* tenta próxima query */ }
+  }
+
+  return { url: getRandomMeiCoverImage(), attribution: null };
+}
+
+// ─── Pesquisa GOV.BR para contexto factual MEI ──────────────────────────────
+const MEI_STATIC_SOURCES: ResearchItem[] = [
+  {
+    title: "Gov.br — Portal MEI Oficial: abertura, DASN, DAS e cancelamento",
+    url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor",
+    snippet: "Portal oficial MEI 2026: limite de faturamento R$ 81.000/ano (R$ 6.750/mês proporcional). DAS mensal: R$ 73,00 comércio/indústria, R$ 79,90 serviços, R$ 80,90 comércio+serviços. DASN-SIMEI: prazo anual até 31 de maio. Categorias permitidas: 600+ atividades CNAE. Abertura gratuita via Portal do Empreendedor. Cancelamento (baixa): gratuito, pode ter dívidas pendentes canceladas automaticamente após 5 anos.",
+  },
+  {
+    title: "Gov.br — Receita Federal: MEI e Imposto de Renda Pessoa Física",
+    url: "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
+    snippet: "MEI e IRPF PF 2026: o MEI é uma empresa (CNPJ), mas o empreendedor continua sendo Pessoa Física. Se os rendimentos da PF (pró-labore, aluguéis, outras fontes) ultrapassarem R$ 35.584,00 em 2025, o titular deve declarar IRPF 2026 (prazo 23/03 a 29/05/2026). Atenção: lucros da empresa MEI distribuídos ao sócio são isentos de IR PF, desde que não ultrapassem o limite de isenção do SIMEI.",
+  },
+  {
+    title: "Gov.br — Desenrola Brasil Empresas e Procred 360 MEI",
+    url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/mei-microempreendedor-individual",
+    snippet: "Desenrola Brasil faixa MEI/MPE: negociação de dívidas com desconto de 30% a 90% conforme tempo de atraso, parcelamento em até 48 meses. Procred 360 MEI: linha de crédito com carência de 24 meses, prazo de até 96 meses, valor máximo = 50% do faturamento bruto anual do MEI (máx. R$ 180.000). Taxa de juros subsidiada. Cadastro via Gov.br, FGTS Digital.",
+  },
+  {
+    title: "Gov.br — Desenrola Brasil: regras e prazos para renegociação de dívidas",
+    url: "https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/desenrola-brasil",
+    snippet: "Desenrola Faixa 1 (renda até 2 SM ou negativados CPF até R$ 20k): renegociação com bancos públicos, descontos de até 96% e Faixa 2 (renda até 12 SM): renegociação com instituições financeiras privadas, descontos médios de 50%, prazo 60 meses máx. Condição: estar inscrito no CadÚnico ou ter dívida com banco parceiro. Programa encerrado fase 1 mas renegociações ainda são aceitas por adesão das IFs.",
+  },
+];
+
+async function fetchWithTimeoutMei(url: string, timeoutMs = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "Mozilla/5.0 IRPF-NSB-BlogBot/1.0" },
+      next: { revalidate: 3600 },
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function getMeiGoogleNewsResearch(keyword: string): Promise<ResearchItem[]> {
+  try {
+    const q = encodeURIComponent(
+      `${keyword} MEI microempreendedor site:gov.br OR site:sebrae.com.br OR site:g1.globo.com OR site:infomoney.com.br OR site:contabeis.com.br`
+    );
+    const url = `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
+    const res = await fetchWithTimeoutMei(url, 8000);
+    if (!res.ok) return [];
+    const xml = await res.text();
+
+    const items = Array.from(xml.matchAll(/<item>([\s\S]*?)<\/item>/g))
+      .slice(0, 8)
+      .map((m) => m[1]);
+
+    return items
+      .map((item) => {
+        const titleMatch = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/);
+        const linkMatch = item.match(/<link>(.*?)<\/link>/);
+        const descMatch = item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/);
+        const t = titleMatch?.[1]?.trim() || "";
+        const u = linkMatch?.[1]?.trim() || "";
+        const snippet = (descMatch?.[1] || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 260);
+        if (!t || !u) return null;
+        return { title: t, url: u, snippet } as ResearchItem;
+      })
+      .filter(Boolean) as ResearchItem[];
+  } catch {
+    return [];
+  }
+}
+
+async function collectMeiResearchContext(keyword: string): Promise<ResearchItem[]> {
+  const news = await getMeiGoogleNewsResearch(keyword);
+  const merged = [...MEI_STATIC_SOURCES, ...news];
+  const dedup = new Map<string, ResearchItem>();
+  for (const item of merged) {
+    if (!dedup.has(item.url)) dedup.set(item.url, item);
+  }
+  return Array.from(dedup.values()).slice(0, 12);
+}
+
 // WA link para CTAs
 const WA_MEI_LINK =
   `https://wa.me/5511940825120?text=${encodeURIComponent("Olá Nilson! Li o artigo do blog sobre MEI e preciso de ajuda.")}`;
@@ -153,9 +380,22 @@ export async function generateMeiBlogPost(clusterIndex?: number, customKeyword?:
     (keyword.toLowerCase().includes("desenrola") ? "DESENROLA" : "MEI");
 
   const systemPrompt = meiSystemPrompt(keyword, categoria);
-  const userPrompt = `TEMA OBRIGATÓRIO: "${keyword}". Secundárias: ${
-    (cluster as { secondary?: string[] }).secondary?.join(", ") || ""
-  }. Retorne APENAS o JSON válido, sem markdown.`;
+
+  // ── Pesquisa GOV.BR em paralelo com slot de espera ────────────────────────
+  const research = await collectMeiResearchContext(keyword);
+  const researchBlock =
+    research.length > 0
+      ? `PESQUISA OFICIAL MEI (use estes dados, não invente nada além deles):\n` +
+        research
+          .map((r) => `[${r.title}]\nURL: ${r.url}\n${r.snippet}`)
+          .join("\n\n")
+      : "";
+
+  const userPrompt =
+    (researchBlock ? researchBlock + "\n\n" : "") +
+    `TEMA OBRIGATÓRIO: "${keyword}". Secundárias: ${
+      (cluster as { secondary?: string[] }).secondary?.join(", ") || ""
+    }. Retorne APENAS o JSON válido, sem markdown.`;
 
   let parsed: Record<string, unknown>;
   let aiModel = "groq-" + MODELS.blogVerifier;
@@ -178,6 +418,7 @@ export async function generateMeiBlogPost(clusterIndex?: number, customKeyword?:
   const review = await verificarPostMei(`${parsed.title || keyword}\n\n${content}`, categoria);
 
   // Slug sanitizado
+  const rawTitle = (parsed.title as string) || keyword;
   const baseSlug = ((parsed.slug as string) || keyword)
     .toLowerCase()
     .normalize("NFD")
@@ -187,10 +428,16 @@ export async function generateMeiBlogPost(clusterIndex?: number, customKeyword?:
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
 
+  // ── Imagem de capa via Unsplash ──────────────────────────────────────────
+  const imageResult = await getMeiCoverImage(keyword, rawTitle);
+  const imageAttribution = imageResult.attribution
+    ? JSON.stringify(imageResult.attribution)
+    : null;
+
   return {
     keyword,
     categoria,
-    title: (parsed.title as string) || keyword,
+    title: rawTitle,
     slug: baseSlug,
     summary: (parsed.summary as string) || "",
     content,
@@ -198,7 +445,9 @@ export async function generateMeiBlogPost(clusterIndex?: number, customKeyword?:
     keywords: Array.isArray(parsed.keywords) ? (parsed.keywords as string[]) : [],
     faqs: Array.isArray(parsed.faqs) ? (parsed.faqs as { question: string; answer: string }[]) : [],
     imageQuery: (parsed.imageQuery as string) || "small business entrepreneur brazil",
-    imageAlt: (parsed.imageAlt as string) || (parsed.title as string) || keyword,
+    imageAlt: (parsed.imageAlt as string) || rawTitle,
+    coverImage: imageResult.url,
+    imageAttribution,
     reviewApproved: review.aprovado,
     reviewJson: JSON.stringify(review),
     aiModel,
@@ -222,8 +471,9 @@ export async function saveMeiBlogPost(post: Awaited<ReturnType<typeof generateMe
       tags: post.tags,
       keywords: post.keywords,
       faqsJson: JSON.stringify(post.faqs),
-      coverImage: null, // sem imagem automática — admin pode adicionar via painel
+      coverImage: post.coverImage ?? null,
       imageAlt: post.imageAlt ?? post.title,
+      imageAttribution: post.imageAttribution ?? null,
       published: post.reviewApproved,
       reviewJson: post.reviewJson ?? "",
       aiModel: post.aiModel ?? "",

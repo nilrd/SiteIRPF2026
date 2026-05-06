@@ -104,6 +104,122 @@ FONTES OFICIAIS MEI:
 - SEBRAE MEI: sebrae.com.br
 - Portal e-CAC: cav.receita.fazenda.gov.br
 - Legislação: Lei Complementar 123/2006 + Resolução CGSN 140/2018
+- O que precisa saber antes de ser MEI: gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/o-que-voce-precisa-saber-antes-de-se-tornar-um-mei
+- Atividades MEI permitidas: gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/atividades-permitidas
+- Direitos e obrigações MEI: gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/direitos-e-obrigacoes
+- Verificar débitos MEI: gov.br/empresas-e-negocios/pt-br/empreendedor/verificar-debitos-do-mei
+- Cartão MEI / Contrata Mais Brasil: contratamaisbrasil.sistema.gov.br
+
+═══════════════════════════════════════════
+NOVO DESENROLA BRASIL 2026 — DADOS OFICIAIS
+Fonte: Ministério da Fazenda — apresentação oficial maio/2026
+═══════════════════════════════════════════
+
+O QUE É O NOVO DESENROLA BRASIL:
+- Mobilização nacional de 90 dias para brasileiros renegociarem dívidas e limparem o nome
+- Lançado pelo Ministério da Fazenda em maio de 2026
+- Fases: Desenrola Famílias, Desenrola FIES, Desenrola Empresas (Procred + Pronampe), Desenrola Rural
+
+DESENROLA FAMÍLIAS — REGRAS OFICIAIS COMPLETAS:
+- Público-alvo: brasileiros com renda até 5 salários mínimos (R$ 8.105,00)
+- Dívidas elegíveis: cartão de crédito rotativo, cheque especial e crédito pessoal (CDC)
+- Período das dívidas: contratadas até 31 de janeiro de 2026, com atraso entre 90 dias e 2 anos
+- Desconto: entre 30% e 90% (conforme tipo e tempo de atraso — ver tabela abaixo)
+- Taxa de juros máxima da nova dívida: 1,99% ao mês
+- Prazo de pagamento: até 48 meses
+- Prazo 1ª parcela: até 35 dias após adesão
+- Limite da nova dívida (após descontos): R$ 15.000 por pessoa, por instituição financeira
+- Garantia: FGO (Fundo de Garantia de Operações)
+- Como participar: procurar os canais oficiais dos bancos participantes
+
+TABELA OFICIAL DE DESCONTOS — DESENROLA FAMÍLIAS:
+Crédito Rotativo (CC Rotativo + Cheque Especial):
+  91–120 dias de atraso → 40% de desconto
+  121–150 dias → 45%
+  151–180 dias → 50%
+  181–240 dias → 55%
+  241–300 dias → 70%
+  301–360 dias → 85%
+  1 a 2 anos → 90%
+Crédito Pessoal (CDC s/Garantia + CC Parcelado):
+  91–120 dias de atraso → 30% de desconto
+  121–150 dias → 35%
+  151–180 dias → 40%
+  181–240 dias → 45%
+  241–300 dias → 60%
+  301–360 dias → 75%
+  1 a 2 anos → 80%
+
+CONTRAPARTIDAS DO DESENROLA FAMÍLIAS:
+Para as famílias: bloqueio do CPF em casas de apostas por 12 meses
+Para as instituições financeiras:
+  - Desnegativar (limpar o nome) de quem tem dívida de até R$ 100 e do crédito renegociado
+  - Destinar 1% do valor garantido pelo FGO para educação financeira
+  - Proibição de enviar recursos a casas de apostas via cartão crédito, PIX crédito e parcelado
+
+FGTS NO DESENROLA FAMÍLIAS:
+- Novidade: trabalhadores podem usar parcela do FGTS para quitar dívidas renegociadas
+- Valor: 20% do saldo da conta OU R$ 1.000, o que for maior
+- Condição: só pode usar o FGTS APÓS renegociar a dívida no programa
+- Limite global de saques do programa: R$ 8,2 bilhões
+
+FGO — FONTES DE RECURSOS:
+- Saldo já disponível: R$ 2 bilhões
+- Novos aportes autorizados: até R$ 5 bilhões
+- Recursos não resgatados (SVR): entre R$ 5 a R$ 8 bilhões (devolução de tarifas indevidas, contas encerradas com saldo)
+
+MUDANÇAS CONSIGNADO INSS (Desenrola Famílias):
+- Margem total: reduz de 45% para 40%, com redução gradual de 2pp/ano até chegar a 30%
+- Cartão consignado + benefícios: máximo 5% cada (era 10% total)
+- Prazo máximo da operação: de 96 para 108 meses
+- Carência: agora permitida até 90 dias (antes era vedada)
+
+MUDANÇAS CONSIGNADO SERVIDOR PÚBLICO (Desenrola Famílias):
+- Margem total: de 45% para 40%, redução gradual de 2pp/ano até 30%
+- Cartão consignado: máximo 10% (extingue margem exclusiva problemática)
+- Prazo máximo: de 96 para 120 meses
+- Carência autorizada: até 120 dias
+
+DESENROLA FIES 2026:
+- Público: estudantes com dívidas FIES vencidas há mais de 90 dias
+- Pagamento à vista (+90 dias atrasado): desconto de 100% nos juros e multas + 12% do principal
+- Parcelamento (+90 dias): desconto de 100% nos juros e multas (em até 150 vezes)
+- Dívidas +360 dias fora do CadÚnico: desconto de até 77% do valor total (principal + juros + multa)
+- Dívidas +360 dias no CadÚnico: desconto de até 99% do valor total
+- Impacto estimado: mais de 1 milhão de estudantes beneficiados
+
+DESENROLA EMPRESAS — MICROEMPRESAS (Procred/FGO) 2026:
+- Público: microempresas faturamento anual até R$ 360 mil — MEI que migrou para ME se enquadra
+- Carência: de 12 para 24 meses
+- Prazo máximo: de 72 para 96 meses
+- Tolerância de atraso para novos créditos: de 14 para 90 dias
+- Limite de crédito: de 30% (teto R$ 150 mil) para 50% do faturamento (novo teto R$ 180 mil)
+- Empresas lideradas por mulheres: 60% do faturamento (teto R$ 180 mil)
+
+DESENROLA EMPRESAS — MICRO E PEQUENAS (Pronampe/FGO) 2026:
+- Público: empresas faturamento anual até R$ 4,8 milhões
+- Carência: de 12 para 24 meses
+- Prazo máximo: de 72 para 96 meses
+- Tolerância para novos créditos: de 14 para 90 dias
+- Limite de crédito: de R$ 250 mil para R$ 500 mil
+
+DESENROLA RURAL 2026:
+- Público: agricultores familiares de baixa renda
+- Objetivo: regularização de dívidas + reinserção produtiva + acesso ao crédito rural
+- Prazo reaberto até 20 de dezembro de 2026
+- Já beneficiou: ~507.000 produtores; meta com reabertura: mais 800.000 = 1,3 milhão no total
+
+RELAÇÃO DESENROLA + IRPF — ARGUMENTO DE VENDA NILSON BRITES:
+- CPF limpo pelo Desenrola permite desbloquear restituição do IRPF represada por pendências
+- Quem teve dívida cancelada em 2025 pode ter renda tributável não declarada (risco de malha fina)
+- MEI que aderiu ao Desenrola Empresas DEVE entregar DASN-SIMEI + IRPF PF corretamente
+- Próximo passo natural após regularizar dívidas: regularizar o IRPF com Nilson Brites
+
+FONTES OFICIAIS NOVO DESENROLA BRASIL:
+- gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/novo-desenrola-brasil
+- gov.br/fazenda/pt-br/assuntos/noticias/2026/maio/governo-federal-anuncia-programa-para-renegociacao-de-dividas-de-familias-estudantes-e-empresas
+- gov.br/sri/pt-br/governo-do-brasil-lanca-o-programa-desenrola-2.0
+- bb.com.br/site/pra-voce/desenrola-brasil
 `;
 
 // Frase de disclaimer obrigatória em conteúdo MEI
@@ -179,37 +295,98 @@ export const MEI_KEYWORD_CLUSTERS = [
 
 // Clusters Desenrola Brasil para blog
 export const DESENROLA_KEYWORD_CLUSTERS = [
+  // ── Programa completo ────────────────────────────────────────────────────
   {
-    primary: "Novo Desenrola Brasil 2026 como funciona participar",
-    secondary: ["desenrola brasil familias", "renegociar divida 2026", "limpar nome 2026"],
+    primary: "Novo Desenrola Brasil 2026 como funciona fases participar",
+    secondary: ["desenrola brasil 90 dias renegociacao", "novo desenrola ministerio fazenda 2026", "limpar nome 2026 programa governo"],
     volume: "alta",
     intent: "informacional",
     categoria: "DESENROLA" as const,
   },
+  // ── Famílias — visão geral ───────────────────────────────────────────────
   {
-    primary: "Desenrola Famílias 2026 quem pode participar descontos",
-    secondary: ["desenrola familias renda 5 salarios", "desconto divida cartao 90 por cento", "fgo credito renegociacao"],
+    primary: "Desenrola Famílias 2026 quem pode participar renda 5 salários",
+    secondary: ["desenrola familias requisitos renda limite", "quem tem direito desenrola brasil 2026", "renda ate 5 salarios minimos desenrola"],
     volume: "alta",
     intent: "informacional",
     categoria: "DESENROLA" as const,
   },
+  // ── Famílias — tabela de descontos ───────────────────────────────────────
   {
-    primary: "Desenrola FIES 2026 quitar divida estudante desconto",
-    secondary: ["fies quitacao desconto 99 por cento cadunico", "renegociar fies 2026", "fies atrasado como resolver"],
+    primary: "tabela descontos Desenrola Famílias 2026 cartão cheque especial CDC",
+    secondary: ["desconto 90 por cento cartao rotativo desenrola", "quanto desconto desenrola familias tempo atraso", "tabela porcentagem desconto desenrola 2026"],
+    volume: "alta",
+    intent: "informacional",
+    categoria: "DESENROLA" as const,
+  },
+  // ── Famílias — FGTS ──────────────────────────────────────────────────────
+  {
+    primary: "usar FGTS para pagar dívida Desenrola 2026 como funciona",
+    secondary: ["fgts desenrola 20 por cento saldo ou 1000 reais", "sacar fgts quitar divida banco 2026", "fgts desenrola familias regras"],
+    volume: "alta",
+    intent: "transacional",
+    categoria: "DESENROLA" as const,
+  },
+  // ── Famílias — contrapartidas / limpar nome ──────────────────────────────
+  {
+    primary: "Desenrola limpar nome CPF 2026 dívida até R$ 100 desnegativado",
+    secondary: ["desnegativar cpf desenrola 2026", "nome limpo desenrola familias automatico", "cpf negativado como limpar 2026"],
+    volume: "alta",
+    intent: "transacional",
+    categoria: "DESENROLA" as const,
+  },
+  // ── FIES ─────────────────────────────────────────────────────────────────
+  {
+    primary: "Desenrola FIES 2026 desconto 99 por cento dívida estudante",
+    secondary: ["fies quitacao desconto cadunico 99 por cento", "renegociar fies 2026 parcelamento 150 vezes", "fies atrasado 360 dias como resolver"],
     volume: "media",
     intent: "transacional",
     categoria: "DESENROLA" as const,
   },
+  // ── Empresas — MEI Procred ───────────────────────────────────────────────
   {
-    primary: "Desenrola Empresas 2026 MEI Pronampe Procred",
-    secondary: ["pronampe novo 2026 limite 500 mil", "procred mei microempresa divida", "desenrola empresa como funciona"],
+    primary: "Desenrola Empresas MEI Procred 2026 renegociar dívida microempresa",
+    secondary: ["procred fgo mei credito 50 por cento faturamento 180 mil", "renegociar divida cnpj mei desenrola 2026", "microempresa divida banco como renegociar 2026"],
+    volume: "alta",
+    intent: "transacional",
+    categoria: "DESENROLA" as const,
+  },
+  // ── Pronampe micro e pequenas ────────────────────────────────────────────
+  {
+    primary: "Pronampe 2026 microempresa crédito até R$ 500 mil novo limite",
+    secondary: ["pronampe novo limite 500 mil credito barato", "pronampe prazo 96 meses carencia 24 meses", "micro empresa credito pronampe 2026"],
     volume: "media",
     intent: "transacional",
     categoria: "DESENROLA" as const,
   },
+  // ── Consignado INSS aposentados ──────────────────────────────────────────
   {
-    primary: "limpar nome 2026 CPF regularizado imposto de renda",
-    secondary: ["cpf negativado irpf", "desenrola limpar nome declarar ir", "regularizar cpf receita federal apos desenrola"],
+    primary: "consignado INSS 2026 nova margem 40 por cento mudanças aposentado",
+    secondary: ["consignado inss prazo 108 meses regra nova", "margem consignavel inss reducao 30 por cento", "aposentado consignado limite novo 2026"],
+    volume: "media",
+    intent: "informacional",
+    categoria: "DESENROLA" as const,
+  },
+  // ── Desenrola Rural ──────────────────────────────────────────────────────
+  {
+    primary: "Desenrola Rural 2026 agricultor familiar regularizar dívida prazo dezembro",
+    secondary: ["desenrola rural prazo 20 dezembro 2026", "agricultor familiar renegociar divida credito rural", "1 milhao agricultores desenrola rural beneficiados"],
+    volume: "media",
+    intent: "informacional",
+    categoria: "DESENROLA" as const,
+  },
+  // ── Limpar nome + IR (funil para serviço) ────────────────────────────────
+  {
+    primary: "limpei o nome pelo Desenrola próximo passo IRPF 2026",
+    secondary: ["cpf limpo receita federal declarar irpf", "desenrola regularizar imposto renda nilson brites", "restituicao bloqueada cpf negativado como liberar"],
+    volume: "alta",
+    intent: "transacional",
+    categoria: "DESENROLA" as const,
+  },
+  // ── MEI + Desenrola Empresas ─────────────────────────────────────────────
+  {
+    primary: "MEI com dívida no banco Desenrola Empresas 2026 como aderir",
+    secondary: ["mei divida banco como renegociar 2026", "procred mei carencia 24 meses novo prazo", "mei empresa desenrola faturamento 50 por cento credito"],
     volume: "alta",
     intent: "transacional",
     categoria: "DESENROLA" as const,

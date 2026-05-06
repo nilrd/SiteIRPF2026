@@ -166,24 +166,54 @@ async function getMeiCoverImage(keyword: string, title?: string): Promise<ImageR
 // ─── Pesquisa GOV.BR para contexto factual MEI ──────────────────────────────
 const MEI_STATIC_SOURCES: ResearchItem[] = [
   {
-    title: "Gov.br — Portal MEI Oficial: abertura, DASN, DAS e cancelamento",
+    title: "Gov.br — Portal MEI Oficial: abertura, DAS, DASN e obrigações 2026",
     url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor",
-    snippet: "Portal oficial MEI 2026: limite de faturamento R$ 81.000/ano (R$ 6.750/mês proporcional). DAS mensal: R$ 73,00 comércio/indústria, R$ 79,90 serviços, R$ 80,90 comércio+serviços. DASN-SIMEI: prazo anual até 31 de maio. Categorias permitidas: 600+ atividades CNAE. Abertura gratuita via Portal do Empreendedor. Cancelamento (baixa): gratuito, pode ter dívidas pendentes canceladas automaticamente após 5 anos.",
+    snippet: "Portal oficial MEI 2026: limite faturamento R$ 81.000/ano. DAS mensal: R$ 73,00 comércio/indústria, R$ 79,90 serviços, R$ 80,90 misto. DASN-SIMEI: prazo até 31 de maio de 2026 (ano-base 2025). Abertura gratuita e online. Cancelamento (baixa) gratuito pelo portal.",
+  },
+  {
+    title: "Gov.br — O que você precisa saber antes de ser MEI",
+    url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/o-que-voce-precisa-saber-antes-de-se-tornar-um-mei",
+    snippet: "Pré-requisitos MEI: ser maior de 18 anos, ter CPF regular, não ser sócio ou administrador de outra empresa, limite de faturamento R$ 81.000/ano, ter no máximo 1 empregado. Vedado a profissões regulamentadas (médico, advogado, engenheiro, contador). Abertura gratuita em menos de 10 minutos pelo gov.br/mei.",
+  },
+  {
+    title: "Gov.br — Atividades permitidas para MEI 2026",
+    url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/atividades-permitidas",
+    snippet: "Lista oficial de mais de 600 ocupações permitidas ao MEI conforme Resolução CGSN 140/2018. MEI pode exercer atividades de comércio, indústria ou serviços (não regulamentadas). Exemplos: cabeleireiro, eletricista, pedreiro, vendedor ambulante, costureira, motorista de transporte por app.",
+  },
+  {
+    title: "Gov.br — Direitos e obrigações do MEI",
+    url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/direitos-e-obrigacoes",
+    snippet: "Obrigações MEI: pagar DAS mensalmente até dia 20, entregar DASN-SIMEI até 31 de maio, emitir nota fiscal para PJ. Direitos: INSS (aposentadoria por idade, auxílio-doença, salário-maternidade), CNPJ gratuito, acesso a crédito, sem contabilidade obrigatória, pode contratar 1 empregado.",
+  },
+  {
+    title: "Gov.br — Verificar débitos do MEI",
+    url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/verificar-debitos-do-mei",
+    snippet: "Ferramenta oficial para verificar débitos de DAS e outras pendências do MEI. Permite parcelamento do DAS em atraso em até 60 meses. Débitos acima de 90 dias geram juros Selic + multa máx 20%. MEI inadimplente pode perder o regime MEI e ir a dívida ativa.",
   },
   {
     title: "Gov.br — Receita Federal: MEI e Imposto de Renda Pessoa Física",
     url: "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
-    snippet: "MEI e IRPF PF 2026: o MEI é uma empresa (CNPJ), mas o empreendedor continua sendo Pessoa Física. Se os rendimentos da PF (pró-labore, aluguéis, outras fontes) ultrapassarem R$ 35.584,00 em 2025, o titular deve declarar IRPF 2026 (prazo 23/03 a 29/05/2026). Atenção: lucros da empresa MEI distribuídos ao sócio são isentos de IR PF, desde que não ultrapassem o limite de isenção do SIMEI.",
+    snippet: "MEI e IRPF PF 2026: o MEI é empresa (CNPJ), mas o titular continua sendo Pessoa Física. Se rendimentos totais da PF (pró-labore, aluguéis, salários) ultrapassaram R$ 35.584,00 em 2025, deve declarar IRPF 2026 (prazo 23/03 a 29/05/2026). Lucros MEI distribuídos ao titular são isentos de IR PF dentro dos limites do SIMEI.",
   },
   {
-    title: "Gov.br — Desenrola Brasil Empresas e Procred 360 MEI",
-    url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/mei-microempreendedor-individual",
-    snippet: "Desenrola Brasil faixa MEI/MPE: negociação de dívidas com desconto de 30% a 90% conforme tempo de atraso, parcelamento em até 48 meses. Procred 360 MEI: linha de crédito com carência de 24 meses, prazo de até 96 meses, valor máximo = 50% do faturamento bruto anual do MEI (máx. R$ 180.000). Taxa de juros subsidiada. Cadastro via Gov.br, FGTS Digital.",
+    title: "Novo Desenrola Brasil 2026 — Ministério da Fazenda: regras oficiais",
+    url: "https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/novo-desenrola-brasil",
+    snippet: "Novo Desenrola Brasil 2026: mobilização de 90 dias para renegociação de dívidas. Desenrola Famílias: renda até R$ 8.105 (5 SM), dívidas cartão/cheque/CDC atrasadas 90 dias a 2 anos contratadas até 31/01/2026, descontos 30–90%, juros máx 1,99%/mês, prazo 48 meses, limite R$ 15 mil/IF. Garantia FGO. Uso de FGTS: 20% do saldo ou R$ 1.000 (maior) após renegociação.",
   },
   {
-    title: "Gov.br — Desenrola Brasil: regras e prazos para renegociação de dívidas",
-    url: "https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/desenrola-brasil",
-    snippet: "Desenrola Faixa 1 (renda até 2 SM ou negativados CPF até R$ 20k): renegociação com bancos públicos, descontos de até 96% e Faixa 2 (renda até 12 SM): renegociação com instituições financeiras privadas, descontos médios de 50%, prazo 60 meses máx. Condição: estar inscrito no CadÚnico ou ter dívida com banco parceiro. Programa encerrado fase 1 mas renegociações ainda são aceitas por adesão das IFs.",
+    title: "Gov.br Fazenda — Anúncio Novo Desenrola Brasil maio 2026",
+    url: "https://www.gov.br/fazenda/pt-br/assuntos/noticias/2026/maio/governo-federal-anuncia-programa-para-renegociacao-de-dividas-de-familias-estudantes-e-empresas",
+    snippet: "Governo Federal anuncia Novo Desenrola Brasil em maio/2026: Famílias (cartão/cheque/CDC, descontos até 90%, FGO), FIES (desconto até 99% CadÚnico), Empresas — Procred (MEI/ME, crédito até 50% faturamento, teto R$ 180 mil, carência 24 meses, prazo 96 meses) e Pronampe (MPE faturamento até R$ 4,8 mi, limite R$ 500 mil), Rural (prazo até 20/12/2026).",
+  },
+  {
+    title: "SEBRAE — O que é MEI e como se formalizar: passo a passo",
+    url: "https://sebrae.com.br/empreendedores/conteudos/comecar/o-que-e-mei-e-como-se-formalizar-passo-a-passo-para-comecar",
+    snippet: "SEBRAE explica o MEI: Microempreendedor Individual é a categoria mais simples do Simples Nacional para quem fatura até R$ 81.000/ano. Abertura gratuita no Portal do Empreendedor (gov.br/mei) em menos de 10 minutos. Após abertura: emitir DAS todo mês, entregar DASN-SIMEI anual (até 31/mai) e emitir nota fiscal para pessoa jurídica.",
+  },
+  {
+    title: "Banco do Brasil — Desenrola Brasil: como aderir",
+    url: "https://www.bb.com.br/site/pra-voce/desenrola-brasil/",
+    snippet: "Banco do Brasil participa do Novo Desenrola Brasil 2026. Clientes BB podem renegociar dívidas elegíveis com descontos conforme tabela oficial. Acesso pelo app BB, internet banking ou agências. Dívidas elegíveis: cartão de crédito, cheque especial e crédito pessoal contratados até 31/01/2026 com atraso de 90 dias a 2 anos.",
   },
 ];
 
@@ -203,8 +233,9 @@ async function fetchWithTimeoutMei(url: string, timeoutMs = 8000): Promise<Respo
 
 async function getMeiGoogleNewsResearch(keyword: string): Promise<ResearchItem[]> {
   try {
+    // Busca news sobre MEI/Desenrola em fontes confiáveis (gov.br, sebrae, g1, cnn, istoé, contábeis)
     const q = encodeURIComponent(
-      `${keyword} MEI microempreendedor site:gov.br OR site:sebrae.com.br OR site:g1.globo.com OR site:infomoney.com.br OR site:contabeis.com.br`
+      `${keyword} site:gov.br OR site:sebrae.com.br OR site:g1.globo.com OR site:cnnbrasil.com.br OR site:istoedinheiro.com.br OR site:contabeis.com.br OR site:infomoney.com.br`
     );
     const url = `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
     const res = await fetchWithTimeoutMei(url, 8000);
@@ -232,14 +263,70 @@ async function getMeiGoogleNewsResearch(keyword: string): Promise<ResearchItem[]
   }
 }
 
+// Fontes oficiais complementares para scraping direto (gov.br + confiáveis)
+const MEI_LIVE_SOURCES: { url: string; label: string }[] = [
+  { url: "https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/novo-desenrola-brasil", label: "Gov Fazenda Desenrola" },
+  { url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/direitos-e-obrigacoes", label: "Gov MEI Direitos" },
+  { url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/verificar-debitos-do-mei", label: "Gov MEI Débitos" },
+  { url: "https://sebrae.com.br/empreendedores/conteudos/comecar/o-que-e-mei-e-como-se-formalizar-passo-a-passo-para-comecar", label: "SEBRAE MEI formalizacao" },
+];
+
+/** Scraping direto de até 3 fontes vivas (gov.br/sebrae) para enriquecer o contexto */
+async function fetchLiveMeiSources(keyword: string): Promise<ResearchItem[]> {
+  const lower = keyword.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  // Seleciona as 3 fontes mais relevantes para a keyword
+  const desenrolaKeywords = ["desenrola", "divida", "renegociar", "debito", "procred", "pronampe", "fgts", "fies"];
+  const isDesenrola = desenrolaKeywords.some((k) => lower.includes(k));
+  const sources = isDesenrola
+    ? [MEI_LIVE_SOURCES[0], MEI_LIVE_SOURCES[2], MEI_LIVE_SOURCES[3]]
+    : [MEI_LIVE_SOURCES[1], MEI_LIVE_SOURCES[2], MEI_LIVE_SOURCES[3]];
+
+  const results: ResearchItem[] = [];
+  await Promise.allSettled(
+    sources.map(async ({ url, label }) => {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 6000);
+        const res = await fetch(url, {
+          signal: controller.signal,
+          headers: { "User-Agent": "Mozilla/5.0 IRPF-NSB-BlogBot/1.0" },
+          next: { revalidate: 3600 },
+        });
+        clearTimeout(timer);
+        if (!res.ok) return;
+        const html = await res.text();
+        const semantic =
+          html.match(/<article[^>]*>([\s\S]*?)<\/article>/i) ??
+          html.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
+        const source = semantic ? semantic[1] : html;
+        const text = source
+          .replace(/<script[\s\S]*?<\/script>/gi, " ")
+          .replace(/<style[\s\S]*?<\/style>/gi, " ")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(200, 900);
+        if (text.length > 100) {
+          results.push({ title: label, url, snippet: text });
+        }
+      } catch { /* ignora falha individual */ }
+    })
+  );
+  return results;
+}
+
 async function collectMeiResearchContext(keyword: string): Promise<ResearchItem[]> {
-  const news = await getMeiGoogleNewsResearch(keyword);
-  const merged = [...MEI_STATIC_SOURCES, ...news];
+  // 3 fontes em paralelo: estáticas + Google News + scraping gov.br/sebrae ao vivo
+  const [news, live] = await Promise.all([
+    getMeiGoogleNewsResearch(keyword),
+    fetchLiveMeiSources(keyword),
+  ]);
+  const merged = [...MEI_STATIC_SOURCES, ...live, ...news];
   const dedup = new Map<string, ResearchItem>();
   for (const item of merged) {
     if (!dedup.has(item.url)) dedup.set(item.url, item);
   }
-  return Array.from(dedup.values()).slice(0, 12);
+  return Array.from(dedup.values()).slice(0, 16);
 }
 
 // WA link para CTAs

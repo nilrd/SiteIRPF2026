@@ -4,6 +4,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import BlogPostImage from "@/components/site/BlogPostImage";
 import AuthorBadge from "@/components/site/AuthorBadge";
+import BlogCTA from "@/components/site/BlogCTA";
 import { JsonLdArticle, JsonLdBreadcrumb, JsonLdFAQ, JsonLdSpeakable } from "@/components/seo/JsonLd";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +65,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá! Vi um artigo no blog e quero declarar meu IRPF.")}`;
+/** Mapeia categoria do post para o topic do BlogCTA */
+function topicFromCategoria(categoria: string): "irpf" | "mei" | "desenrola" {
+  if (categoria === "MEI") return "mei";
+  if (categoria === "DESENROLA") return "desenrola";
+  return "irpf";
+}
 
 export default async function BlogPostPage({ params }: Props) {
   const post = await getPost(params.slug);
@@ -176,23 +182,7 @@ export default async function BlogPostPage({ params }: Props) {
             />
 
             {/* CTA Box mid-content */}
-            <div className="bg-verde text-white p-8 my-12 text-center">
-              <h3 className="font-serif text-2xl mb-3">
-                Precisa declarar seu IRPF?
-              </h3>
-              <p className="opacity-70 mb-6 text-sm">
-                Nosso consultor pode analisar seu caso e maximizar sua
-                restituicao.
-              </p>
-              <a
-                href={WA_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-white text-verde px-8 py-3 inline-block uppercase text-xs tracking-widest font-bold hover:bg-white/90 transition"
-              >
-                Falar com Consultor
-              </a>
-            </div>
+            <BlogCTA variant="inline" topic={topicFromCategoria(post.categoria)} />
 
             {/* FAQ Accordion */}
             {faqs.length > 0 && (
@@ -236,22 +226,7 @@ export default async function BlogPostPage({ params }: Props) {
               </div>
 
               {/* Lead form */}
-              <div className="bg-verde/5 border border-verde/10 p-6">
-                <h3 className="font-serif text-lg mb-3">
-                  Receba nosso conteudo
-                </h3>
-                <p className="text-sm opacity-60 mb-4">
-                  Dicas de IRPF direto no seu WhatsApp.
-                </p>
-                <a
-                  href={WA_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full text-center bg-verde text-white py-3 uppercase text-xs tracking-widest font-bold hover:bg-verde/90 transition"
-                >
-                  Entrar em Contato
-                </a>
-              </div>
+              <BlogCTA variant="sidebar" topic={topicFromCategoria(post.categoria)} />
 
               {/* Related posts */}
               {related.length > 0 && (

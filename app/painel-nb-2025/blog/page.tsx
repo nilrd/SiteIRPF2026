@@ -18,6 +18,17 @@ type Post = {
   reviewJson: string;
   coverImage: string | null;
   aiModel: string | null;
+  categoria: string;
+};
+
+const CATEGORIA_TABS = ["TODOS", "IRPF", "MEI", "DESENROLA", "GERAL"] as const;
+type CategoriaTab = typeof CATEGORIA_TABS[number];
+
+const CATEGORIA_COLORS: Record<string, string> = {
+  IRPF:      "bg-blue-500/20 text-blue-300",
+  MEI:       "bg-orange-500/20 text-orange-300",
+  DESENROLA: "bg-purple-500/20 text-purple-300",
+  GERAL:     "bg-white/10 text-white/40",
 };
 
 function BlogAdminContent() {
@@ -25,9 +36,10 @@ function BlogAdminContent() {
   const [posts, setPosts]           = useState<Post[]>([]);
   const [loading, setLoading]       = useState(true);
   const [keyword, setKeyword]       = useState("");
-  const [generating, setGenerating] = useState(false);
-  const [genResult, setGenResult]   = useState<{ title: string; slug: string } | null>(null);
-  const [actionMsg, setActionMsg]   = useState<string | null>(null);
+  const [generating, setGenerating]         = useState(false);
+  const [genResult, setGenResult]           = useState<{ title: string; slug: string } | null>(null);
+  const [actionMsg, setActionMsg]           = useState<string | null>(null);
+  const [categoriaFilter, setCategoriaFilter] = useState<CategoriaTab>("TODOS");
   const [generatingImage, setGeneratingImage] = useState<{ postId: string; model: string } | null>(null);
 
   // Ler keyword/titulo da URL (link vindo do analisador)
@@ -136,6 +148,9 @@ function BlogAdminContent() {
 
   const published = posts.filter((p) => p.published).length;
   const drafts    = posts.filter((p) => !p.published).length;
+  const filteredPosts = categoriaFilter === "TODOS"
+    ? posts
+    : posts.filter((p) => (p.categoria || "IRPF") === categoriaFilter);
 
   return (
     <div className="flex min-h-screen">
@@ -155,6 +170,28 @@ function BlogAdminContent() {
             {actionMsg}
           </div>
         )}
+
+        {/* Categoria filter tabs */}
+        <div className="flex gap-2 mb-8 flex-wrap">
+          {CATEGORIA_TABS.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setCategoriaFilter(tab)}
+              className={`px-4 py-1.5 text-[10px] uppercase tracking-widest font-bold transition border ${
+                categoriaFilter === tab
+                  ? "bg-white text-black border-white"
+                  : "bg-transparent text-white/50 border-white/10 hover:border-white/30"
+              }`}
+            >
+              {tab}
+              {tab !== "TODOS" && (
+                <span className="ml-2 opacity-60">
+                  ({posts.filter((p) => (p.categoria || "IRPF") === tab).length})
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
 
         {/* Generate section */}
         <div className="border border-white/10 p-6 mb-10">
@@ -196,6 +233,7 @@ function BlogAdminContent() {
               <thead>
                 <tr className="border-b border-white/10 text-left">
                   <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Titulo</th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Categoria</th>
                   <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Modelo IA</th>
                   <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Status</th>
                   <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Views</th>
@@ -205,11 +243,18 @@ function BlogAdminContent() {
                 </tr>
               </thead>
               <tbody>
-                {posts.map((post) => (
+                {filteredPosts.map((post) => (
                   <tr key={post.id} className="border-b border-white/5 hover:bg-white/5">
                     <td className="py-3 pr-4 max-w-xs">
                       <span className="block font-medium">{post.title}</span>
                       <span className="block text-[10px] opacity-40 mt-0.5">{post.slug}</span>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
+                        CATEGORIA_COLORS[post.categoria || "IRPF"] || CATEGORIA_COLORS.GERAL
+                      }`}>
+                        {post.categoria || "IRPF"}
+                      </span>
                     </td>
                     <td className="py-3 pr-4">
                       {(() => {
@@ -320,7 +365,7 @@ function BlogAdminContent() {
                     </td>
                   </tr>
                 ))}
-                {posts.length === 0 && !loading && (
+                {filteredPosts.length === 0 && !loading && (
                   <tr>
                     <td colSpan={6} className="py-8 text-center opacity-40">
                       Nenhum post ainda — gere o primeiro acima

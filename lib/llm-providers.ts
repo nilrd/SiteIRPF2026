@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Clientes Groq — key1 principal + key2 fallback (rate limit independente por chave)
+// Clientes Groq — key1 principal + key2 fallback + keyMei dedicada para conteúdo MEI
 const groqClients: Array<{ client: OpenAI; label: string }> = [
   ...(process.env.GROQ_API_KEY
     ? [{ client: new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY }), label: "key1" }]
@@ -10,6 +10,16 @@ const groqClients: Array<{ client: OpenAI; label: string }> = [
     ? [{ client: new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY_2 }), label: "key2" }]
     : []),
 ];
+
+// Cliente Groq dedicado para geração de conteúdo MEI — rate limit independente
+export const groqMei: OpenAI = process.env.GROQ_API_KEY_MEI
+  ? new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY_MEI })
+  : (groqClients[0]?.client ?? new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY }));
+
+// Cliente Gemini dedicado para geração de conteúdo MEI — chave/cota independente
+export const geminiMei: GoogleGenerativeAI | null = process.env.GEMINI_API_KEY_MEI
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY_MEI)
+  : null;
 
 // Compatibilidade com código legado que usa groqLlama diretamente (chatbot, verifier)
 export const groqLlama = groqClients[0]?.client ?? new OpenAI({
@@ -503,4 +513,88 @@ export async function callWithFallback(
   throw new Error(
     `Todos os modelos LLM falharam. Modelos mortos nesta instância: [${Array.from(deadModels).join(", ")}]. Tente novamente em alguns minutos.`
   );
+}
+
+// ─── callWithFallbackMei ──────────────────────────────────────────────────────
+// Pipeline MEI isolado: geminiMei (GEMINI_API_KEY_MEI) → groqMei (GROQ_API_KEY_MEI).
+// Usa chaves dedicadas para não consumir cota do blog IRPF.
+const MEI_GEMINI_TIMEOUT_MS = 55_000;
+
+export async function callWithFallbackMei(
+  systemPrompt: string,
+  userPrompt: string,
+  options?: { temperature?: number; response_format?: { type: "json_object" } }
+): Promise<FallbackResult> {
+  const requireJson = options?.response_format?.type === "json_object";
+
+  // ── 1. Gemini MEI (chave dedicada) ────────────────────────────────────────
+  if (geminiMei) {
+    const model = MODELS.blogGeneration; // gemini-2.5-flash
+    const keyId = `mei:${model}`;
+    if (!isRateLimited(keyId)) {
+      try {
+        console.log(`[MEI LLM] Tentando Gemini: ${model} [mei]`);
+        const gemini = geminiMei.getGenerativeModel({
+          model,
+          systemInstruction: systemPrompt,
+          generationConfig: {
+            temperature: options?.temperature ?? 0.35,
+            ...(requireJson ? { responseMimeType: "application/json" } : {}),
+          },
+        });
+        const result = await Promise.race([
+          gemini.generateContent(userPrompt),
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () => reject(new Error(`Gemini MEI timeout após ${MEI_GEMINI_TIMEOUT_MS / 1000}s`)),
+              MEI_GEMINI_TIMEOUT_MS
+            )
+          ),
+        ]);
+        const raw = result.response.text();
+        const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+        if (validated) {
+          console.log(`[MEI LLM] Sucesso: ${model} [mei]`);
+          return { text: validated, model };
+        }
+        console.warn(`[MEI LLM] ${model} retornou conteúdo inválido — fallback para groqMei`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const errType = classifyError(err);
+        if (errType === "size_limit") markRateLimited(keyId, 65_000);
+        console.warn(`[MEI LLM] Gemini MEI falhou [${errType}]: ${msg.slice(0, 120)}`);
+      }
+    } else {
+      const remaining = Math.round(((rateLimitedKeys.get(keyId) ?? 0) - Date.now()) / 1000);
+      console.log(`[MEI LLM] Gemini MEI em cooldown por mais ${remaining}s — usando groqMei`);
+    }
+  }
+
+  // ── 2. Groq MEI (chave dedicada) — fallback ───────────────────────────────
+  const system = safeTrim(systemPrompt, GROQ_SYSTEM_MAX_CHARS);
+  const user   = safeTrim(userPrompt,   GROQ_USER_MAX_CHARS);
+  try {
+    console.log(`[MEI LLM] Tentando groqMei: ${MODELS.blogVerifier}`);
+    const response = await groqMei.chat.completions.create({
+      model: MODELS.blogVerifier,
+      messages: [
+        { role: "system", content: system },
+        { role: "user",   content: user   },
+      ],
+      max_tokens: 8000,
+      temperature: options?.temperature ?? 0.35,
+      ...(options?.response_format ? { response_format: options.response_format } : {}),
+    });
+    const raw = response.choices[0]?.message?.content;
+    const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+    if (validated) {
+      console.log(`[MEI LLM] Sucesso: groqMei [${MODELS.blogVerifier}]`);
+      return { text: validated, model: `groq-${MODELS.blogVerifier}` };
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[MEI LLM] groqMei falhou: ${msg.slice(0, 120)}`);
+  }
+
+  throw new Error("callWithFallbackMei: todos os LLMs MEI falharam. Tente novamente em 1 minuto.");
 }

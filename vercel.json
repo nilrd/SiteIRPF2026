@@ -5,6 +5,10 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/blog-mei?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4",
+      "schedule": "0 18 * * *"
+    },
+    {
       "path": "/api/cron/email-sequence?secret=xP9aKm2wR4nQ7vL3hT8uY6sZ",
       "schedule": "0 10 * * *"
     }
@@ -12,6 +16,9 @@
   "functions": {
     "app/api/cron/blog-auto/route.ts": {
       "maxDuration": 300
+    },
+    "app/api/cron/blog-mei/route.ts": {
+      "maxDuration": 180
     }
   }
 }

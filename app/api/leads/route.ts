@@ -10,6 +10,8 @@ const schema = z.object({
   email: z.string().email().max(200),
   telefone: z.string().max(20).optional(),
   origem: z.string().max(100).optional(),
+  servico: z.enum(["IRPF", "MEI", "GERAL"]).optional().default("IRPF"),
+  mensagem: z.string().max(500).optional(),
 });
 
 export async function POST(request: Request) {
@@ -23,6 +25,8 @@ export async function POST(request: Request) {
         email: data.email,
         telefone: data.telefone || "",
         origem: data.origem || "site",
+        servico: data.servico || "IRPF",
+        mensagem: data.mensagem || "",
         emailSeqStep: 1,
         emailSeqAt: new Date(),
       },
@@ -101,7 +105,9 @@ export async function POST(request: Request) {
           <p><strong>Nome:</strong> ${data.nome}</p>
           <p><strong>Email:</strong> ${data.email}</p>
           <p><strong>Telefone:</strong> ${data.telefone || "Nao informado"}</p>
+          <p><strong>Serviço:</strong> ${data.servico || "IRPF"}</p>
           <p><strong>Origem:</strong> ${data.origem || "site"}</p>
+          ${data.mensagem ? `<p><strong>Mensagem:</strong> ${data.mensagem}</p>` : ""}
           <br>
           <a href="${waLink}" style="background:#25D366;color:white;padding:12px 24px;text-decoration:none;font-weight:bold;">Abrir WhatsApp do Lead</a>
         `,

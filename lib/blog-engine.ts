@@ -1411,7 +1411,10 @@ export async function generateBlogPost(
 }
 
 /* ---- Save post to DB ---- */
-export async function saveBlogPost(post: Awaited<ReturnType<typeof generateBlogPost>>) {
+export async function saveBlogPost(
+  post: Awaited<ReturnType<typeof generateBlogPost>>,
+  categoria: "IRPF" | "MEI" | "DESENROLA" | "GERAL" = "IRPF"
+) {
   // Deduplicação de slug: se já existe, adiciona sufixo de timestamp
   let slug = post.slug;
   const exists = await prisma.blogPost.findFirst({ where: { slug }, select: { id: true } });
@@ -1434,6 +1437,7 @@ export async function saveBlogPost(post: Awaited<ReturnType<typeof generateBlogP
       published: post.reviewApproved ?? true,
       reviewJson: post.reviewJson ?? "",
       aiModel: post.aiModel ?? "",
+      categoria,
     },
   });
 }

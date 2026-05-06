@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         coverImage: true,
         aiModel: true,
         categoria: true,
+      },
     });
 
     return NextResponse.json({ posts });

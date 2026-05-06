@@ -133,7 +133,8 @@ function BlogAdminContent() {
         setPosts((prev) =>
           prev.map((p) => (p.id === postId ? { ...p, coverImage: data.imageUrl } : p))
         );
-        setActionMsg(`✅ Imagem gerada (${model})! Clique em "Ver" para conferir no site.`);
+        const scene = data.scene ? ` | Cena: "${data.scene.slice(0, 80)}..."` : "";
+        setActionMsg(`✅ Imagem gerada (${model})!${scene}`);
       } else {
         setActionMsg(`❌ Erro (${model}): ${data.error || "falha ao gerar imagem"}`);
       }

@@ -52,56 +52,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Post não encontrado" }, { status: 404 });
     }
 
-    // 2. GPT-4o lê o post completo, decide a cena visual e gera o prompt técnico para o gpt-image-1
-    const contentSnippet = (post.content ?? "").replace(/<[^>]+>/g, "").slice(0, 400);
+    // 2. GPT-4o analisa o artigo e descreve apenas a CENA visual (limpa, positiva, sem instruções negativas).
+    //    O sufixo fotorrealístico é anexado pelo código — não pelo modelo — para garantir consistência.
+    const contentSnippet = (post.content ?? "").replace(/<[^>]+>/g, "").slice(0, 500);
+
+    const PHOTO_STYLE_SUFFIX =
+      "Photorealistic editorial photography. Shot on 35mm lens, natural soft window light, shallow depth of field f/1.8. Professional newspaper quality, cinematic warm color grading. Landscape 3:2 ratio. Crystal clear, high resolution.";
+
     const promptCompletion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: `You are a senior photo editor at a top Brazilian financial journalism outlet. You select the perfect editorial stock photo concept for each article to maximize click-through on Google Discover.
+          content: `You are a photo director for a top Brazilian financial magazine (like Exame or Veja Negócios). Given an article, you describe a single, specific editorial photo scene that immediately communicates the article topic.
 
-Your job: read the full article details, identify the emotional core and specific context, then write a prompt for gpt-image-1 (OpenAI's best image model) — a compelling, hyper-realistic editorial photo tailored to this exact article.
+OUTPUT RULES — CRITICAL:
+- Output ONLY the scene description in English
+- Describe what IS in the scene — never use "no", "without", "avoid", "don't"
+- Maximum 60 words
+- Structure: [WHO] + [DOING WHAT] + [WHERE] + [LIGHTING/MOOD]
+- People must look Brazilian/Latin American (olive/warm brown skin, dark hair)
+- People shown from behind or at an angle — hands and posture visible, face turned away
+- Be SPECIFIC to this exact article topic — generic scenes are unacceptable
 
-THINKING PROCESS (internal, do not output):
-1. What is the SPECIFIC topic? (MEI entrepreneur registering business? Desenrola Brasil debt negotiation? Income tax refund? Deadline stress? Budget savings?)
-2. What HUMAN SITUATION best represents this specific topic? (small business owner at laptop? family negotiating debt? professional filing taxes at home?)
-3. What environment feels authentic to Brazilian working class / middle class?
-
-STYLE RULES:
-- PEOPLE in real, specific situations — not generic stock photo clichés
-- People from behind, side angle, or hands only — never full faces
-- People must look Brazilian/Latin American: warm olive/brown skin tones, dark hair
-- Authentic Brazilian settings: small apartment, home office in favela-adjacent building, corner bakery (padaria), street in São Paulo or interior city
-- For MEI topics: small business owner, artisan, deliveryman context
-- For Desenrola/debt topics: regular person with relief, documents, negotiation atmosphere
-- For IRPF/tax topics: organized desk, digital documents, professional calm environment
-- Natural window light, warm golden hour tones
-- gpt-image-1 photorealistic style — cinematic, 35mm, shallow depth of field
-- Premium editorial quality (Folha de S.Paulo, Veja, Exame visual style)
-
-HARD LIMITS:
-- NO camera brand names
-- NO banknotes or paper money visible
-- NO text, words, or numbers visible in scene
-- NO more than 4 elements
-- NO Middle Eastern appearance or clothing
-- NO generic 'calculator on white desk' — be SPECIFIC to the article topic
-
-OUTPUT: only the image prompt in English. Maximum 100 words. No explanations. No preamble.`,
+TOPIC → SCENE EXAMPLES:
+- Income tax deadline → Person at kitchen table, seen from behind, sorting papers urgently under warm ceiling light, clock on wall, São Paulo apartment
+- Tax refund/restituição → Woman from behind smiling at laptop screen, bright morning light through window, home office, relaxed posture
+- MEI registration → Young man from behind at café table opening laptop, notepad with CNPJ forms visible, padaria setting, morning light
+- Debt/Desenrola → Middle-aged couple across a table with a bank advisor, signing papers, warm interior light, relief in their posture
+- Malha fina/audit → Person at desk looking intently at printed papers under desk lamp, late afternoon`,
         },
         {
           role: "user",
-          content: `Article details:\nTITLE: ${post.title}\nSUMMARY: ${post.summary ?? ""}\nKEYWORDS: ${(post.keywords ?? []).slice(0, 6).join(", ")}\nTAGS: ${(post.tags ?? []).slice(0, 4).join(", ")}\nCONTENT EXCERPT: ${contentSnippet}\n\nWrite a hyper-specific editorial photo prompt for THIS exact article. The image must make someone immediately understand the topic without reading the title.`,
+          content: `TITLE: ${post.title}\nSUMMARY: ${post.summary ?? ""}\nTAGS: ${(post.tags ?? []).slice(0, 4).join(", ")}\nKEYWORDS: ${(post.keywords ?? []).slice(0, 6).join(", ")}\nEXCERPT: ${contentSnippet.slice(0, 300)}\n\nDescribe the perfect editorial photo scene for this article.`,
         },
       ],
-      temperature: 0.75,
-      max_tokens: 150,
+      temperature: 0.7,
+      max_tokens: 100,
     });
 
-    const imagePrompt =
+    const sceneDescription =
       (promptCompletion.choices?.[0]?.message?.content ?? "").trim() ||
-      `Person from behind sitting at bright home office desk, looking at laptop screen, warm natural window light, shallow depth of field, 35mm film aesthetic, photorealistic, editorial stock photo style, no text visible, Brazilian apartment setting`;
+      "Person seen from behind sitting at a bright home office desk in a Brazilian apartment, reviewing documents on laptop, warm natural window light, relaxed professional atmosphere";
+
+    const imagePrompt = `${sceneDescription}\n\n${PHOTO_STYLE_SUFFIX}`;
 
     // 3. Gerar imagem pelo modelo escolhido
     let buffer: Buffer;
@@ -150,12 +144,13 @@ OUTPUT: only the image prompt in English. Maximum 100 words. No explanations. No
 
     } else {
       // ── gpt-image-1 High Quality (padrão) ────────────────────────────────
+      console.log("[Image] Cena gerada pelo GPT-4o:", sceneDescription);
       console.log("[Image] Gerando com gpt-image-1 High Quality...");
       const imageResponse = await openai.images.generate({
         model: "gpt-image-1",
         prompt: imagePrompt,
         size: "1536x1024",
-        quality: "medium",
+        quality: "high",
         n: 1,
       });
 
@@ -202,7 +197,7 @@ OUTPUT: only the image prompt in English. Maximum 100 words. No explanations. No
       },
     });
 
-    return NextResponse.json({ imageUrl: publicUrl, prompt: imagePrompt, imageAlt, imageSource });
+    return NextResponse.json({ imageUrl: publicUrl, prompt: imagePrompt, scene: sceneDescription, imageAlt, imageSource });
   } catch (err) {
     console.error("[generate-image]", err);
     const msg = err instanceof Error ? err.message : "Erro interno";

@@ -10,7 +10,7 @@ export const maxDuration = 60;
 
 const BUCKET = "blog-images";
 
-// GPT-4o: gera prompt visual — DALL-E 3 Standard: gera a imagem
+// GPT-4o: gera prompt visual — gpt-image-1 High Quality: gera a imagem
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 async function ensureBucket() {
@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Post não encontrado" }, { status: 404 });
     }
 
-    // 2. GPT-4o lê o post completo, decide a cena visual e gera o prompt técnico para o DALL-E 3
+    // 2. GPT-4o lê o post completo, decide a cena visual e gera o prompt técnico para o gpt-image-1
+    const contentSnippet = (post.content ?? "").replace(/<[^>]+>/g, "").slice(0, 400);
     const promptCompletion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -60,51 +61,42 @@ export async function POST(req: NextRequest) {
           role: "system",
           content: `You are a senior photo editor at a top Brazilian financial journalism outlet. You select the perfect editorial stock photo concept for each article to maximize click-through on Google Discover.
 
-Your job: read the article title, summary and keywords, identify the emotional core and main concept, then write a DALL-E 3 prompt for a compelling, contextual editorial photo.
+Your job: read the full article details, identify the emotional core and specific context, then write a prompt for gpt-image-1 (OpenAI's best image model) — a compelling, hyper-realistic editorial photo tailored to this exact article.
 
 THINKING PROCESS (internal, do not output):
-1. What is the REAL topic? (stress about taxes? relief of refund? confusion about rules? savings opportunity? deadline urgency?)
-2. What HUMAN SITUATION represents this? (person stressed at desk? happy couple receiving money? professional reviewing documents? family planning budget?)
-3. What OBJECTS reinforce this? (only if no people work better)
+1. What is the SPECIFIC topic? (MEI entrepreneur registering business? Desenrola Brasil debt negotiation? Income tax refund? Deadline stress? Budget savings?)
+2. What HUMAN SITUATION best represents this specific topic? (small business owner at laptop? family negotiating debt? professional filing taxes at home?)
+3. What environment feels authentic to Brazilian working class / middle class?
 
 STYLE RULES:
-- Prefer PEOPLE in real situations over objects alone
+- PEOPLE in real, specific situations — not generic stock photo clichés
 - People from behind, side angle, or hands only — never full faces
-- People must look Brazilian/Latin American (warm skin tones, dark hair)
-- Settings: Brazilian apartment, home office, café in São Paulo, modern Brazilian kitchen
-- NEVER generate people with Middle Eastern appearance or clothing
-- Bright, clean, professional environments (not dark/dramatic)
-- Natural window light, warm tones
-- Editorial stock photo style (Getty Images, Shutterstock premium)
-- Real Brazilian context when possible (home office, apartment, cafe)
-- 35mm film aesthetic, shallow depth of field, photorealistic
+- People must look Brazilian/Latin American: warm olive/brown skin tones, dark hair
+- Authentic Brazilian settings: small apartment, home office in favela-adjacent building, corner bakery (padaria), street in São Paulo or interior city
+- For MEI topics: small business owner, artisan, deliveryman context
+- For Desenrola/debt topics: regular person with relief, documents, negotiation atmosphere
+- For IRPF/tax topics: organized desk, digital documents, professional calm environment
+- Natural window light, warm golden hour tones
+- gpt-image-1 photorealistic style — cinematic, 35mm, shallow depth of field
+- Premium editorial quality (Folha de S.Paulo, Veja, Exame visual style)
 
 HARD LIMITS:
-- NO camera brand names (Canon, Nikon, etc)
-- NO banknotes or paper money
-- NO text or writing visible
-- NO more than 4 elements in scene
-- NO generic 'just a calculator on desk' concepts
+- NO camera brand names
+- NO banknotes or paper money visible
+- NO text, words, or numbers visible in scene
+- NO more than 4 elements
+- NO Middle Eastern appearance or clothing
+- NO generic 'calculator on white desk' — be SPECIFIC to the article topic
 
-CONCEPT EXAMPLES BY TOPIC:
-- Restituição/refund → person smiling looking at phone/laptop, bright home, relieved expression (from behind or side)
-- Prazo/deadline → person at desk at night, clock visible, urgent atmosphere, hands typing
-- Declaração/filing → hands organizing papers neatly on clean desk, coffee nearby, organized professional feeling
-- Malha fina/audit → person looking concerned at official letter, kitchen table, natural light
-- Deduções/savings → couple at table with notebook planning together, calculator, warm home environment
-- MEI/freelancer → person working laptop in cafe or home office, casual professional setting
-- Investimentos → charts on screen (blurred), person analyzing, professional office setting
-- Criptomoedas → tech environment, multiple screens blurred, modern minimalist desk
-
-OUTPUT: only the DALL-E 3 prompt in English. Maximum 80 words. No explanations. No preamble.`,
+OUTPUT: only the image prompt in English. Maximum 100 words. No explanations. No preamble.`,
         },
         {
           role: "user",
-          content: `Article details:\nTITLE: ${post.title}\nSUMMARY: ${post.summary ?? ""}\nKEYWORDS: ${(post.keywords ?? []).slice(0, 5).join(", ")}\nTAGS: ${(post.tags ?? []).slice(0, 3).join(", ")}\n\nThink about the emotional core of this article and write the perfect editorial photo prompt. Remember: contextual and human beats generic objects. The image must make someone stop scrolling.`,
+          content: `Article details:\nTITLE: ${post.title}\nSUMMARY: ${post.summary ?? ""}\nKEYWORDS: ${(post.keywords ?? []).slice(0, 6).join(", ")}\nTAGS: ${(post.tags ?? []).slice(0, 4).join(", ")}\nCONTENT EXCERPT: ${contentSnippet}\n\nWrite a hyper-specific editorial photo prompt for THIS exact article. The image must make someone immediately understand the topic without reading the title.`,
         },
       ],
-      temperature: 0.8,
-      max_tokens: 120,
+      temperature: 0.75,
+      max_tokens: 150,
     });
 
     const imagePrompt =
@@ -157,30 +149,24 @@ OUTPUT: only the DALL-E 3 prompt in English. Maximum 80 words. No explanations. 
       console.log("[Image] Flux Pro 1.1 gerado com sucesso.");
 
     } else {
-      // ── DALL-E 3 Standard (padrão) ────────────────────────────────────────
-      console.log("[Image] Gerando com DALL-E 3 Standard...");
+      // ── gpt-image-1 High Quality (padrão) ────────────────────────────────
+      console.log("[Image] Gerando com gpt-image-1 High Quality...");
       const imageResponse = await openai.images.generate({
-        model: "dall-e-3",
+        model: "gpt-image-1",
         prompt: imagePrompt,
-        size: "1792x1024",
-        quality: "standard",
-        style: "natural",
+        size: "1536x1024",
+        quality: "high",
         n: 1,
-        response_format: "url",
       });
 
-      const dalleUrl = imageResponse.data?.[0]?.url;
-      if (!dalleUrl) {
-        return NextResponse.json({ error: "DALL-E não retornou imagem" }, { status: 500 });
+      const b64 = imageResponse.data?.[0]?.b64_json;
+      if (!b64) {
+        return NextResponse.json({ error: "gpt-image-1 não retornou imagem" }, { status: 500 });
       }
-
-      const imgRes = await fetch(dalleUrl);
-      if (!imgRes.ok) {
-        return NextResponse.json({ error: "Falha ao baixar imagem do DALL-E" }, { status: 500 });
-      }
-      buffer = Buffer.from(await imgRes.arrayBuffer());
-      imageSource = "dall-e";
-      console.log("[Image] DALL-E 3 Standard gerado com sucesso.");
+      buffer = Buffer.from(b64, "base64");
+      contentType = "image/png";
+      imageSource = "gpt-image-1";
+      console.log("[Image] gpt-image-1 High Quality gerado com sucesso.");
     }
 
     // 4. Upload para Supabase Storage

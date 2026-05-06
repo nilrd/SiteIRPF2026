@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateMeiBlogPost, saveMeiBlogPost, ALL_MEI_CLUSTERS } from "@/lib/mei-blog-engine";
+import { MEI_KEYWORD_CLUSTERS, DESENROLA_KEYWORD_CLUSTERS } from "@/lib/mei-context";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 180; // 3min — gera 2 posts MEI por cron run
@@ -10,12 +11,14 @@ const MAX_CRON_MS = 150_000; // 150s de segurança
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-// Rastreia índice do último cluster usado (em memória — por instância)
-let lastClusterIdx = -1;
-
-function nextClusterIdx(): number {
-  lastClusterIdx = (lastClusterIdx + 1) % ALL_MEI_CLUSTERS.length;
-  return lastClusterIdx;
+// Seleção aleatória ponderada: 50% MEI, 50% Desenrola — sem memória (funciona em cold start)
+function pickClusterIdx(): number {
+  const useDesenrola = Math.random() < 0.5 && DESENROLA_KEYWORD_CLUSTERS.length > 0;
+  if (useDesenrola) {
+    const i = Math.floor(Math.random() * DESENROLA_KEYWORD_CLUSTERS.length);
+    return MEI_KEYWORD_CLUSTERS.length + i;
+  }
+  return Math.floor(Math.random() * MEI_KEYWORD_CLUSTERS.length);
 }
 
 export async function GET(request: Request) {
@@ -40,7 +43,7 @@ export async function GET(request: Request) {
       }
 
       try {
-        const clusterIdx = nextClusterIdx();
+        const clusterIdx = pickClusterIdx();
         const clusterName = ALL_MEI_CLUSTERS[clusterIdx]?.primary ?? "mei";
         console.log(`[Cron MEI][${i + 1}/${NUM_POSTS}] Gerando post — cluster: ${clusterName}`);
         const post = await generateMeiBlogPost(clusterIdx);

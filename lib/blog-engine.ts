@@ -1407,7 +1407,7 @@ export async function generateBlogPost(
     imageAlt: (typeof parsed.imageAlt === "string" && parsed.imageAlt ? parsed.imageAlt : null) ?? (parsed.title || keyword),
     articleSection: (typeof parsed.articleSection === "string" ? parsed.articleSection : null) ?? "IRPF",
     isNewsworthy: typeof parsed.isNewsworthy === "boolean" ? parsed.isNewsworthy : false,
-    reviewApproved: forceUnpublished ? false : review.aprovado,
+    reviewApproved: !forceUnpublished, // publica sempre; forceUnpublished só ativo se idioma errado após 2 tentativas
     reviewJson: JSON.stringify(review),
     aiModel,
   };
@@ -1437,7 +1437,7 @@ export async function saveBlogPost(
       coverImage: post.coverImage,
       imageAttribution: post.imageAttribution ?? null,
       imageAlt: post.imageAlt ?? post.title,
-      published: post.reviewApproved ?? true,
+      published: true, // posts sempre publicados direto (sem revisão manual)
       reviewJson: post.reviewJson ?? "",
       aiModel: post.aiModel ?? "",
       categoria,

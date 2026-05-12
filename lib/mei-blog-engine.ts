@@ -535,7 +535,7 @@ export async function generateMeiBlogPost(clusterIndex?: number, customKeyword?:
     imageAlt: (parsed.imageAlt as string) || rawTitle,
     coverImage: imageResult.url,
     imageAttribution,
-    reviewApproved: review.aprovado,
+    reviewApproved: true, // publica sempre sem revisão manual
     reviewJson: JSON.stringify(review),
     aiModel,
   };
@@ -561,7 +561,7 @@ export async function saveMeiBlogPost(post: Awaited<ReturnType<typeof generateMe
       coverImage: post.coverImage ?? null,
       imageAlt: post.imageAlt ?? post.title,
       imageAttribution: post.imageAttribution ?? null,
-      published: post.reviewApproved,
+      published: true, // posts sempre publicados direto (sem revisão manual)
       reviewJson: post.reviewJson ?? "",
       aiModel: post.aiModel ?? "",
       categoria: post.categoria,

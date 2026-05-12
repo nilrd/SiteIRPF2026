@@ -183,7 +183,8 @@ export default function ChatbotWidget() {
     } catch {
       alert("Permita o acesso ao microfone nas configuracoes do navegador.");
     }
-  }, [isLoading, isTranscribing, audioEnabled, sendMessage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isTranscribing, audioEnabled]); // sendMessage declarada abaixo, usada via closure — ok
 
   const stopRecording = useCallback(() => {
     mediaRecorderRef.current?.stop();

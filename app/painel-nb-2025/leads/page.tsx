@@ -7,6 +7,7 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import LeadsActions from "./LeadsActions";
 import LeadsFilters, { FiltersState } from "@/components/admin/LeadsFilters";
 import LeadsTableRow from "@/components/admin/LeadsTableRow";
+import KanbanView from "@/components/admin/KanbanView";
 
 type PipelineItem = {
   itemType: "lead" | "contato";
@@ -50,6 +51,7 @@ export default function LeadsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [view, setView] = useState<"table" | "kanban">("table");
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -174,7 +176,28 @@ export default function LeadsPage() {
       <main className="flex-1 p-8 overflow-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="font-serif text-3xl">Leads & Contatos</h1>
-          <LeadsActions />
+          <div className="flex items-center gap-3">
+            {/* Toggle visão */}
+            <div className="flex border border-white/20">
+              <button
+                onClick={() => setView("table")}
+                className={`px-3 py-1.5 text-[10px] uppercase tracking-widest transition-colors ${
+                  view === "table" ? "bg-white text-black" : "text-white/60 hover:text-white"
+                }`}
+              >
+                Tabela
+              </button>
+              <button
+                onClick={() => setView("kanban")}
+                className={`px-3 py-1.5 text-[10px] uppercase tracking-widest transition-colors ${
+                  view === "kanban" ? "bg-white text-black" : "text-white/60 hover:text-white"
+                }`}
+              >
+                Kanban
+              </button>
+            </div>
+            <LeadsActions />
+          </div>
         </div>
 
         {/* Filters */}
@@ -213,46 +236,65 @@ export default function LeadsPage() {
           </div>
         )}
 
-        {/* Unified Leads & Contatos Table */}
+        {/* Resultados */}
         <h2 className="font-serif text-xl mb-4">
           Resultados ({data?.pagination.total || 0})
         </h2>
-        <div className="overflow-x-auto mb-8">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10 text-left">
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Nome</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Email</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Telefone</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">
-                  {filters.tipo === "lead" ? "Tipo" : "Assunto"}
-                </th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Origem</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Status</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Data</th>
-                <th className="py-3 text-[10px] uppercase tracking-widest opacity-50">Acao</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data?.items && data.items.length > 0 ? (
-                data.items.map((item) => (
-                  <LeadsTableRow
-                    key={item.id}
-                    item={item}
-                    onStatusUpdate={handleStatusUpdate}
-                    isUpdating={isUpdatingStatus}
-                  />
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center opacity-40">
-                    {isLoading ? "Carregando..." : "Nenhum resultado encontrado"}
-                  </td>
+
+        {view === "kanban" ? (
+          /* Kanban View */
+          <div className="mb-8">
+            {data?.items && data.items.length > 0 ? (
+              <KanbanView
+                items={data.items}
+                onStatusUpdate={handleStatusUpdate}
+                isUpdating={isUpdatingStatus}
+              />
+            ) : (
+              <div className="py-16 text-center opacity-40 text-sm">
+                {isLoading ? "Carregando..." : "Nenhum resultado encontrado"}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Table View */
+          <div className="overflow-x-auto mb-8">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10 text-left">
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Nome</th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Email</th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Telefone</th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">
+                    {filters.tipo === "lead" ? "Tipo" : "Assunto"}
+                  </th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Origem</th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Status</th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Data</th>
+                  <th className="py-3 text-[10px] uppercase tracking-widest opacity-50">Acao</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {data?.items && data.items.length > 0 ? (
+                  data.items.map((item) => (
+                    <LeadsTableRow
+                      key={item.id}
+                      item={item}
+                      onStatusUpdate={handleStatusUpdate}
+                      isUpdating={isUpdatingStatus}
+                    />
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center opacity-40">
+                      {isLoading ? "Carregando..." : "Nenhum resultado encontrado"}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Pagination */}
         {data?.pagination && data.pagination.totalPages > 1 && (

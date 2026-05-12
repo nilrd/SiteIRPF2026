@@ -151,6 +151,7 @@ export async function GET(request: NextRequest) {
     ]
       .sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime())
       .slice(skip, skip + perPage)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .map(({ sortDate, ...item }) => item);
 
     const total = leadTotal + contatoTotal;

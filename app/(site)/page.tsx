@@ -46,9 +46,9 @@ export default function HomePage() {
       <DadosOficiaisSection />
       <RestituicaoCard />
       <CalculadoraSection />
+      <ContatoSection />
       <BlogPreviewSection />
       <ProcessoSection />
-      <ContatoSection />
       <FAQSection />
     </>
   );

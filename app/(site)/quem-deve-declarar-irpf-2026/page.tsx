@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import QuemDeveClient from "./QuemDeveClient";
+import ContatoSection from "@/components/site/ContatoSection";
 
 export const metadata: Metadata = {
   title: "Quem Deve Declarar o IRPF 2026? Descubra em 2 Minutos",
@@ -129,6 +130,7 @@ export default function QuemDeveDeclarar2026Page() {
         <div className="max-w-7xl mx-auto px-6">
           <QuemDeveClient />
         </div>
+        <ContatoSection />
       </main>
     </>
   );

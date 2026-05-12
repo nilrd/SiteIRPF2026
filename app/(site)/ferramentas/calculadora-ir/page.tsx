@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import CalculadoraSection from "@/components/site/CalculadoraSection";
+import ContatoSection from "@/components/site/ContatoSection";
+import { JsonLdWebApplication } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = {
   title: "Calculadora de Imposto de Renda 2026 | Consultoria IRPF NSB",
@@ -23,6 +25,13 @@ export default function CalculadoraPage() {
         </p>
       </section>
       <CalculadoraSection />
+      <JsonLdWebApplication
+        name="Calculadora de Imposto de Renda 2026"
+        description="Simule seu imposto de renda com a tabela progressiva oficial da Receita Federal 2026. Gratuito e preciso."
+        url="https://irpf.qaplay.com.br/ferramentas/calculadora-ir"
+        applicationCategory="FinanceApplication"
+      />
+      <ContatoSection />
     </main>
   );
 }

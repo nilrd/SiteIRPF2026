@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import TabelaIRPFClient from "./TabelaIRPFClient";
+import ContatoSection from "@/components/site/ContatoSection";
 
 export const metadata: Metadata = {
   title: "Tabela IRPF 2026 | Faixas e Alíquotas Atualizadas — Receita Federal",
@@ -91,6 +92,7 @@ export default function TabelaIRPF2026Page() {
         <div className="max-w-7xl mx-auto px-6">
           <TabelaIRPFClient />
         </div>
+        <ContatoSection />
       </main>
     </>
   );

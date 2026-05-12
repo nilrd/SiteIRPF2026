@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import ContatoSection from "@/components/site/ContatoSection";
 
 export const metadata: Metadata = {
   title: "Consulta Situacao IRPF | Consultoria IRPF NSB",
@@ -78,6 +79,7 @@ export default function ConsultaSituacaoPage() {
           </a>
         </div>
       </section>
+      <ContatoSection />
     </main>
   );
 }

@@ -222,6 +222,48 @@ export function JsonLdPerson() {
   );
 }
 
+/** WebApplication schema — para ferramentas e calculadoras (aparece como app no Google) */
+export function JsonLdWebApplication({
+  name,
+  description,
+  url,
+  applicationCategory = "FinanceApplication",
+}: {
+  name: string;
+  description: string;
+  url: string;
+  applicationCategory?: string;
+}) {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name,
+    description,
+    url,
+    applicationCategory,
+    operatingSystem: "All",
+    isAccessibleForFree: true,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" },
+    author: {
+      "@type": "Person",
+      name: "Nilson Brites",
+      url: "https://irpf.qaplay.com.br/sobre",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Consultoria IRPF NSB",
+      url: "https://irpf.qaplay.com.br",
+    },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
+}
+
 /** SpeakableSpecification — indica ao Google quais trechos devem ser lidos em voz alta (Discover + assistentes) */
 export function JsonLdSpeakable({
   url,

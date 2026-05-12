@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { JsonLdBreadcrumb, JsonLdFAQ } from "@/components/seo/JsonLd";
+import ContatoSection from "@/components/site/ContatoSection";
 
 export const metadata: Metadata = {
   title: "Desenrola Brasil 2026 — Renegociar Dívidas com Desconto (MEI e PF)",
@@ -230,6 +231,7 @@ export default function DesenrolaBrasilPage() {
           ))}
         </div>
       </section>
+      <ContatoSection />
     </main>
   );
 }

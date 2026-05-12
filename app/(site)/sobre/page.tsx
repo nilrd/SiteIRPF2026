@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { JsonLdPerson } from "@/components/seo/JsonLd";
+import ContatoSection from "@/components/site/ContatoSection";
 
 export const metadata: Metadata = {
   title: "Sobre | Consultoria IRPF NSB",
@@ -187,6 +188,7 @@ export default function SobrePage() {
           </div>
         </div>
       </section>
+      <ContatoSection />
     </main>
   );
 }

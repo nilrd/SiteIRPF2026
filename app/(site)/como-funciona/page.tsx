@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import ProcessoSection from "@/components/site/ProcessoSection";
 import FAQSection from "@/components/site/FAQSection";
 import { JsonLdBreadcrumb } from "@/components/seo/JsonLd";
+import ContatoSection from "@/components/site/ContatoSection";
 
 const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá! Quero declarar meu IRPF.")}`;
 
@@ -94,6 +95,7 @@ export default function ComoFuncionaPage() {
 
       <ProcessoSection />
       <FAQSection />
+      <ContatoSection />
     </main>
   );
 }

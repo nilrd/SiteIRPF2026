@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ContatoSection from "@/components/site/ContatoSection";
 
 const MULTA_MINIMA = 165.74;
 // Nao existe teto fixo em reais — maximo e 20% do IR devido
@@ -135,6 +136,29 @@ export default function SimuladorMultaPage() {
           </div>
         </div>
       </section>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            name: "Simulador de Multa IRPF",
+            description:
+              "Calcule a multa por atraso na entrega da declaração do Imposto de Renda. Ferramenta gratuita da Receita Federal.",
+            url: "https://irpf.qaplay.com.br/ferramentas/simulador-multa",
+            applicationCategory: "FinanceApplication",
+            isAccessibleForFree: true,
+            offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" },
+            author: { "@type": "Person", name: "Nilson Brites" },
+            publisher: {
+              "@type": "Organization",
+              name: "Consultoria IRPF NSB",
+              url: "https://irpf.qaplay.com.br",
+            },
+          }),
+        }}
+      />
+      <ContatoSection />
     </main>
   );
 }

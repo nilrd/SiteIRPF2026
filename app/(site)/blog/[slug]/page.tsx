@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import BlogPostImage from "@/components/site/BlogPostImage";
 import AuthorBadge from "@/components/site/AuthorBadge";
 import BlogCTA from "@/components/site/BlogCTA";
+import BlogStickyBar from "@/components/site/BlogStickyBar";
 import { JsonLdArticle, JsonLdBreadcrumb, JsonLdFAQ, JsonLdSpeakable } from "@/components/seo/JsonLd";
 
 export const dynamic = "force-dynamic";
@@ -256,6 +257,7 @@ export default async function BlogPostPage({ params }: Props) {
           </aside>
         </div>
       </article>
+      <BlogStickyBar />
     </main>
   );
 }

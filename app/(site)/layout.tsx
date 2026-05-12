@@ -3,6 +3,7 @@ import Navbar from "@/components/site/Navbar";
 import Footer from "@/components/site/Footer";
 import WhatsAppFloat from "@/components/site/WhatsAppFloat";
 import ChatbotWidget from "@/components/site/ChatbotWidget";
+import ExitIntentModal from "@/components/site/ExitIntentModal";
 import { JsonLdWebsite } from "@/components/seo/JsonLd";
 import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
 
@@ -39,6 +40,7 @@ export default function SiteLayout({
       <Footer />
       <WhatsAppFloat />
       <ChatbotWidget />
+      <ExitIntentModal />
     </>
   );
 }

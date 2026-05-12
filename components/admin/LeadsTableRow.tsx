@@ -18,6 +18,7 @@ export interface LeadsTableRowProps {
     mensagem: string;
   };
   onStatusUpdate?: (itemId: string, newStatus: string) => void;
+  onDelete?: (itemId: string, itemType: "lead" | "contato") => void;
   isUpdating?: boolean;
 }
 
@@ -36,10 +37,21 @@ function getStatusColor(status: string) {
   }
 }
 
-export default function LeadsTableRow({ item, onStatusUpdate, isUpdating = false }: LeadsTableRowProps) {
+export default function LeadsTableRow({ item, onStatusUpdate, onDelete, isUpdating = false }: LeadsTableRowProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isUpdatingLocal, setIsUpdatingLocal] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleDelete = () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      // Reseta confirmação após 4s se não confirmar
+      setTimeout(() => setConfirmDelete(false), 4000);
+      return;
+    }
+    if (onDelete) onDelete(item.id, item.itemType);
+  };
 
   const handleStatusChange = async (newStatus: string) => {
     setIsUpdatingLocal(true);
@@ -126,6 +138,14 @@ export default function LeadsTableRow({ item, onStatusUpdate, isUpdating = false
             className="text-white/70 text-xs hover:underline text-left"
           >
             Ver mensagem
+          </button>
+          <button
+            onClick={handleDelete}
+            className={`text-xs hover:underline text-left transition-colors ${
+              confirmDelete ? "text-red-400 font-bold" : "text-white/30 hover:text-red-400"
+            }`}
+          >
+            {confirmDelete ? "Confirmar exclusão" : "Excluir"}
           </button>
         </div>
       </td>

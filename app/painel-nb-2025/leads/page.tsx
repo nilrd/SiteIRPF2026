@@ -111,12 +111,21 @@ export default function LeadsPage() {
     fetchPipeline(newFilters);
   };
 
+  // Handle delete
+  const handleDelete = async (itemId: string, itemType: "lead" | "contato") => {
+    try {
+      const res = await fetch(`/api/admin/leads/${itemId}?tipo=${itemType}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Falha ao excluir");
+      await fetchPipeline(filters);
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
+  };
+
   // Handle status update
   const handleStatusUpdate = async (itemId: string, newStatus: string) => {
-    setIsUpdatingStatus(true);
-
-    try {
-      const item = data?.items.find((itemCandidate) => itemCandidate.id === itemId);
       if (!item) return;
 
       const endpoint =
@@ -281,6 +290,7 @@ export default function LeadsPage() {
                       key={item.id}
                       item={item}
                       onStatusUpdate={handleStatusUpdate}
+                      onDelete={handleDelete}
                       isUpdating={isUpdatingStatus}
                     />
                   ))

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/resend";
+import { notifyNewContato } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -132,6 +133,15 @@ export async function POST(request: Request) {
       console.log("[contato] Email confirmacao enviado. ID:", userEmailResult.id);
     }
 
+    const webhookResults = await notifyNewContato({
+      nome: data.nome,
+      email: data.email,
+      telefone: data.telefone,
+      origem: "site",
+      servico: data.servico,
+      mensagem: data.mensagem,
+    });
+
     return NextResponse.json({
       success: true,
       id: contato.id,
@@ -139,6 +149,7 @@ export async function POST(request: Request) {
         admin: adminEmailResult,
         user: userEmailResult,
       },
+      webhookSent: webhookResults,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

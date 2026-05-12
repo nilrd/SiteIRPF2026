@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/resend";
+import { notifyNewLead } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -164,6 +165,15 @@ export async function POST(request: Request) {
           error: "ADMIN_EMAIL nao configurado",
         };
 
+    const webhookResults = await notifyNewLead({
+      nome: data.nome,
+      email: data.email,
+      telefone: data.telefone,
+      origem: data.origem || "site",
+      servico: data.servico || "IRPF",
+      mensagem: data.mensagem,
+    });
+
     return NextResponse.json({
       success: true,
       id: lead.id,
@@ -171,6 +181,7 @@ export async function POST(request: Request) {
         lead: leadEmailResult,
         admin: adminEmailResult,
       },
+      webhookSent: webhookResults,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ModalDetalheMensagem from "@/components/admin/ModalDetalheMensagem";
 
 export interface LeadsTableRowProps {
   item: {
@@ -38,6 +39,7 @@ function getStatusColor(status: string) {
 export default function LeadsTableRow({ item, onStatusUpdate, isUpdating = false }: LeadsTableRowProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isUpdatingLocal, setIsUpdatingLocal] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleStatusChange = async (newStatus: string) => {
     setIsUpdatingLocal(true);
@@ -54,7 +56,8 @@ export default function LeadsTableRow({ item, onStatusUpdate, isUpdating = false
   const createdDate = new Date(item.createdAt).toLocaleDateString("pt-BR");
 
   return (
-    <tr className="border-b border-white/5 hover:bg-white/5">
+    <>
+      <tr className="border-b border-white/5 hover:bg-white/5">
       <td className="py-3 pr-4">
         <span>{item.nome}</span>
         {item.mensagem && (
@@ -107,17 +110,41 @@ export default function LeadsTableRow({ item, onStatusUpdate, isUpdating = false
       </td>
       <td className="py-3 pr-4 opacity-40">{createdDate}</td>
       <td className="py-3">
-        {item.telefone && (
-          <a
-            href={`https://wa.me/55${item.telefone.replace(/\D/g, "")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-green-400 text-xs hover:underline"
+        <div className="flex flex-col gap-1">
+          {item.telefone && (
+            <a
+              href={`https://wa.me/55${item.telefone.replace(/\D/g, "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-green-400 text-xs hover:underline"
+            >
+              WhatsApp
+            </a>
+          )}
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="text-white/70 text-xs hover:underline text-left"
           >
-            WhatsApp
-          </a>
-        )}
+            Ver mensagem
+          </button>
+        </div>
       </td>
-    </tr>
+
+      </tr>
+
+      <ModalDetalheMensagem
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        item={{
+          nome: item.nome,
+          telefone: item.telefone,
+          mensagem: item.mensagem,
+          origem: item.origem,
+          tipoDecl: item.tipoDecl,
+          assunto: item.assunto,
+          itemType: item.itemType,
+        }}
+      />
+    </>
   );
 }

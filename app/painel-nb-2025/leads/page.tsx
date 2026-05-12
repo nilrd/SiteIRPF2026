@@ -8,6 +8,26 @@ import LeadsActions from "./LeadsActions";
 import LeadsFilters, { FiltersState } from "@/components/admin/LeadsFilters";
 import LeadsTableRow from "@/components/admin/LeadsTableRow";
 
+type PipelineItem = {
+  itemType: "lead" | "contato";
+  id: string;
+  nome: string;
+  email: string;
+  telefone?: string | null;
+  tipoDecl?: string | null;
+  assunto?: string | null;
+  origem: string;
+  status: string;
+  createdAt: string;
+  mensagem: string;
+};
+
+type PipelineResponse = {
+  items: PipelineItem[];
+  pagination: { page: number; perPage: number; total: number; totalPages: number };
+  counters: { novos: number; em_contato: number; convertidos: number; perdidos: number; nao_lidos: number };
+};
+
 export default function LeadsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -22,7 +42,7 @@ export default function LeadsPage() {
   });
 
   const [data, setData] = useState<{
-    items: any[];
+    items: PipelineItem[];
     pagination: { page: number; perPage: number; total: number; totalPages: number };
     counters: { novos: number; em_contato: number; convertidos: number; perdidos: number; nao_lidos: number };
   } | null>(null);
@@ -61,7 +81,7 @@ export default function LeadsPage() {
         throw new Error(`Erro ao carregar pipeline: ${response.statusText}`);
       }
 
-      const result = await response.json();
+      const result = (await response.json()) as PipelineResponse;
       setData(result);
       setFilters(filtersToUse);
     } catch (err) {
@@ -74,7 +94,13 @@ export default function LeadsPage() {
   // On component mount, load initial data
   useEffect(() => {
     if (session) {
-      fetchPipeline(filters);
+      fetchPipeline({
+        q: "",
+        tipo: "todos",
+        status: "",
+        origem: "",
+        page: 1,
+      });
     }
   }, [session]);
 
@@ -88,7 +114,7 @@ export default function LeadsPage() {
     setIsUpdatingStatus(true);
 
     try {
-      const item = data?.items.find((i) => i.id === itemId);
+      const item = data?.items.find((itemCandidate) => itemCandidate.id === itemId);
       if (!item) return;
 
       const endpoint =

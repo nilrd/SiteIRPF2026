@@ -459,7 +459,8 @@ type ImageResult = {
 /** Usa Groq para gerar 3 keywords visuais em ingles para busca no Unsplash.
  * Retorna null em caso de falha (usar fallback VISUAL_QUERY_MAP).
  */
-async function getGroqImageKeywords(title: string): Promise<string | null> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function getGroqImageKeywords(title: string, _summary?: string): Promise<string | null> {
   try {
     const completion = await groqLlama.chat.completions.create({
       model: MODELS.blogVerifier,

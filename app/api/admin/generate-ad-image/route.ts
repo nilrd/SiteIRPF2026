@@ -50,28 +50,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `formato inválido. Use: ${Object.keys(FORMAT_MAP).join(", ")}` }, { status: 400 });
     }
 
-    // Gera imagem com DALL-E 3 HD
+    // Gera imagem com gpt-image-2 para evitar dependência de modelos descontinuados
     console.log(`[ad-image] Gerando ${formatConfig.label}...`);
     const imageResponse = await openai.images.generate({
-      model: "dall-e-3",
+      model: "gpt-image-2",
       prompt,
       size: formatConfig.size,
-      quality: "hd",
-      style: "natural",
+      quality: "high",
       n: 1,
-      response_format: "url",
     });
 
+    const b64 = imageResponse.data?.[0]?.b64_json;
     const imageUrl = imageResponse.data?.[0]?.url;
-    if (!imageUrl) {
-      return NextResponse.json({ error: "DALL-E não retornou imagem" }, { status: 500 });
-    }
 
-    const imgRes = await fetch(imageUrl);
-    if (!imgRes.ok) {
-      return NextResponse.json({ error: "Falha ao baixar imagem" }, { status: 500 });
+    let buffer: Buffer;
+    if (b64) {
+      buffer = Buffer.from(b64, "base64");
+    } else if (imageUrl) {
+      const imgRes = await fetch(imageUrl);
+      if (!imgRes.ok) {
+        return NextResponse.json({ error: "Falha ao baixar imagem" }, { status: 500 });
+      }
+      buffer = Buffer.from(await imgRes.arrayBuffer());
+    } else {
+      return NextResponse.json({ error: "gpt-image-2 nao retornou imagem" }, { status: 500 });
     }
-    const buffer = Buffer.from(await imgRes.arrayBuffer());
 
     // Upload para Supabase Storage
     await ensureBucket();

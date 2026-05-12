@@ -13,6 +13,41 @@ const schema = z.object({
   mensagem: z.string().max(2000).optional(),
 });
 
+type SafeEmailResult = {
+  success: boolean;
+  skipped: boolean;
+  id: string | null;
+  error: string | null;
+};
+
+async function safeSendEmail(params: Parameters<typeof resend.emails.send>[0]): Promise<SafeEmailResult> {
+  try {
+    const { data, error } = await resend.emails.send(params);
+    if (error) {
+      return {
+        success: false,
+        skipped: false,
+        id: null,
+        error: typeof error === "string" ? error : JSON.stringify(error),
+      };
+    }
+
+    return {
+      success: true,
+      skipped: false,
+      id: data?.id ?? null,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      skipped: false,
+      id: null,
+      error: err instanceof Error ? err.message : "Erro desconhecido ao enviar email",
+    };
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -25,6 +60,8 @@ export async function POST(request: Request) {
           nome: data.nome,
           email: data.email,
           telefone: data.telefone || "",
+          origem: "site",
+          status: "novo",
           mensagem: `${data.servico ? `[${data.servico}] ` : ""}${data.mensagem || ""}`,
         },
       }),
@@ -40,12 +77,19 @@ export async function POST(request: Request) {
       }),
     ]);
 
-    // Email — usa FROM_EMAIL do env (onboarding@resend.dev ou domínio verificado)
+    // Email — usa FROM_EMAIL do env (onboarding@resend.dev ou dominio verificado)
     const fromAddress = process.env.FROM_EMAIL || "IRPF NSB <onboarding@resend.dev>";
     const adminEmail = process.env.ADMIN_EMAIL || "nilson.brites@gmail.com";
 
+    if (!process.env.FROM_EMAIL) {
+      console.warn("[contato] FROM_EMAIL nao configurado. Usando fallback onboarding@resend.dev.");
+    }
+    if (!process.env.ADMIN_EMAIL) {
+      console.warn("[contato] ADMIN_EMAIL nao configurado. Usando fallback nilson.brites@gmail.com.");
+    }
+
     // EMAIL 1 — Notificação para o Nilson
-    const { data: adminData, error: adminError } = await resend.emails.send({
+    const adminEmailResult = await safeSendEmail({
       from: fromAddress,
       to: adminEmail,
       subject: `Novo contato via site — ${data.nome}`,
@@ -60,16 +104,16 @@ export async function POST(request: Request) {
         <a href="https://wa.me/55${(data.telefone || "").replace(/\D/g, "")}">Abrir WhatsApp</a>
       `,
     });
-    if (adminError) {
-      console.error("[contato] Falha ao enviar email admin:", JSON.stringify(adminError));
+    if (!adminEmailResult.success) {
+      console.error("[contato] Falha ao enviar email admin:", adminEmailResult.error);
     } else {
-      console.log("[contato] Email admin enviado. ID:", adminData?.id, "| to:", adminEmail);
+      console.log("[contato] Email admin enviado. ID:", adminEmailResult.id, "| to:", adminEmail);
     }
 
     // EMAIL 2 — Confirmação para o usuário
     // Nota: com onboarding@resend.dev, só envia para o email da conta Resend.
     // Quando domínio for verificado (FROM_EMAIL = noreply@irpf.qaplay.com.br), envia para qualquer email.
-    const { data: userEmailData, error: userEmailError } = await resend.emails.send({
+    const userEmailResult = await safeSendEmail({
       from: fromAddress,
       to: data.email,
       subject: "Recebemos seu contato — IRPF NSB",
@@ -82,13 +126,20 @@ export async function POST(request: Request) {
         <p>Consultoria IRPF NSB</p>
       `,
     });
-    if (userEmailError) {
-      console.error("[contato] Falha ao enviar email confirmação:", JSON.stringify(userEmailError));
+    if (!userEmailResult.success) {
+      console.error("[contato] Falha ao enviar email confirmacao:", userEmailResult.error);
     } else {
-      console.log("[contato] Email confirmação enviado. ID:", userEmailData?.id);
+      console.log("[contato] Email confirmacao enviado. ID:", userEmailResult.id);
     }
 
-    return NextResponse.json({ success: true, id: contato.id });
+    return NextResponse.json({
+      success: true,
+      id: contato.id,
+      emailSent: {
+        admin: adminEmailResult,
+        user: userEmailResult,
+      },
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

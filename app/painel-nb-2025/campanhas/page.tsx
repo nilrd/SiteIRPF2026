@@ -309,7 +309,7 @@ export default function CampanhasPage() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="font-serif text-3xl mb-1">Gerador de Campanhas IA</h1>
-              <p className="text-white/40 text-sm">GPT-4o cria copy profissional + DALL-E 3 gera imagens nos formatos certos</p>
+              <p className="text-white/40 text-sm">GPT-4o cria copy profissional + GPT-Image gera imagens nos formatos certos</p>
             </div>
             <div className="flex gap-2 text-[10px] uppercase tracking-widest">
               {[1, 2, 3].map((s) => (

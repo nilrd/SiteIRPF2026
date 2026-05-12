@@ -14,6 +14,41 @@ const schema = z.object({
   mensagem: z.string().max(500).optional(),
 });
 
+type SafeEmailResult = {
+  success: boolean;
+  skipped: boolean;
+  id: string | null;
+  error: string | null;
+};
+
+async function safeSendEmail(params: Parameters<typeof resend.emails.send>[0]): Promise<SafeEmailResult> {
+  try {
+    const { data, error } = await resend.emails.send(params);
+    if (error) {
+      return {
+        success: false,
+        skipped: false,
+        id: null,
+        error: typeof error === "string" ? error : JSON.stringify(error),
+      };
+    }
+
+    return {
+      success: true,
+      skipped: false,
+      id: data?.id ?? null,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      skipped: false,
+      id: null,
+      error: err instanceof Error ? err.message : "Erro desconhecido ao enviar email",
+    };
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -87,34 +122,56 @@ export async function POST(request: Request) {
 </body>
 </html>`;
 
-    await resend.emails.send({
-      from: "Nilson Brites — IRPF <noreply@irpf.qaplay.com.br>",
+    const fromLead = process.env.FROM_EMAIL || "Nilson Brites - IRPF <onboarding@resend.dev>";
+    const fromAdmin = process.env.FROM_EMAIL || "IRPF NSB <onboarding@resend.dev>";
+    const adminEmail = process.env.ADMIN_EMAIL;
+
+    if (!process.env.FROM_EMAIL) {
+      console.warn("[leads] FROM_EMAIL nao configurado. Usando fallback onboarding@resend.dev.");
+    }
+    if (!adminEmail) {
+      console.warn("[leads] ADMIN_EMAIL nao configurado. Notificacao para admin sera ignorada.");
+    }
+
+    const leadEmailResult = await safeSendEmail({
+      from: fromLead,
       to: data.email,
-      subject: `${primeiroNome}, recebemos seu contato — IRPF 2026 (prazo: 29 de maio)`,
+      subject: `${primeiroNome}, recebemos seu contato - IRPF 2026 (prazo: 29 de maio)`,
       html: welcomeHtml,
     });
 
-    // Notificar admin com link WhatsApp direto
-    if (process.env.ADMIN_EMAIL) {
-      await resend.emails.send({
-        from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
-        to: process.env.ADMIN_EMAIL,
-        subject: `Novo lead: ${data.nome}`,
-        html: `
-          <h2>Novo lead capturado</h2>
-          <p><strong>Nome:</strong> ${data.nome}</p>
-          <p><strong>Email:</strong> ${data.email}</p>
-          <p><strong>Telefone:</strong> ${data.telefone || "Nao informado"}</p>
-          <p><strong>Serviço:</strong> ${data.servico || "IRPF"}</p>
-          <p><strong>Origem:</strong> ${data.origem || "site"}</p>
-          ${data.mensagem ? `<p><strong>Mensagem:</strong> ${data.mensagem}</p>` : ""}
-          <br>
-          <a href="${waLink}" style="background:#25D366;color:white;padding:12px 24px;text-decoration:none;font-weight:bold;">Abrir WhatsApp do Lead</a>
-        `,
-      });
-    }
+    const adminEmailResult = adminEmail
+      ? await safeSendEmail({
+          from: fromAdmin,
+          to: adminEmail,
+          subject: `Novo lead: ${data.nome}`,
+          html: `
+            <h2>Novo lead capturado</h2>
+            <p><strong>Nome:</strong> ${data.nome}</p>
+            <p><strong>Email:</strong> ${data.email}</p>
+            <p><strong>Telefone:</strong> ${data.telefone || "Nao informado"}</p>
+            <p><strong>Servico:</strong> ${data.servico || "IRPF"}</p>
+            <p><strong>Origem:</strong> ${data.origem || "site"}</p>
+            ${data.mensagem ? `<p><strong>Mensagem:</strong> ${data.mensagem}</p>` : ""}
+            <br>
+            <a href="${waLink}" style="background:#25D366;color:white;padding:12px 24px;text-decoration:none;font-weight:bold;">Abrir WhatsApp do Lead</a>
+          `,
+        })
+      : {
+          success: false,
+          skipped: true,
+          id: null,
+          error: "ADMIN_EMAIL nao configurado",
+        };
 
-    return NextResponse.json({ success: true, id: lead.id });
+    return NextResponse.json({
+      success: true,
+      id: lead.id,
+      emailSent: {
+        lead: leadEmailResult,
+        admin: adminEmailResult,
+      },
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

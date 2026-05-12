@@ -230,7 +230,7 @@ Retorne JSON com EXATAMENTE esta estrutura (todos os campos obrigatórios, sem p
       "tarefas": ["string"]
     }
   ],
-  "promptImagemDalle": "string — prompt detalhado em inglês para DALL-E 3 HD gerar imagem editorial fotorrealista para este anúncio. Especifique câmera (Canon 5D Mark IV), lente (50mm f/1.8), iluminação (natural window light), composição, elementos visuais relacionados a declaração fiscal/IRPF/documentos/finanças brasileiras. Estilo editorial de revista financeira premium. SEM pessoas olhando para câmera. SEM texto na imagem. SEM computador ou celular na cena."
+  "promptImagemDalle": "string — prompt detalhado em inglês para GPT-Image gerar imagem editorial fotorrealista para este anúncio. Especifique câmera (Canon 5D Mark IV), lente (50mm f/1.8), iluminação (natural window light), composição, elementos visuais relacionados a declaração fiscal/IRPF/documentos/finanças brasileiras. Estilo editorial de revista financeira premium. SEM pessoas olhando para câmera. SEM texto na imagem. SEM computador ou celular na cena."
 }`;
 
     const completion = await openai.chat.completions.create({

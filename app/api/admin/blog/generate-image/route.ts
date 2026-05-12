@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     const body = (await req.json()) as { postId: string; model?: string };
     const { postId } = body;
-    const model = body.model ?? "dall-e-3";
+    const model = body.model ?? "gpt-image-1";
     if (!postId) {
       return NextResponse.json({ error: "postId obrigatório" }, { status: 400 });
     }

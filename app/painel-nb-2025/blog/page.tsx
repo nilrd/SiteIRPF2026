@@ -341,9 +341,9 @@ function BlogAdminContent() {
                           Deletar
                         </button>
                         {/* Geração de imagem — gpt-image-1 e Flux */}
-                        {(["dall-e-3", "flux"] as const).map((imgModel) => {
-                          const labels: Record<string, string> = { "dall-e-3": "GPT-img1", "flux": "Flux" };
-                          const colors: Record<string, string> = { "dall-e-3": "text-purple-300 hover:text-purple-100", "flux": "text-orange-300 hover:text-orange-100" };
+                        {(["gpt-image-1", "flux"] as const).map((imgModel) => {
+                          const labels: Record<string, string> = { "gpt-image-1": "GPT-img1", "flux": "Flux" };
+                          const colors: Record<string, string> = { "gpt-image-1": "text-purple-300 hover:text-purple-100", "flux": "text-orange-300 hover:text-orange-100" };
                           const isActive = generatingImage?.postId === post.id && generatingImage.model === imgModel;
                           const isDisabled = generatingImage?.postId === post.id;
                           return (

@@ -118,6 +118,8 @@ export default async function LeadsPage() {
                 <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Email</th>
                 <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Telefone</th>
                 <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Assunto</th>
+                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Origem</th>
+                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Status</th>
                 <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Mensagem</th>
                 <th className="py-3 text-[10px] uppercase tracking-widest opacity-50">Data</th>
               </tr>
@@ -125,21 +127,41 @@ export default async function LeadsPage() {
             <tbody>
               {contatos.map((c) => (
                 <tr key={c.id} className="border-b border-white/5 hover:bg-white/5">
+                  {(() => {
+                    const contatoStatus = (c as unknown as { status?: string }).status || (c.lido ? "em_contato" : "novo");
+                    const contatoOrigem = (c as unknown as { origem?: string }).origem || "site";
+                    return (
+                      <>
                   <td className="py-3 pr-4">{c.nome}</td>
                   <td className="py-3 pr-4 opacity-60">{c.email}</td>
                   <td className="py-3 pr-4 opacity-60">{c.telefone || "—"}</td>
                   <td className="py-3 pr-4 opacity-60">{c.assunto || "—"}</td>
+                  <td className="py-3 pr-4 opacity-60">{contatoOrigem}</td>
+                  <td className="py-3 pr-4">
+                    <span className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
+                      contatoStatus === "convertido"
+                        ? "bg-green-500/20 text-green-300"
+                        : contatoStatus === "em_contato"
+                        ? "bg-yellow-500/20 text-yellow-300"
+                        : "bg-white/10"
+                    }`}>
+                      {contatoStatus}
+                    </span>
+                  </td>
                   <td className="py-3 pr-4 opacity-60 max-w-xs">
                     <span className="line-clamp-2">{c.mensagem}</span>
                   </td>
                   <td className="py-3 opacity-40">
                     {new Date(c.createdAt).toLocaleDateString("pt-BR")}
                   </td>
+                      </>
+                    );
+                  })()}
                 </tr>
               ))}
               {contatos.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center opacity-40">
+                  <td colSpan={8} className="py-8 text-center opacity-40">
                     Nenhum contato ainda
                   </td>
                 </tr>

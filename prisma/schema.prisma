@@ -66,10 +66,14 @@ model Contato {
   email     String
   telefone  String?
   assunto   String?
+  origem    String   @default("site")
+  status    String   @default("novo")
   mensagem  String
   lido      Boolean  @default(false)
   createdAt DateTime @default(now())
 
+  @@index([status])
+  @@index([createdAt])
   @@map("contatos")
 }
 

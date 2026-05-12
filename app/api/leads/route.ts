@@ -125,13 +125,13 @@ export async function POST(request: Request) {
 
     const fromLead = process.env.FROM_EMAIL || "Nilson Brites - IRPF <onboarding@resend.dev>";
     const fromAdmin = process.env.FROM_EMAIL || "IRPF NSB <onboarding@resend.dev>";
-    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminEmail = process.env.ADMIN_EMAIL || "nilson.brites@gmail.com";
 
     if (!process.env.FROM_EMAIL) {
       console.warn("[leads] FROM_EMAIL nao configurado. Usando fallback onboarding@resend.dev.");
     }
-    if (!adminEmail) {
-      console.warn("[leads] ADMIN_EMAIL nao configurado. Notificacao para admin sera ignorada.");
+    if (!process.env.ADMIN_EMAIL) {
+      console.warn("[leads] ADMIN_EMAIL nao configurado. Usando fallback nilson.brites@gmail.com.");
     }
 
     const leadEmailResult = await safeSendEmail({
@@ -141,29 +141,22 @@ export async function POST(request: Request) {
       html: welcomeHtml,
     });
 
-    const adminEmailResult = adminEmail
-      ? await safeSendEmail({
-          from: fromAdmin,
-          to: adminEmail,
-          subject: `Novo lead: ${data.nome}`,
-          html: `
-            <h2>Novo lead capturado</h2>
-            <p><strong>Nome:</strong> ${data.nome}</p>
-            <p><strong>Email:</strong> ${data.email}</p>
-            <p><strong>Telefone:</strong> ${data.telefone || "Nao informado"}</p>
-            <p><strong>Servico:</strong> ${data.servico || "IRPF"}</p>
-            <p><strong>Origem:</strong> ${data.origem || "site"}</p>
-            ${data.mensagem ? `<p><strong>Mensagem:</strong> ${data.mensagem}</p>` : ""}
-            <br>
-            <a href="${waLink}" style="background:#25D366;color:white;padding:12px 24px;text-decoration:none;font-weight:bold;">Abrir WhatsApp do Lead</a>
-          `,
-        })
-      : {
-          success: false,
-          skipped: true,
-          id: null,
-          error: "ADMIN_EMAIL nao configurado",
-        };
+    const adminEmailResult = await safeSendEmail({
+      from: fromAdmin,
+      to: adminEmail,
+      subject: `Novo lead: ${data.nome}`,
+      html: `
+        <h2>Novo lead capturado</h2>
+        <p><strong>Nome:</strong> ${data.nome}</p>
+        <p><strong>Email:</strong> ${data.email}</p>
+        <p><strong>Telefone:</strong> ${data.telefone || "Nao informado"}</p>
+        <p><strong>Servico:</strong> ${data.servico || "IRPF"}</p>
+        <p><strong>Origem:</strong> ${data.origem || "site"}</p>
+        ${data.mensagem ? `<p><strong>Mensagem:</strong> ${data.mensagem}</p>` : ""}
+        <br>
+        <a href="${waLink}" style="background:#25D366;color:white;padding:12px 24px;text-decoration:none;font-weight:bold;">Abrir WhatsApp do Lead</a>
+      `,
+    });
 
     const webhookResults = await notifyNewLead({
       nome: data.nome,

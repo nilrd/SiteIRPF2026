@@ -1,12 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const DEADLINE = new Date("2026-05-29T23:59:59");
+/** Cooldown de 48 horas entre exibições */
+const COOLDOWN_MS = 48 * 60 * 60 * 1000;
 
 function getDaysLeft() {
   const diff = DEADLINE.getTime() - Date.now();
   return Math.max(0, Math.ceil(diff / 86400000));
+}
+
+function canShow(): boolean {
+  try {
+    const last = localStorage.getItem("exit_shown_at");
+    if (!last) return true;
+    return Date.now() - parseInt(last, 10) > COOLDOWN_MS;
+  } catch {
+    return true;
+  }
+}
+
+function markShown() {
+  try {
+    localStorage.setItem("exit_shown_at", String(Date.now()));
+  } catch { /* sem acesso ao localStorage */ }
 }
 
 export default function ExitIntentModal() {
@@ -15,48 +34,48 @@ export default function ExitIntentModal() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const pathname = usePathname();
+  const triggeredRef = useRef(false);
   const daysLeft = getDaysLeft();
 
   useEffect(() => {
-    if (sessionStorage.getItem("exit_shown")) return;
+    // Reinicia a cada mudança de página
+    triggeredRef.current = false;
 
-    let triggered = false;
+    if (!canShow()) return;
 
-    // Desktop: mouse sai pelo topo da janela
-    function handleMouseLeave(e: MouseEvent) {
-      if (triggered) return;
-      if (e.clientY < 20) {
-        triggered = true;
-        sessionStorage.setItem("exit_shown", "1");
-        setVisible(true);
-      }
+    function trigger() {
+      if (triggeredRef.current) return;
+      triggeredRef.current = true;
+      markShown();
+      setVisible(true);
     }
 
-    // Mobile: scroll rápido pra cima
+    // Desktop: cursor sai pelo topo do viewport
+    function handleMouseLeave(e: MouseEvent) {
+      if (e.clientY < 50) trigger();
+    }
+
+    // Mobile: scroll rápido para cima (dedo desce = clientY aumenta)
     let lastY = 0;
     function handleTouchMove(e: TouchEvent) {
-      if (triggered) return;
       const y = e.touches[0].clientY;
-      if (lastY - y < -50) {
-        triggered = true;
-        sessionStorage.setItem("exit_shown", "1");
-        setVisible(true);
-      }
+      if (y - lastY > 60) trigger(); // dedo desceu = scroll para cima
       lastY = y;
     }
 
-    // Ativa os listeners só após 15s (usuário leu algo)
+    // Aguarda 8s para que o usuário leia antes de monitorar
     const readyTimer: ReturnType<typeof setTimeout> = setTimeout(() => {
       document.addEventListener("mouseleave", handleMouseLeave);
       document.addEventListener("touchmove", handleTouchMove, { passive: true });
-    }, 15000);
+    }, 8000);
 
     return () => {
       clearTimeout(readyTimer);
       document.removeEventListener("mouseleave", handleMouseLeave);
       document.removeEventListener("touchmove", handleTouchMove);
     };
-  }, []);
+  }, [pathname]); // re-executa a cada navegação
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import { groqLlama, MODELS, callWithFallback, type FallbackResult } from "./llm-providers";
+import { groqLlama, MODELS, callWithFallback } from "./llm-providers";
 import { prisma } from "./prisma";
 import { IRPF_DATA_CONTEXT } from "./irpf-context";
 import { getBrainContext, saveToKnowledge } from "./knowledge-brain";
@@ -17,7 +17,9 @@ type ExistingPostSnapshot = {
   keywords: string[];
 };
 
-// Fontes raspadas via HTTP (HTML) — cobertura máxima oficial + jornalismo econômico
+// Referência para documentação — armazenado mas não utilizado na geração automática atual
+// Será usado em versão futura para validação de contexto com Groq
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TRUSTED_SOURCE_URLS = [
   // Receita Federal — páginas específicas do IRPF 2026
   "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
@@ -457,7 +459,7 @@ type ImageResult = {
 /** Usa Groq para gerar 3 keywords visuais em ingles para busca no Unsplash.
  * Retorna null em caso de falha (usar fallback VISUAL_QUERY_MAP).
  */
-async function getGroqImageKeywords(title: string, summary: string): Promise<string | null> {
+async function getGroqImageKeywords(title: string): Promise<string | null> {
   try {
     const completion = await groqLlama.chat.completions.create({
       model: MODELS.blogVerifier,

@@ -183,7 +183,7 @@ export default function ChatbotWidget() {
     } catch {
       alert("Permita o acesso ao microfone nas configuracoes do navegador.");
     }
-  }, [isLoading, isTranscribing, audioEnabled]); // sendMessage added below via ref trick
+  }, [isLoading, isTranscribing, audioEnabled, sendMessage]);
 
   const stopRecording = useCallback(() => {
     mediaRecorderRef.current?.stop();

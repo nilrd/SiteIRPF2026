@@ -885,6 +885,7 @@ export default function CampanhasPage() {
                         <div className="p-4">
                           {adImg ? (
                             <div className="space-y-3">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={adImg.url}
                                 alt={f.label}

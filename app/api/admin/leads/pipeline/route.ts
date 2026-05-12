@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
     ]
       .sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime())
       .slice(skip, skip + perPage)
-      .map(({ sortDate: _sortDate, ...item }) => item);
+      .map(({ sortDate, ...item }) => item);
 
     const total = leadTotal + contatoTotal;
 

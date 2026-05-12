@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 const items = [
   "IRPF 2025",
   "Declaração Completa",

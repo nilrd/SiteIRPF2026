@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type { Metadata } from "next";
 
 const MULTA_MINIMA = 165.74;
 // Nao existe teto fixo em reais — maximo e 20% do IR devido

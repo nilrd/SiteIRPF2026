@@ -99,7 +99,7 @@ export default function CancelamentoMeiPage() {
               </li>
               <li>
                 <strong>Solicite a baixa</strong> — pelo Portal do Empreendedor (gov.br) na opção
-                "Encerrar MEI". O processo é online e imediato.
+                &quot;Encerrar MEI&quot;. O processo é online e imediato.
               </li>
               <li>
                 <strong>Guarde o comprovante</strong> — o número de protocolo comprova o encerramento.

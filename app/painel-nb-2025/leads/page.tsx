@@ -126,6 +126,10 @@ export default function LeadsPage() {
 
   // Handle status update
   const handleStatusUpdate = async (itemId: string, newStatus: string) => {
+    setIsUpdatingStatus(true);
+
+    try {
+      const item = data?.items.find((itemCandidate) => itemCandidate.id === itemId);
       if (!item) return;
 
       const endpoint =

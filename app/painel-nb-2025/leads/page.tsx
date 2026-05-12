@@ -1,29 +1,145 @@
-import { prisma } from "@/lib/prisma";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import LeadsActions from "./LeadsActions";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import LeadsFilters, { FiltersState } from "@/components/admin/LeadsFilters";
+import LeadsTableRow from "@/components/admin/LeadsTableRow";
 
-export const dynamic = "force-dynamic";
+export default function LeadsPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-async function getLeads() {
-  try {
-    return await prisma.lead.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
-  } catch { return []; }
-}
+  // State management
+  const [filters, setFilters] = useState<FiltersState>({
+    q: "",
+    tipo: "todos",
+    status: "",
+    origem: "",
+    page: 1,
+  });
 
-async function getContatos() {
-  try {
-    return await prisma.contato.findMany({ orderBy: { createdAt: "desc" }, take: 200 });
-  } catch { return []; }
-}
+  const [data, setData] = useState<{
+    items: any[];
+    pagination: { page: number; perPage: number; total: number; totalPages: number };
+    counters: { novos: number; em_contato: number; convertidos: number; perdidos: number; nao_lidos: number };
+  } | null>(null);
 
-export default async function LeadsPage() {
-  const session = await getServerSession(authOptions);
-  if (!session) redirect("/painel-nb-2025?callbackUrl=%2Fpainel-nb-2025%2Fleads");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  const [leads, contatos] = await Promise.all([getLeads(), getContatos()]);
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/painel-nb-2025?callbackUrl=%2Fpainel-nb-2025%2Fleads");
+    }
+  }, [status, router]);
+
+  // Fetch pipeline data
+  const fetchPipeline = async (filtersToUse: FiltersState) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const params = new URLSearchParams();
+      if (filtersToUse.q) params.append("q", filtersToUse.q);
+      if (filtersToUse.tipo) params.append("tipo", filtersToUse.tipo);
+      if (filtersToUse.status) params.append("status", filtersToUse.status);
+      if (filtersToUse.origem) params.append("origem", filtersToUse.origem);
+      params.append("page", String(filtersToUse.page));
+      params.append("per_page", "50");
+
+      const response = await fetch(`/api/admin/leads/pipeline?${params.toString()}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao carregar pipeline: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      setData(result);
+      setFilters(filtersToUse);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // On component mount, load initial data
+  useEffect(() => {
+    if (session) {
+      fetchPipeline(filters);
+    }
+  }, [session]);
+
+  // Handle filter change
+  const handleFiltersChange = (newFilters: FiltersState) => {
+    fetchPipeline(newFilters);
+  };
+
+  // Handle status update
+  const handleStatusUpdate = async (itemId: string, newStatus: string) => {
+    setIsUpdatingStatus(true);
+
+    try {
+      const item = data?.items.find((i) => i.id === itemId);
+      if (!item) return;
+
+      const endpoint =
+        item.itemType === "lead"
+          ? `/api/admin/leads/${itemId}/status`
+          : `/api/admin/leads/contatos/${itemId}/status`;
+
+      const response = await fetch(endpoint, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Falha ao atualizar status");
+      }
+
+      // Refresh data after update
+      await fetchPipeline(filters);
+    } catch (err) {
+      console.error("Status update error:", err);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // Handle pagination
+  const handlePrevPageClick = () => {
+    if (filters.page > 1) {
+      fetchPipeline({ ...filters, page: filters.page - 1 });
+    }
+  };
+
+  const handleNextPageClick = () => {
+    if (data?.pagination && filters.page < data.pagination.totalPages) {
+      fetchPipeline({ ...filters, page: filters.page + 1 });
+    }
+  };
+
+  if (status === "loading") {
+    return (
+      <div className="flex min-h-screen">
+        <AdminSidebar />
+        <main className="flex-1 p-8 flex items-center justify-center">
+          <div className="text-white/50">Carregando...</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!session) return null;
 
   return (
     <div className="flex min-h-screen">
@@ -35,16 +151,56 @@ export default async function LeadsPage() {
           <LeadsActions />
         </div>
 
-        {/* Leads Table */}
-        <h2 className="font-serif text-xl mb-4">Leads ({leads.length})</h2>
-        <div className="overflow-x-auto mb-12">
+        {/* Filters */}
+        <LeadsFilters onFiltersChange={handleFiltersChange} isLoading={isLoading} />
+
+        {/* Counters */}
+        {data?.counters && (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div className="p-4 bg-white/5 border border-white/10">
+              <div className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Novos</div>
+              <div className="font-serif text-2xl">{data.counters.novos}</div>
+            </div>
+            <div className="p-4 bg-white/5 border border-white/10">
+              <div className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Em Contato</div>
+              <div className="font-serif text-2xl">{data.counters.em_contato}</div>
+            </div>
+            <div className="p-4 bg-white/5 border border-white/10">
+              <div className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Convertidos</div>
+              <div className="font-serif text-2xl">{data.counters.convertidos}</div>
+            </div>
+            <div className="p-4 bg-white/5 border border-white/10">
+              <div className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Perdidos</div>
+              <div className="font-serif text-2xl">{data.counters.perdidos}</div>
+            </div>
+            <div className="p-4 bg-white/5 border border-white/10">
+              <div className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Não Lidos</div>
+              <div className="font-serif text-2xl">{data.counters.nao_lidos}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-8 p-4 bg-red-500/20 border border-red-500/50 text-red-300 text-sm">
+            {error}
+          </div>
+        )}
+
+        {/* Unified Leads & Contatos Table */}
+        <h2 className="font-serif text-xl mb-4">
+          Resultados ({data?.pagination.total || 0})
+        </h2>
+        <div className="overflow-x-auto mb-8">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/10 text-left">
                 <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Nome</th>
                 <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Email</th>
                 <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Telefone</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Tipo</th>
+                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">
+                  {filters.tipo === "lead" ? "Tipo" : "Assunto"}
+                </th>
                 <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Origem</th>
                 <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Status</th>
                 <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Data</th>
@@ -52,55 +208,19 @@ export default async function LeadsPage() {
               </tr>
             </thead>
             <tbody>
-              {leads.map((lead) => (
-                <tr key={lead.id} className="border-b border-white/5 hover:bg-white/5">
-                  <td className="py-3 pr-4">
-                    <span>{lead.nome}</span>
-                    {lead.mensagem && (
-                      <span
-                        className="block text-[10px] opacity-40 max-w-[160px] truncate"
-                        title={lead.mensagem}
-                      >
-                        {lead.mensagem}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 pr-4 opacity-60">{lead.email}</td>
-                  <td className="py-3 pr-4 opacity-60">{lead.telefone || "—"}</td>
-                  <td className="py-3 pr-4 opacity-60">{lead.tipoDecl || "—"}</td>
-                  <td className="py-3 pr-4 opacity-60">{lead.origem}</td>
-                  <td className="py-3 pr-4">
-                    <span className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
-                      lead.status === "convertido"
-                        ? "bg-green-500/20 text-green-300"
-                        : lead.status === "em_contato"
-                        ? "bg-yellow-500/20 text-yellow-300"
-                        : "bg-white/10"
-                    }`}>
-                      {lead.status}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 opacity-40">
-                    {new Date(lead.createdAt).toLocaleDateString("pt-BR")}
-                  </td>
-                  <td className="py-3">
-                    {lead.telefone && (
-                      <a
-                        href={`https://wa.me/55${lead.telefone.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-green-400 text-xs hover:underline"
-                      >
-                        WhatsApp
-                      </a>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {leads.length === 0 && (
+              {data?.items && data.items.length > 0 ? (
+                data.items.map((item) => (
+                  <LeadsTableRow
+                    key={item.id}
+                    item={item}
+                    onStatusUpdate={handleStatusUpdate}
+                    isUpdating={isUpdatingStatus}
+                  />
+                ))
+              ) : (
                 <tr>
                   <td colSpan={8} className="py-8 text-center opacity-40">
-                    Nenhum lead ainda
+                    {isLoading ? "Carregando..." : "Nenhum resultado encontrado"}
                   </td>
                 </tr>
               )}
@@ -108,67 +228,30 @@ export default async function LeadsPage() {
           </table>
         </div>
 
-        {/* Contatos Table */}
-        <h2 className="font-serif text-xl mb-4">Contatos ({contatos.length})</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-white/10 text-left">
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Nome</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Email</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Telefone</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Assunto</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Origem</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Status</th>
-                <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Mensagem</th>
-                <th className="py-3 text-[10px] uppercase tracking-widest opacity-50">Data</th>
-              </tr>
-            </thead>
-            <tbody>
-              {contatos.map((c) => (
-                <tr key={c.id} className="border-b border-white/5 hover:bg-white/5">
-                  {(() => {
-                    const contatoStatus = (c as unknown as { status?: string }).status || (c.lido ? "em_contato" : "novo");
-                    const contatoOrigem = (c as unknown as { origem?: string }).origem || "site";
-                    return (
-                      <>
-                  <td className="py-3 pr-4">{c.nome}</td>
-                  <td className="py-3 pr-4 opacity-60">{c.email}</td>
-                  <td className="py-3 pr-4 opacity-60">{c.telefone || "—"}</td>
-                  <td className="py-3 pr-4 opacity-60">{c.assunto || "—"}</td>
-                  <td className="py-3 pr-4 opacity-60">{contatoOrigem}</td>
-                  <td className="py-3 pr-4">
-                    <span className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
-                      contatoStatus === "convertido"
-                        ? "bg-green-500/20 text-green-300"
-                        : contatoStatus === "em_contato"
-                        ? "bg-yellow-500/20 text-yellow-300"
-                        : "bg-white/10"
-                    }`}>
-                      {contatoStatus}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 opacity-60 max-w-xs">
-                    <span className="line-clamp-2">{c.mensagem}</span>
-                  </td>
-                  <td className="py-3 opacity-40">
-                    {new Date(c.createdAt).toLocaleDateString("pt-BR")}
-                  </td>
-                      </>
-                    );
-                  })()}
-                </tr>
-              ))}
-              {contatos.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center opacity-40">
-                    Nenhum contato ainda
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* Pagination */}
+        {data?.pagination && data.pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between">
+            <div className="text-sm opacity-60">
+              Página {data.pagination.page} de {data.pagination.totalPages}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handlePrevPageClick}
+                disabled={data.pagination.page === 1 || isLoading}
+                className="px-4 py-2 bg-white/10 border border-white/20 text-white text-xs uppercase tracking-widest hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Anterior
+              </button>
+              <button
+                onClick={handleNextPageClick}
+                disabled={data.pagination.page >= data.pagination.totalPages || isLoading}
+                className="px-4 py-2 bg-white/10 border border-white/20 text-white text-xs uppercase tracking-widest hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

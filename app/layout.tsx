@@ -95,11 +95,23 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const googleAdsId = "AW-18158780982";
   const ga4Id = process.env.NEXT_PUBLIC_GA4_ID || "G-7FYYGX7C12";
   const fbPixelId = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
 
   return (
     <html lang="pt-br" className={`${playfair.variable} ${inter.variable}`}>
+      <head>
+        <script
+          async
+          src={`https://www.googletagmanager.com/gtag/js?id=${googleAdsId}`}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${googleAdsId}');`,
+          }}
+        />
+      </head>
       <body className="font-sans antialiased bg-base text-preto">
         <JsonLdWebSite />
         {children}

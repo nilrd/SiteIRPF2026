@@ -46,14 +46,15 @@ export default function BlogCTA({ variant = "inline", topic = "irpf" }: BlogCTAP
 
   if (variant === "sidebar") {
     return (
-      <div className="bg-[#F5F5F2] border border-[#0A0A0A]/20 p-6 md:p-7 space-y-4">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#F5F5F2] to-[#eef5e8] border border-[#C6FF00]/30 p-6 md:p-7 space-y-4 shadow-sm">
+        <div className="absolute top-0 right-0 w-16 h-16 bg-[#C6FF00]/10 rounded-bl-full" />
         <p className="font-serif text-xl leading-tight text-[#0A0A0A]">{msg.headline}</p>
-        <p className="text-sm leading-relaxed text-[#1F1F1C]">{msg.sub}</p>
+        <p className="text-sm leading-relaxed text-[#1F1F1C]/80">{msg.sub}</p>
         <a
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="block w-full text-center bg-[#0A0A0A] text-[#C6FF00] py-3.5 uppercase text-[11px] tracking-[0.14em] font-bold hover:bg-[#171717] transition"
+          className="block w-full text-center bg-[#0A0A0A] text-[#C6FF00] py-3.5 uppercase text-[11px] tracking-[0.14em] font-bold hover:bg-[#1a2e00] hover:text-white transition-colors duration-200"
         >
           {msg.cta}
         </a>

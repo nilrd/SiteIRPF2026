@@ -211,16 +211,17 @@ export default async function BlogPostPage({ params }: Props) {
           <aside className="md:col-span-4">
             <div className="sticky top-32 space-y-8">
               {/* Mini calculator CTA */}
-              <div className="border border-[#0A0A0A]/15 bg-[#F5F5F2] p-6 md:p-7">
+              <div className="relative overflow-hidden border border-[#0A0A0A]/10 bg-gradient-to-br from-[#F5F5F2] to-[#eaeae6] p-6 md:p-7 shadow-sm">
+                <div className="absolute -top-4 -right-4 w-20 h-20 bg-[#0A0A0A]/5 rounded-full" />
                 <h3 className="font-serif text-xl text-[#0A0A0A] mb-3">
                   Calculadora de IR
                 </h3>
-                <p className="text-sm text-[#1F1F1C] leading-relaxed mb-5">
+                <p className="text-sm text-[#1F1F1C]/80 leading-relaxed mb-5">
                   Simule seu imposto de renda gratuitamente.
                 </p>
                 <Link
                   href="/ferramentas/calculadora-ir"
-                  className="block w-full text-center bg-[#0A0A0A] text-[#F5F5F2] py-3.5 uppercase text-[11px] tracking-[0.14em] font-bold hover:bg-[#171717] transition"
+                  className="block w-full text-center bg-[#0A0A0A] text-[#F5F5F2] py-3.5 uppercase text-[11px] tracking-[0.14em] font-bold hover:bg-[#1a2e00] hover:text-[#C6FF00] transition-colors duration-200"
                 >
                   Calcular Agora
                 </Link>

@@ -44,7 +44,7 @@ function normalize(text: string): string {
 
 function postText(post: BlogListItem): string {
   return normalize(
-    [post.title, post.summary || "", ...(post.tags || []), post.categoria || ""].join(" ")
+    [post.title, post.summary || "", post.slug, ...(post.tags || []), post.categoria || ""].join(" ")
   );
 }
 
@@ -65,7 +65,7 @@ function matchesFilter(post: BlogListItem, filter: (typeof FILTERS)[number]): bo
     case "Malha Fina":
       return text.includes("malha fina");
     case "Restituição":
-      return text.includes("restituicao") || text.includes("restituicao");
+      return text.includes("restituicao") || text.includes("restituicao") || text.includes("restitui");
     case "Documentos":
       return text.includes("document") || text.includes("comprovante");
     default:
@@ -118,6 +118,7 @@ export default function BlogListingClient({ posts }: Props) {
     });
   }, [posts, activeFilter, query]);
 
+  const isFiltering = activeFilter !== "Todos" || query.trim().length > 0;
   const visiblePosts = filteredPosts.slice(0, visibleCount);
   const hasMore = visibleCount < filteredPosts.length;
 
@@ -181,7 +182,7 @@ export default function BlogListingClient({ posts }: Props) {
         </div>
       </div>
 
-      {featured.length > 0 && (
+      {featured.length > 0 && !isFiltering && (
         <section className="mb-10">
           <h2 className="font-serif text-2xl md:text-3xl mb-5">Posts em destaque</h2>
           <div className="grid md:grid-cols-2 gap-6">

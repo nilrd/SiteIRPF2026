@@ -211,16 +211,16 @@ export default async function BlogPostPage({ params }: Props) {
           <aside className="md:col-span-4">
             <div className="sticky top-32 space-y-8">
               {/* Mini calculator CTA */}
-              <div className="border border-gray-200 p-6">
-                <h3 className="font-serif text-lg mb-3">
+              <div className="border border-[#0A0A0A]/15 bg-[#F5F5F2] p-6 md:p-7">
+                <h3 className="font-serif text-xl text-[#0A0A0A] mb-3">
                   Calculadora de IR
                 </h3>
-                <p className="text-sm opacity-60 mb-4">
+                <p className="text-sm text-[#1F1F1C] leading-relaxed mb-5">
                   Simule seu imposto de renda gratuitamente.
                 </p>
                 <Link
                   href="/ferramentas/calculadora-ir"
-                  className="block w-full text-center bg-preto text-white py-3 uppercase text-xs tracking-widest font-bold hover:bg-preto/80 transition"
+                  className="block w-full text-center bg-[#0A0A0A] text-[#F5F5F2] py-3.5 uppercase text-[11px] tracking-[0.14em] font-bold hover:bg-[#171717] transition"
                 >
                   Calcular Agora
                 </Link>
@@ -232,7 +232,7 @@ export default async function BlogPostPage({ params }: Props) {
               {/* Related posts */}
               {related.length > 0 && (
                 <div>
-                  <h3 className="font-serif text-lg mb-4">
+                  <h3 className="font-serif text-lg text-[#0A0A0A] mb-4">
                     Artigos Relacionados
                   </h3>
                   <div className="space-y-4">
@@ -240,12 +240,12 @@ export default async function BlogPostPage({ params }: Props) {
                       <Link
                         key={r.id}
                         href={`/blog/${r.slug}`}
-                        className="block group"
+                        className="block group border-b border-[#0A0A0A]/10 pb-3"
                       >
                         <span className="text-[10px] uppercase tracking-widest text-ouro">
                           {r.tags?.[0] || "IRPF"}
                         </span>
-                        <h4 className="font-serif text-sm group-hover:italic transition-all mt-1">
+                        <h4 className="font-serif text-sm text-[#0A0A0A] group-hover:italic transition-all mt-1 leading-snug">
                           {r.title}
                         </h4>
                       </Link>

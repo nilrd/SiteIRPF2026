@@ -17,9 +17,9 @@ interface BlogCTAProps {
 
 const MESSAGES: Record<BlogCTATopic, { headline: string; sub: string; cta: string; waText: string }> = {
   irpf: {
-    headline: "Precisa declarar seu IRPF?",
-    sub: "Nilson Brites cuida da sua declaração — sem erros, sem multas, 100% online.",
-    cta: "Falar com especialista",
+    headline: "Precisa declarar ou regularizar seu IRPF?",
+    sub: "Atendimento online para analisar sua situação e orientar os próximos passos com clareza.",
+    cta: "FALAR COM ESPECIALISTA",
     waText: "Olá! Li um artigo no blog e quero declarar meu IRPF 2026.",
   },
   mei: {
@@ -46,14 +46,14 @@ export default function BlogCTA({ variant = "inline", topic = "irpf" }: BlogCTAP
 
   if (variant === "sidebar") {
     return (
-      <div className="bg-verde/5 border border-verde p-6">
-        <p className="font-serif text-base mb-2">{msg.headline}</p>
-        <p className="text-sm opacity-70 mb-5 leading-relaxed">{msg.sub}</p>
+      <div className="bg-[#F5F5F2] border border-[#0A0A0A]/20 p-6 md:p-7 space-y-4">
+        <p className="font-serif text-xl leading-tight text-[#0A0A0A]">{msg.headline}</p>
+        <p className="text-sm leading-relaxed text-[#1F1F1C]">{msg.sub}</p>
         <a
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="block w-full text-center bg-verde text-white py-3 uppercase text-[10px] tracking-widest font-bold hover:bg-verde/90 transition"
+          className="block w-full text-center bg-[#0A0A0A] text-[#C6FF00] py-3.5 uppercase text-[11px] tracking-[0.14em] font-bold hover:bg-[#171717] transition"
         >
           {msg.cta}
         </a>

@@ -303,8 +303,8 @@ export default function ConsulteSemMedoPage() {
         </div>
         <div className="bg-[#0A0A0A] text-white p-10">
           <p className="font-serif text-xl md:text-2xl leading-snug mb-8 text-white/90 italic">
-            "Consulte sem medo. Entender sua situação é o primeiro passo para resolver com mais
-            tranquilidade."
+            &ldquo;Consulte sem medo. Entender sua situação é o primeiro passo para resolver com mais
+            tranquilidade.&rdquo;
           </p>
           <div className="border-t border-white/15 pt-6">
             <span className="block text-[10px] uppercase tracking-widest text-white/35 mb-1">Nilson Brites</span>

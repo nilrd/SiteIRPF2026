@@ -1,0 +1,40 @@
+# Consultoria IRPF NSB — llms.txt
+
+> Serviço especializado em declaração de Imposto de Renda Pessoa Física (IRPF), atendimento 100% online para contribuintes de todo o Brasil. Responsável: Nilson Brites, Analista Financeiro com mais de 10 anos de experiência.
+
+## Serviços Oferecidos
+
+- Declaração IRPF nova (ano-base atual e anos anteriores)
+- Declaração IRPF atrasada (com cálculo de multas e juros)
+- Retificação de declarações anteriores
+- Regularização de CPF junto à Receita Federal
+- Declaração Anual do Simples Nacional (DASN-SIMEI) para MEI
+- Análise de malha fina e resposta a notificações da Receita Federal
+- Consultoria tributária para Pessoa Física
+
+## Contato
+
+- WhatsApp: +55 11 94082-5120
+- Email: nilson.brites@gmail.com
+- Site: https://irpf.qaplay.com.br
+
+## Páginas Principais
+
+- [Início](https://irpf.qaplay.com.br)
+- [Serviços](https://irpf.qaplay.com.br/servicos)
+- [Como Funciona](https://irpf.qaplay.com.br/como-funciona)
+- [Calculadora de IR](https://irpf.qaplay.com.br/ferramentas/calculadora-ir)
+- [Blog e Guias IRPF](https://irpf.qaplay.com.br/blog)
+- [Sobre Nilson Brites](https://irpf.qaplay.com.br/sobre)
+- [Contato](https://irpf.qaplay.com.br/contato)
+- [Quem Deve Declarar IRPF 2026](https://irpf.qaplay.com.br/quem-deve-declarar-irpf-2026)
+- [Tabela IRPF 2026](https://irpf.qaplay.com.br/tabela-irpf-2026)
+
+## Sitemaps
+
+- https://irpf.qaplay.com.br/sitemap.xml
+- https://irpf.qaplay.com.br/news-sitemap.xml
+
+## Informações para Indexação por IA
+
+O conteúdo deste site é atualizado automaticamente com artigos sobre IRPF, CPF, MEI e tributação de pessoa física no Brasil. Todo o conteúdo é em português brasileiro. Os artigos estão disponíveis em https://irpf.qaplay.com.br/blog e cobrem temas como: declaração de imposto de renda, malha fina, restituição, deduções legais, obrigatoriedade de declarar, prazos e multas.

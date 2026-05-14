@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
       topCtaElements,
       timeOnPageAvg,
       utmSources,
+      topPagesByWaClicks,
     ] = await Promise.all([
       prisma.analyticsEvent.count({
         where: { type: "pageview", createdAt: { gte: since30d } },
@@ -116,10 +117,25 @@ export async function GET(req: NextRequest) {
         orderBy: { _count: { id: "desc" } },
         take: 10,
       }),
+      prisma.analyticsEvent.groupBy({
+        by: ["page"],
+        where: { type: "whatsapp_click", createdAt: { gte: since30d } },
+        _count: { id: true },
+        orderBy: { _count: { id: "desc" } },
+        take: 10,
+      }),
     ]);
 
     const uniqueSessions30d = sessionRows30d.length;
     const avgTimeOnPage = Math.round(timeOnPageAvg._avg.timeOnPage ?? 0);
+    const waConversionRate =
+      uniqueSessions30d > 0
+        ? Math.round((waClicks30d / uniqueSessions30d) * 1000) / 10
+        : 0;
+    const ctaConversionRate =
+      uniqueSessions30d > 0
+        ? Math.round((ctaClicks30d / uniqueSessions30d) * 1000) / 10
+        : 0;
 
     return NextResponse.json({
       overview: {
@@ -129,6 +145,8 @@ export async function GET(req: NextRequest) {
         waClicks30d,
         ctaClicks30d,
         avgTimeOnPageSec: avgTimeOnPage,
+        waConversionRate,
+        ctaConversionRate,
       },
       topPages: topPages.map((p) => ({ page: p.page, views: p._count.id })),
       topReferrers: topReferrers.map((r) => ({
@@ -157,6 +175,10 @@ export async function GET(req: NextRequest) {
         utmSource: u.utmSource,
         utmCampaign: u.utmCampaign,
         visits: u._count.id,
+      })),
+      topPagesByWaClicks: topPagesByWaClicks.map((p) => ({
+        page: p.page,
+        waClicks: p._count.id,
       })),
     });
   } catch (err) {

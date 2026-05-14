@@ -49,6 +49,9 @@ function AnalyticsTrackerInner() {
   const sentLeaveRef = useRef<boolean>(false);
 
   useEffect(() => {
+    // Não registrar eventos em ambiente local para não poluir métricas de produção
+    if (/localhost|127\.0\.0\.1/.test(window.location.hostname)) return;
+
     startTimeRef.current = Date.now();
     scrollDepthRef.current = new Set();
     sentLeaveRef.current = false;

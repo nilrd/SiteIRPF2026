@@ -46,6 +46,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPost(params.slug);
   if (!post) return { title: "Artigo nao encontrado" };
   const url = `https://irpf.qaplay.com.br/blog/${post.slug}`;
+  const ogImages = post.coverImage
+    ? [{ url: post.coverImage, width: 1200, height: 630, alt: post.title }]
+    : [{ url: "https://irpf.qaplay.com.br/og-image.svg", width: 1200, height: 630, alt: post.title }];
   return {
     title: `${post.title} | Blog IRPF NSB`,
     description: post.summary || post.title,
@@ -59,9 +62,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: post.createdAt.toISOString(),
       modifiedTime: post.updatedAt.toISOString(),
       authors: ["https://irpf.qaplay.com.br/sobre"],
+      images: ogImages,
     },
     twitter: {
       card: "summary_large_image",
+      images: post.coverImage ? [post.coverImage] : [],
     },
   };
 }

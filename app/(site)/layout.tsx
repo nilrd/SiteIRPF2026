@@ -22,7 +22,17 @@ export const metadata: Metadata = {
     type: "website",
     images: [{ url: "/og-image.jpg", width: 1200, height: 630 }],
   },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-snippet": -1,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+    },
+  },
   alternates: { canonical: "https://irpf.qaplay.com.br" },
 };
 

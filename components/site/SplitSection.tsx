@@ -17,7 +17,7 @@ export default function SplitSection() {
         >
           <div className="relative w-full h-full min-h-[400px] bg-gray-200 overflow-hidden">
             <Image
-              src="/nilson-profile.jpg"
+              src="/nilson-hero.jpg"
               alt="Consultor IRPF NSB"
               fill
               className="object-cover"

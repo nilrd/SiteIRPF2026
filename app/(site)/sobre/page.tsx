@@ -25,7 +25,7 @@ export default function SobrePage() {
         <div className="grid md:grid-cols-2 gap-16 mb-24">
           <div className="relative aspect-[4/5] bg-gray-200 overflow-hidden">
             <Image
-              src="/nilson-profile.jpg"
+              src="/nilson-hero.jpg"
               alt="Consultor IRPF NSB"
               fill
               className="object-cover"

@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
 import Script from "next/script";
 import { JsonLdWebSite } from "@/components/seo/JsonLd";
+import WhatsAppConversionTracker from "@/components/analytics/WhatsAppConversionTracker";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -113,6 +114,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-base text-preto">
+        <WhatsAppConversionTracker />
         <JsonLdWebSite />
         {children}
         {ga4Id && (

@@ -9,7 +9,7 @@ const NAV_LINKS = [
   { href: "/mei", label: "MEI" },
   { href: "/desenrola-brasil", label: "Desenrola" },
   { href: "/ferramentas/calculadora-ir", label: "Calculadora" },
-  { href: "/blog", label: "Insights" },
+  { href: "/blog", label: "Dicas e Guias" },
   { href: "/contato", label: "Contato" },
 ];
 

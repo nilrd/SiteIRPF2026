@@ -121,7 +121,7 @@ export default function Footer() {
                   href="/blog"
                   className="text-sm text-white/70 hover:text-white transition"
                 >
-                  Blog / Insights
+                  Blog / Dicas e Guias
                 </Link>
               </li>
               <li>

@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import BlogPostImage from "@/components/site/BlogPostImage";
+import BlogListingClient from "@/components/site/BlogListingClient";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Blog | Consultoria IRPF NSB",
   description:
-    "Artigos e insights sobre IRPF, planejamento tributario, malha fina e restituicao. Conteudo atualizado pela Consultoria IRPF NSB.",
+    "Dicas e guias sobre IRPF, CPF e MEI. Encontre conteúdos para declarar com mais tranquilidade e regularizar pendências fiscais.",
 };
 
 async function getPosts() {
@@ -16,9 +15,23 @@ async function getPosts() {
     const posts = await prisma.blogPost.findMany({
       where: { published: true },
       orderBy: { createdAt: "desc" },
-      take: 20,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        summary: true,
+        coverImage: true,
+        tags: true,
+        categoria: true,
+        createdAt: true,
+      },
     });
-    return posts;
+
+    return posts.map((post) => ({
+      ...post,
+      tags: post.tags || [],
+      createdAt: post.createdAt.toISOString(),
+    }));
   } catch {
     return [];
   }
@@ -33,11 +46,14 @@ export default async function BlogPage() {
         <div className="mb-10">
           <div>
             <span className="block text-[11px] uppercase tracking-[0.28em] mb-3 opacity-60">
-              Insights
+              Dicas e Guias
             </span>
             <h1 className="font-serif text-4xl md:text-6xl leading-[0.95]">
-              Perspectivas Tecnicas
+              Dicas sobre IRPF, CPF e MEI
             </h1>
+            <p className="mt-4 max-w-3xl text-sm md:text-base text-[#0A0A0A]/70 leading-relaxed">
+              Guias simples para declarar seu Imposto de Renda, regularizar CPF, resolver pendências fiscais e cuidar do seu MEI.
+            </p>
           </div>
         </div>
 
@@ -51,45 +67,7 @@ export default async function BlogPage() {
             </p>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
-            {posts.map((post) => (
-              <article key={post.id} className="group">
-                <Link href={`/blog/${post.slug}`} className="block">
-                  <div className="mb-3">
-                    <span className="text-[10px] uppercase tracking-widest text-ouro">
-                      {post.tags?.[0] || "IRPF"}
-                    </span>
-                    <h2 className="font-serif text-xl leading-tight mt-1 group-hover:italic transition-all">
-                      {post.title}
-                    </h2>
-                  </div>
-
-                  <div className="overflow-hidden mb-3 aspect-[16/10] bg-gray-200 relative">
-                    {post.coverImage ? (
-                      <BlogPostImage src={post.coverImage} alt={post.title} />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-verde/5">
-                        <span className="font-serif text-5xl text-verde/10">
-                          IR
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {post.summary && (
-                    <p className="text-sm opacity-60 line-clamp-2">
-                      {post.summary}
-                    </p>
-                  )}
-
-                  <div className="mt-3 flex items-center justify-between text-[10px] uppercase tracking-widest opacity-45">
-                    <span>{new Date(post.createdAt).toLocaleDateString("pt-BR")}</span>
-                    <span>Ler artigo</span>
-                  </div>
-                </Link>
-              </article>
-            ))}
-          </div>
+          <BlogListingClient posts={posts} />
         )}
       </section>
     </main>

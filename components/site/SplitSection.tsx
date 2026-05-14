@@ -17,7 +17,7 @@ export default function SplitSection() {
         >
           <div className="relative w-full h-full min-h-[400px] bg-gray-200 overflow-hidden">
             <Image
-              src="/nilson-hero.jpg"
+              src="/nilson-profile.jpg"
               alt="Consultor IRPF NSB"
               fill
               className="object-cover"
@@ -55,9 +55,9 @@ export default function SplitSection() {
           </p>
           <p className="text-white/70 leading-relaxed mb-8">
             Nossa abordagem combina precisão técnica com atendimento
-            personalizado. Em cada declaração, verificamos todas as deduções
-            a que o cliente tem direito conforme a legislação vigente —
-            sem deixar nada passar.
+            personalizado. Em cada declaração, verificamos todas as deduções a
+            que o cliente tem direito conforme a legislação vigente — sem deixar
+            nada passar.
           </p>
 
           <div className="grid grid-cols-2 gap-6 mt-auto">

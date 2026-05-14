@@ -102,18 +102,16 @@ export default function RootLayout({
 
   return (
     <html lang="pt-br" className={`${playfair.variable} ${inter.variable}`}>
-      <head>
-        <script
-          async
+      <body className="font-sans antialiased bg-base text-preto">
+        {/* Google Ads — carregado via next/script para garantia em SSR + SPA navigation */}
+        <Script
+          id="google-ads-load"
+          strategy="afterInteractive"
           src={`https://www.googletagmanager.com/gtag/js?id=${googleAdsId}`}
         />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${googleAdsId}');`,
-          }}
-        />
-      </head>
-      <body className="font-sans antialiased bg-base text-preto">
+        <Script id="google-ads-init" strategy="afterInteractive">
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${googleAdsId}');`}
+        </Script>
         <WhatsAppConversionTracker />
         <JsonLdWebSite />
         {children}

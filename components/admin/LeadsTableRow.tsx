@@ -2,21 +2,10 @@
 
 import { useState } from "react";
 import ModalDetalheMensagem from "@/components/admin/ModalDetalheMensagem";
+import type { AdminPipelineItem } from "@/lib/admin-pipeline-types";
 
 export interface LeadsTableRowProps {
-  item: {
-    itemType: "lead" | "contato";
-    id: string;
-    nome: string;
-    email: string;
-    telefone?: string | null;
-    tipoDecl?: string | null;
-    assunto?: string | null;
-    origem: string;
-    status: string;
-    createdAt: Date | string;
-    mensagem: string;
-  };
+  item: AdminPipelineItem;
   onStatusUpdate?: (itemId: string, newStatus: string) => void;
   onDelete?: (itemId: string, itemType: "lead" | "contato") => void;
   isUpdating?: boolean;
@@ -72,6 +61,9 @@ export default function LeadsTableRow({ item, onStatusUpdate, onDelete, isUpdati
       <tr className="border-b border-white/5 hover:bg-white/5">
       <td className="py-3 pr-4">
         <span>{item.nome}</span>
+        <span className="block text-[10px] uppercase tracking-widest opacity-35 mt-1">
+          {item.registrationCount} cadastro{item.registrationCount > 1 ? "s" : ""} • {item.messageCount} mensagem{item.messageCount !== 1 ? "ens" : ""}
+        </span>
         {item.mensagem && (
           <span className="block text-[10px] opacity-40 max-w-[160px] truncate" title={item.mensagem}>
             {item.mensagem}
@@ -87,9 +79,9 @@ export default function LeadsTableRow({ item, onStatusUpdate, onDelete, isUpdati
         ) : "—"}
       </td>
       <td className="py-3 pr-4 opacity-60">
-        {isLead ? item.tipoDecl || "—" : item.assunto || "—"}
+        {item.servicos[0] || (isLead ? item.tipoDecl || item.servico || "—" : item.assunto || "—")}
       </td>
-      <td className="py-3 pr-4 opacity-60">{item.origem}</td>
+      <td className="py-3 pr-4 opacity-60">{item.origens.join(" • ") || item.origem}</td>
       <td className="py-3 pr-4">
         <div className="relative">
           <button
@@ -143,16 +135,18 @@ export default function LeadsTableRow({ item, onStatusUpdate, onDelete, isUpdati
             onClick={() => setIsModalOpen(true)}
             className="text-white/70 text-xs hover:underline text-left"
           >
-            Ver mensagem
+            Ver histórico
           </button>
-          <button
-            onClick={handleDelete}
-            className={`text-xs hover:underline text-left transition-colors ${
-              confirmDelete ? "text-red-400 font-bold" : "text-white/30 hover:text-red-400"
-            }`}
-          >
-            {confirmDelete ? "Confirmar exclusão" : "Excluir"}
-          </button>
+          {!item.hasDuplicate && (
+            <button
+              onClick={handleDelete}
+              className={`text-xs hover:underline text-left transition-colors ${
+                confirmDelete ? "text-red-400 font-bold" : "text-white/30 hover:text-red-400"
+              }`}
+            >
+              {confirmDelete ? "Confirmar exclusão" : "Excluir"}
+            </button>
+          )}
         </div>
       </td>
 
@@ -169,6 +163,12 @@ export default function LeadsTableRow({ item, onStatusUpdate, onDelete, isUpdati
           origem: item.origem,
           tipoDecl: item.tipoDecl,
           assunto: item.assunto,
+          servicos: item.servicos,
+          origens: item.origens,
+          sourceTypes: item.sourceTypes,
+          registrationCount: item.registrationCount,
+          messageCount: item.messageCount,
+          relatedItems: item.relatedItems,
           status: item.status,
           createdAt: item.createdAt,
           itemType: item.itemType,

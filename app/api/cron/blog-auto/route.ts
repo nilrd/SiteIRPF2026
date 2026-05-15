@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateBlogPost, saveBlogPost, ALL_CLUSTERS } from "@/lib/blog-engine";
+import { finishAutomationRun, startAutomationRun, failAutomationRun } from "@/lib/automation-runs";
+import { notifySystemAlert } from "@/lib/notify";
 import { resend } from "@/lib/resend";
 import { feedBrainFromOfficialSources, isKeywordRecent, markKeywordUsed } from "@/lib/knowledge-brain";
 
@@ -15,12 +17,23 @@ const MAX_CRON_MS = 240_000; // 240s → 60s de margem para o maxDuration de 300
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export async function GET(request: Request) {
+  let runId: string | null = null;
+
   try {
     const { searchParams } = new URL(request.url);
     const secret = searchParams.get("secret");
     if (secret !== process.env.CRON_SECRET) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const run = await startAutomationRun({
+      automationKey: "blog-auto",
+      metadata: {
+        targetPosts: NUM_POSTS,
+        maxCronMs: MAX_CRON_MS,
+      },
+    });
+    runId = run.id;
 
     // Alimenta o cérebro com fontes oficiais antes de gerar qualquer post.
     console.log("[Cron] Alimentando cérebro com fontes oficiais...");
@@ -63,33 +76,120 @@ export async function GET(request: Request) {
       }
     }
 
-    // Notifica admin com resumo de todos os posts gerados
-    if (process.env.ADMIN_EMAIL && results.length > 0) {
-      const published = results.filter((r) => r.published);
-      const retained = results.filter((r) => !r.published);
-      await resend.emails.send({
-        from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
-        to: process.env.ADMIN_EMAIL,
-        subject: `[Cron] ${results.length} posts gerados — ${new Date().toLocaleDateString("pt-BR")}`,
-        html: `
-          <h2>Blog Auto — Relatório do Dia</h2>
-          <p><strong>${published.length} publicados</strong> | ${retained.length} retidos para revisão | ${errors.length} erros</p>
-          <h3>Publicados</h3>
-          <ul>${published.map((p) => `<li><a href="https://irpf.qaplay.com.br/blog/${p.slug}">${p.title}</a></li>`).join("")}</ul>
-          ${retained.length > 0 ? `<h3>Aguardando revisão</h3><ul>${retained.map((p) => `<li>${p.title}</li>`).join("")}</ul>` : ""}
-          ${errors.length > 0 ? `<h3>Erros (${errors.length})</h3><ul>${errors.map((e) => `<li>Post ${e.index}: ${e.error}</li>`).join("")}</ul>` : ""}
-          <p>Acesse o painel para revisar e publicar os rascunhos.</p>
-        `,
+    const published = results.filter((result) => result.published);
+    const retained = results.filter((result) => !result.published);
+    const durationMs = Date.now() - cronStart;
+
+    if (runId) {
+      await finishAutomationRun(runId, {
+        generatedCount: results.length,
+        publishedCount: published.length,
+        retainedCount: retained.length,
+        errorCount: errors.length,
+        durationMs,
+        metadata: {
+          results,
+          errors,
+        },
       });
+    }
+
+    // Notifica admin com resumo de todos os posts gerados
+    if (process.env.ADMIN_EMAIL) {
+      try {
+        await resend.emails.send({
+          from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
+          to: process.env.ADMIN_EMAIL,
+          subject: `[Cron] ${results.length} posts gerados — ${new Date().toLocaleDateString("pt-BR")}`,
+          html: `
+            <h2>Blog Auto — Relatório do Dia</h2>
+            <p><strong>${published.length} publicados</strong> | ${retained.length} retidos para revisão | ${errors.length} erros</p>
+            <p>Duração: ${Math.round(durationMs / 1000)}s</p>
+            ${published.length > 0 ? `<h3>Publicados</h3><ul>${published.map((p) => `<li><a href="https://irpf.qaplay.com.br/blog/${p.slug}">${p.title}</a></li>`).join("")}</ul>` : "<p>Nenhum post publicado nesta execução.</p>"}
+            ${retained.length > 0 ? `<h3>Aguardando revisão</h3><ul>${retained.map((p) => `<li>${p.title}</li>`).join("")}</ul>` : ""}
+            ${errors.length > 0 ? `<h3>Erros (${errors.length})</h3><ul>${errors.map((e) => `<li>Post ${e.index}: ${e.error}</li>`).join("")}</ul>` : ""}
+            <p>Acesse o painel para revisar e publicar os rascunhos.</p>
+          `,
+        });
+      } catch (emailError) {
+        console.error("[Cron] Falha ao enviar resumo por email:", emailError);
+      }
+    }
+
+    if (errors.length > 0 || results.length === 0) {
+      const message = [
+        "[ALERTA BLOG AUTO]",
+        `Gerados: ${results.length}`,
+        `Publicados: ${published.length}`,
+        `Retidos: ${retained.length}`,
+        `Erros: ${errors.length}`,
+      ].join("\n");
+
+      await notifySystemAlert(message);
+
+      if (process.env.ADMIN_EMAIL) {
+        try {
+          await resend.emails.send({
+            from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
+            to: process.env.ADMIN_EMAIL,
+            subject: `[ALERTA][Blog Auto] ${results.length === 0 ? "Nenhum post gerado" : `${errors.length} erro(s)`}`,
+            html: `
+              <h2>Alerta do Blog Auto</h2>
+              <p>Gerados: ${results.length}</p>
+              <p>Publicados: ${published.length}</p>
+              <p>Retidos: ${retained.length}</p>
+              <p>Erros: ${errors.length}</p>
+              ${errors.length > 0 ? `<ul>${errors.map((e) => `<li>Post ${e.index}: ${e.error}</li>`).join("")}</ul>` : ""}
+            `,
+          });
+        } catch (emailError) {
+          console.error("[Cron] Falha ao enviar alerta por email:", emailError);
+        }
+      }
     }
 
     return NextResponse.json({
       success: true,
       generated: results.length,
+      published: published.length,
+      retained: retained.length,
       errors: errors.length,
+      runId,
       posts: results,
     });
   } catch (error) {
+    if (runId) {
+      await failAutomationRun(runId, error, {
+        automationKey: "blog-auto",
+      }).catch((runError) => {
+        console.error("[Cron] Falha ao registrar erro no monitor:", runError);
+      });
+    }
+
+    await notifySystemAlert(
+      [
+        "[ALERTA BLOG AUTO]",
+        "Falha fatal no cron do blog.",
+        error instanceof Error ? error.message : String(error),
+      ].join("\n")
+    ).catch((notifyError) => {
+      console.error("[Cron] Falha ao enviar alerta operacional:", notifyError);
+    });
+
+    if (process.env.ADMIN_EMAIL) {
+      await resend.emails.send({
+        from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
+        to: process.env.ADMIN_EMAIL,
+        subject: "[ALERTA][Blog Auto] Falha fatal no cron",
+        html: `
+          <h2>Falha fatal no cron do Blog Auto</h2>
+          <p>${error instanceof Error ? error.message : String(error)}</p>
+        `,
+      }).catch((emailError) => {
+        console.error("[Cron] Falha ao enviar alerta fatal por email:", emailError);
+      });
+    }
+
     console.error("Blog cron error:", error);
     return NextResponse.json(
       { error: "Failed to generate blog post" },

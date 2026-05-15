@@ -181,3 +181,22 @@ model AnalyticsEvent {
   @@index([sessionId])
   @@map("analytics_events")
 }
+
+model AutomationRun {
+  id             String   @id @default(cuid())
+  automationKey  String   @map("automation_key")
+  trigger        String   @default("cron")
+  status         String   @default("started")
+  startedAt      DateTime @default(now()) @map("started_at")
+  finishedAt     DateTime? @map("finished_at")
+  durationMs     Int?     @map("duration_ms")
+  generatedCount Int      @default(0) @map("generated_count")
+  publishedCount Int      @default(0) @map("published_count")
+  retainedCount  Int      @default(0) @map("retained_count")
+  errorCount     Int      @default(0) @map("error_count")
+  metadataJson   String   @default("{}") @map("metadata_json")
+
+  @@index([automationKey, startedAt])
+  @@index([status, startedAt])
+  @@map("automation_runs")
+}

@@ -16,6 +16,7 @@ const schema = z.object({
       (tel) => /\d{10,}/g.test(tel.replace(/\D/g, "")),
       "Telefone inválido. Use formato (XX) 9XXXX-XXXX"
     ),
+  origem: z.string().max(100).optional(),
   servico: z.string().max(50).optional(),
   mensagem: z.string().max(2000).optional(),
 });
@@ -59,30 +60,19 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const data = schema.parse(body);
+    const origem = data.origem || "site";
+    const mensagem = `${data.servico ? `[${data.servico}] ` : ""}${data.mensagem || ""}`;
 
-    // Save to DB — Contato + Lead (para o painel admin contar corretamente)
-    const [contato] = await Promise.all([
-      prisma.contato.create({
-        data: {
-          nome: data.nome,
-          email: data.email,
-          telefone: data.telefone || "",
-          origem: "site",
-          status: "novo",
-          mensagem: `${data.servico ? `[${data.servico}] ` : ""}${data.mensagem || ""}`,
-        },
-      }),
-      prisma.lead.create({
-        data: {
-          nome: data.nome,
-          email: data.email,
-          telefone: data.telefone || "",
-          origem: "site",
-          status: "novo",
-          mensagem: `${data.servico ? `[${data.servico}] ` : ""}${data.mensagem || ""}`,
-        },
-      }),
-    ]);
+    const contato = await prisma.contato.create({
+      data: {
+        nome: data.nome,
+        email: data.email,
+        telefone: data.telefone || "",
+        origem,
+        status: "novo",
+        mensagem,
+      },
+    });
 
     // Email — usa FROM_EMAIL do env (onboarding@resend.dev ou dominio verificado)
     const fromAddress = process.env.FROM_EMAIL || "IRPF NSB <onboarding@resend.dev>";
@@ -143,7 +133,7 @@ export async function POST(request: Request) {
       nome: data.nome,
       email: data.email,
       telefone: data.telefone,
-      origem: "site",
+      origem,
       servico: data.servico,
       mensagem: data.mensagem,
     });

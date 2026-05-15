@@ -3,23 +3,10 @@
 import { useState } from "react";
 import ModalDetalheMensagem from "@/components/admin/ModalDetalheMensagem";
 import { buildWhatsAppLink } from "@/lib/whatsapp-link";
-
-type KanbanItem = {
-  itemType: "lead" | "contato";
-  id: string;
-  nome: string;
-  email: string;
-  telefone?: string | null;
-  tipoDecl?: string | null;
-  assunto?: string | null;
-  origem: string;
-  status: string;
-  createdAt: string;
-  mensagem: string;
-};
+import type { AdminPipelineItem } from "@/lib/admin-pipeline-types";
 
 interface KanbanViewProps {
-  items: KanbanItem[];
+  items: AdminPipelineItem[];
   onStatusUpdate?: (itemId: string, newStatus: string) => void;
   isUpdating?: boolean;
 }
@@ -88,7 +75,7 @@ function KanbanCard({
   onDragStart,
   onDragEnd,
 }: {
-  item: KanbanItem;
+  item: AdminPipelineItem;
   onStatusUpdate?: (id: string, status: string) => void;
   isUpdating?: boolean;
   isDragged: boolean;
@@ -99,11 +86,16 @@ function KanbanCard({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const otherCols = COLUMNS.filter((c) => c.key !== item.status);
-  const servico = item.tipoDecl || item.assunto || "Consultoria IRPF";
+  const servico = item.servicos[0] || item.tipoDecl || item.servico || item.assunto || "Consultoria IRPF";
   const waLink = item.telefone
     ? buildWhatsAppLink(item.telefone, item.nome, servico, item.origem)
     : "";
   const isLead = item.itemType === "lead";
+  const typeLabel = item.sourceTypes.length > 1
+    ? "Lead + Ctto"
+    : isLead
+    ? "Lead"
+    : "Ctto";
 
   return (
     <>
@@ -115,18 +107,23 @@ function KanbanCard({
         }}
         onDragEnd={onDragEnd}
         className={`
-          relative bg-[#141414] border border-white/10 cursor-grab active:cursor-grabbing
-          hover:border-white/30 hover:shadow-lg hover:shadow-black/40 transition-all duration-150
+          relative bg-[#121212] border border-white/8 cursor-grab active:cursor-grabbing
+          hover:border-white/20 transition-all duration-150
           ${isDragged ? "opacity-40 scale-[0.97]" : ""}
         `}
       >
         {/* Type accent bar */}
         <div className={`h-[3px] ${isLead ? "bg-[#C6FF00]" : "bg-blue-400"}`} />
 
-        <div className="p-4 space-y-3">
+        <div className="p-3 space-y-2.5">
           {/* Header: name + type badge */}
           <div className="flex items-start justify-between gap-2">
-            <p className="font-semibold text-sm leading-tight">{item.nome}</p>
+            <div className="min-w-0">
+              <p className="font-semibold text-[13px] leading-tight">{item.nome}</p>
+              <p className="text-[10px] uppercase tracking-widest opacity-35 mt-1">
+                {item.registrationCount} cadastro{item.registrationCount > 1 ? "s" : ""} • {item.messageCount} mensagem{item.messageCount !== 1 ? "ens" : ""}
+              </p>
+            </div>
             <span
               className={`shrink-0 text-[9px] uppercase tracking-widest px-1.5 py-0.5 border ${
                 isLead
@@ -134,12 +131,12 @@ function KanbanCard({
                   : "border-blue-400/40 text-blue-400"
               }`}
             >
-              {isLead ? "Lead" : "Ctto"}
+              {typeLabel}
             </span>
           </div>
 
           {/* Contact info */}
-          <div className="space-y-0.5 text-xs opacity-60">
+          <div className="space-y-0.5 text-[11px] opacity-60">
             <p className="truncate">{item.email}</p>
             {item.telefone && (
               <a
@@ -154,43 +151,43 @@ function KanbanCard({
 
           {/* Service + origin tags */}
           <div className="flex flex-wrap gap-1.5">
-            <span className="text-[10px] px-2 py-0.5 bg-white/8 border border-white/10 text-white/50 truncate max-w-[120px]">
+            <span className="text-[9px] px-2 py-0.5 bg-white/8 border border-white/10 text-white/50 truncate max-w-[120px]">
               {servico}
             </span>
-            <span className="text-[10px] px-2 py-0.5 bg-white/8 border border-white/10 text-white/40">
-              {item.origem}
+            <span className="text-[9px] px-2 py-0.5 bg-white/8 border border-white/10 text-white/40 max-w-[118px] truncate">
+              {item.origens.join(" • ") || item.origem}
             </span>
           </div>
 
           {/* Message preview */}
           {item.mensagem && (
-            <p className="text-[11px] opacity-40 line-clamp-2 leading-relaxed">
+            <p className="text-[10px] opacity-40 line-clamp-2 leading-relaxed">
               {item.mensagem}
             </p>
           )}
 
           {/* Date */}
-          <div className="text-[10px] opacity-30 flex items-center justify-between pt-1 border-t border-white/5">
-            <span>{formatDate(item.createdAt)}</span>
-            <span>{timeAgo(item.createdAt)}</span>
+          <div className="text-[9px] opacity-30 flex items-center justify-between pt-1 border-t border-white/5">
+            <span>{formatDate(item.createdAt.toString())}</span>
+            <span>{timeAgo(item.createdAt.toString())}</span>
           </div>
 
           {/* Actions — always visible */}
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap gap-1.5 pt-1">
             {waLink && (
               <a
                 href={waLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="flex-1 text-center py-2 text-[10px] uppercase tracking-widest bg-[#25D366]/15 border border-[#25D366]/40 text-[#25D366] hover:bg-[#25D366]/25 transition-colors"
+                className="flex-1 text-center py-1.5 text-[9px] uppercase tracking-widest bg-[#25D366]/15 border border-[#25D366]/40 text-[#25D366] hover:bg-[#25D366]/25 transition-colors"
               >
                 WhatsApp
               </a>
             )}
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex-1 py-2 text-[10px] uppercase tracking-widest bg-white/8 border border-white/15 text-white/70 hover:text-white hover:bg-white/15 transition-colors"
+              className="flex-1 py-1.5 text-[9px] uppercase tracking-widest bg-white/8 border border-white/15 text-white/70 hover:text-white hover:bg-white/15 transition-colors"
             >
               Detalhes
             </button>
@@ -200,7 +197,7 @@ function KanbanCard({
               <button
                 onClick={() => setIsMenuOpen((p) => !p)}
                 disabled={isUpdating}
-                className="w-full py-2 text-[10px] uppercase tracking-widest bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-40"
+                className="w-full py-1.5 text-[9px] uppercase tracking-widest bg-white/5 border border-white/10 text-white/50 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-40"
               >
                 Mover para →
               </button>
@@ -250,7 +247,7 @@ function KanbanColumn({
   onDragEnd,
 }: {
   col: (typeof COLUMNS)[number];
-  items: KanbanItem[];
+  items: AdminPipelineItem[];
   isDragOver: boolean;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: () => void;
@@ -267,13 +264,13 @@ function KanbanColumn({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       className={`
-        flex-none w-[272px] flex flex-col border-t-2 ${col.borderColor}
+        flex-none w-[248px] flex flex-col border-t-2 ${col.borderColor}
         transition-colors duration-150
         ${isDragOver ? col.activeBg + " ring-1 ring-white/20 ring-inset" : "bg-[#0D0D0D]"}
       `}
     >
       {/* Column header */}
-      <div className="flex items-center gap-2 px-3 py-3 border-b border-white/5">
+      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/5 sticky top-0 bg-[#0D0D0D] z-10">
         <span className={`w-2.5 h-2.5 rounded-full ${col.dot}`} />
         <span className="text-[11px] uppercase tracking-widest font-bold text-white/80 flex-1">
           {col.label}
@@ -285,7 +282,7 @@ function KanbanColumn({
 
       {/* Cards */}
       <div
-        className="flex-1 overflow-y-auto p-2 space-y-2"
+        className="flex-1 overflow-y-auto p-2 space-y-1.5"
         style={{ maxHeight: "calc(100vh - 340px)", minHeight: "120px" }}
       >
         {items.length === 0 ? (
@@ -381,7 +378,7 @@ export default function KanbanView({ items, onStatusUpdate, isUpdating }: Kanban
       </div>
 
       {/* Desktop: all columns */}
-      <div className="hidden md:flex gap-3 overflow-x-auto pb-4" style={{ minHeight: "480px" }}>
+      <div className="hidden md:flex gap-2.5 overflow-x-auto pb-4" style={{ minHeight: "480px" }}>
         {COLUMNS.map((col) => (
           <KanbanColumn
             key={col.key}

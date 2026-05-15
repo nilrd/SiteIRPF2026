@@ -4,8 +4,66 @@ import { prisma } from "@/lib/prisma";
 
 const ALLOWED_STATUS = ["novo", "em_contato", "convertido", "perdido"] as const;
 const ALLOWED_TIPO = ["lead", "contato", "todos"] as const;
+const STATUS_PRIORITY = {
+  convertido: 4,
+  em_contato: 3,
+  novo: 2,
+  perdido: 1,
+} as const;
 
 type AllowedTipo = (typeof ALLOWED_TIPO)[number];
+type PipelineSourceItem = {
+  itemType: "lead" | "contato";
+  id: string;
+  nome: string;
+  email: string;
+  telefone?: string | null;
+  tipoDecl?: string | null;
+  servico?: string | null;
+  assunto?: string | null;
+  origem: string;
+  status: string;
+  createdAt: Date;
+  mensagem?: string | null;
+  sortDate: Date;
+};
+
+type PipelineGroupItem = {
+  id: string;
+  itemType: "lead" | "contato";
+  latestSourceId: string;
+  latestSourceType: "lead" | "contato";
+  nome: string;
+  email: string;
+  telefone?: string | null;
+  tipoDecl?: string | null;
+  servico?: string | null;
+  assunto?: string | null;
+  origem: string;
+  status: string;
+  createdAt: Date;
+  mensagem: string;
+  sourceTypes: Array<"lead" | "contato">;
+  origens: string[];
+  servicos: string[];
+  registrationCount: number;
+  messageCount: number;
+  hasDuplicate: boolean;
+  relatedItems: Array<{
+    id: string;
+    itemType: "lead" | "contato";
+    nome: string;
+    email: string;
+    telefone?: string | null;
+    tipoDecl?: string | null;
+    servico?: string | null;
+    assunto?: string | null;
+    origem: string;
+    status: string;
+    createdAt: Date;
+    mensagem: string;
+  }>;
+};
 
 function parsePositiveInt(value: string | null, fallback: number) {
   const parsed = Number.parseInt(value ?? "", 10);
@@ -19,6 +77,156 @@ function isAllowedStatus(value: string): value is (typeof ALLOWED_STATUS)[number
 
 function isAllowedTipo(value: string): value is AllowedTipo {
   return (ALLOWED_TIPO as readonly string[]).includes(value);
+}
+
+function normalizeEmail(email?: string | null) {
+  return email?.trim().toLowerCase() ?? "";
+}
+
+function normalizePhone(phone?: string | null) {
+  return phone?.replace(/\D/g, "") ?? "";
+}
+
+function getGroupingKey(item: PipelineSourceItem) {
+  const email = normalizeEmail(item.email);
+  const phone = normalizePhone(item.telefone);
+
+  if (email && phone) return `${email}::${phone}`;
+  if (email) return `email::${email}`;
+  if (phone) return `phone::${phone}`;
+
+  return `single::${item.itemType}::${item.id}`;
+}
+
+function getServiceLabel(item: PipelineSourceItem) {
+  if (item.itemType === "lead") {
+    return item.tipoDecl?.trim() || item.servico?.trim() || null;
+  }
+
+  return item.assunto?.trim() || null;
+}
+
+function getGroupedStatus(items: PipelineGroupItem["relatedItems"]) {
+  return [...items]
+    .sort((a, b) => {
+      const priorityDiff =
+        (STATUS_PRIORITY[b.status as keyof typeof STATUS_PRIORITY] ?? 0) -
+        (STATUS_PRIORITY[a.status as keyof typeof STATUS_PRIORITY] ?? 0);
+
+      if (priorityDiff !== 0) return priorityDiff;
+
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    })[0]?.status ?? "novo";
+}
+
+function groupPipelineItems(items: PipelineSourceItem[]) {
+  const groups = new Map<string, PipelineGroupItem>();
+
+  for (const item of items) {
+    const groupKey = getGroupingKey(item);
+    const serviceLabel = getServiceLabel(item);
+    const message = item.mensagem?.trim() || "";
+    const existing = groups.get(groupKey);
+
+    if (!existing) {
+      groups.set(groupKey, {
+        id: groupKey,
+        itemType: item.itemType,
+        latestSourceId: item.id,
+        latestSourceType: item.itemType,
+        nome: item.nome,
+        email: item.email,
+        telefone: item.telefone,
+        tipoDecl: item.tipoDecl,
+        servico: item.servico,
+        assunto: item.assunto,
+        origem: item.origem,
+        status: item.status,
+        createdAt: item.createdAt,
+        mensagem: message,
+        sourceTypes: [item.itemType],
+        origens: item.origem ? [item.origem] : [],
+        servicos: serviceLabel ? [serviceLabel] : [],
+        registrationCount: 1,
+        messageCount: message ? 1 : 0,
+        hasDuplicate: false,
+        relatedItems: [
+          {
+            id: item.id,
+            itemType: item.itemType,
+            nome: item.nome,
+            email: item.email,
+            telefone: item.telefone,
+            tipoDecl: item.tipoDecl,
+            servico: item.servico,
+            assunto: item.assunto,
+            origem: item.origem,
+            status: item.status,
+            createdAt: item.createdAt,
+            mensagem: message,
+          },
+        ],
+      });
+      continue;
+    }
+
+    existing.relatedItems.push({
+      id: item.id,
+      itemType: item.itemType,
+      nome: item.nome,
+      email: item.email,
+      telefone: item.telefone,
+      tipoDecl: item.tipoDecl,
+      servico: item.servico,
+      assunto: item.assunto,
+      origem: item.origem,
+      status: item.status,
+      createdAt: item.createdAt,
+      mensagem: message,
+    });
+    existing.registrationCount += 1;
+    existing.messageCount += message ? 1 : 0;
+    existing.hasDuplicate = existing.registrationCount > 1;
+
+    if (!existing.sourceTypes.includes(item.itemType)) {
+      existing.sourceTypes.push(item.itemType);
+    }
+
+    if (item.origem && !existing.origens.includes(item.origem)) {
+      existing.origens.push(item.origem);
+    }
+
+    if (serviceLabel && !existing.servicos.includes(serviceLabel)) {
+      existing.servicos.push(serviceLabel);
+    }
+  }
+
+  return Array.from(groups.values())
+    .map((group) => {
+      const relatedItems = [...group.relatedItems].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      const latest = relatedItems[0];
+
+      return {
+        ...group,
+        itemType: latest?.itemType ?? group.itemType,
+        latestSourceId: latest?.id ?? group.latestSourceId,
+        latestSourceType: latest?.itemType ?? group.latestSourceType,
+        nome: latest?.nome ?? group.nome,
+        email: latest?.email ?? group.email,
+        telefone: latest?.telefone ?? group.telefone,
+        tipoDecl: latest?.tipoDecl ?? group.tipoDecl,
+        servico: latest?.servico ?? group.servico,
+        assunto: latest?.assunto ?? group.assunto,
+        origem: latest?.origem ?? group.origem,
+        createdAt: latest?.createdAt ?? group.createdAt,
+        mensagem: latest?.mensagem ?? group.mensagem,
+        status: getGroupedStatus(relatedItems),
+        relatedItems,
+      };
+    })
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 export async function GET(request: NextRequest) {
@@ -102,69 +310,30 @@ export async function GET(request: NextRequest) {
       nao_lidos: naoLidos,
     };
 
-    if (tipo === "lead") {
-      const [total, leads] = await Promise.all([
-        prisma.lead.count({ where: leadWhere }),
-        prisma.lead.findMany({
-          where: leadWhere,
-          orderBy: { createdAt: "desc" },
-          skip,
-          take: perPage,
-        }),
-      ]);
-
-      return NextResponse.json({
-        items: leads.map((lead) => ({ ...lead, itemType: "lead" as const })),
-        pagination: { page, perPage, total, totalPages: Math.max(1, Math.ceil(total / perPage)) },
-        counters,
-      });
-    }
-
-    if (tipo === "contato") {
-      const [total, contatos] = await Promise.all([
-        prisma.contato.count({ where: contatoWhere }),
-        prisma.contato.findMany({
-          where: contatoWhere,
-          orderBy: { createdAt: "desc" },
-          skip,
-          take: perPage,
-        }),
-      ]);
-
-      return NextResponse.json({
-        items: contatos.map((contato) => ({ ...contato, itemType: "contato" as const })),
-        pagination: { page, perPage, total, totalPages: Math.max(1, Math.ceil(total / perPage)) },
-        counters,
-      });
-    }
-
     const [leads, contatos] = await Promise.all([
-      prisma.lead.findMany({ where: leadWhere, orderBy: { createdAt: "desc" }, take: 500 }),
-      prisma.contato.findMany({ where: contatoWhere, orderBy: { createdAt: "desc" }, take: 500 }),
+      tipo === "contato"
+        ? Promise.resolve([])
+        : prisma.lead.findMany({ where: leadWhere, orderBy: { createdAt: "desc" } }),
+      tipo === "lead"
+        ? Promise.resolve([])
+        : prisma.contato.findMany({ where: contatoWhere, orderBy: { createdAt: "desc" } }),
     ]);
 
-    const allSorted = [
-      ...leads.map((lead) => ({ ...lead, itemType: "lead" as const, sortDate: lead.createdAt })),
-      ...contatos.map((contato) => ({ ...contato, itemType: "contato" as const, sortDate: contato.createdAt })),
-    ].sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
+    const groupedItems = groupPipelineItems([
+      ...leads.map((lead) => ({
+        ...lead,
+        itemType: "lead" as const,
+        sortDate: lead.createdAt,
+      })),
+      ...contatos.map((contato) => ({
+        ...contato,
+        itemType: "contato" as const,
+        sortDate: contato.createdAt,
+      })),
+    ]);
 
-    // Deduplicate: same email + normalized phone → keep most recent only
-    const seenKeys = new Set<string>();
-    const dedupedAll = allSorted.filter((item) => {
-      const phone = (item.telefone ?? "").replace(/\D/g, "");
-      const key = phone
-        ? `${item.email.toLowerCase()}::${phone}`
-        : `__unique__${item.id}`;
-      if (seenKeys.has(key)) return false;
-      seenKeys.add(key);
-      return true;
-    });
-
-    const total = dedupedAll.length;
-    const merged = dedupedAll
-      .slice(skip, skip + perPage)
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      .map(({ sortDate, ...item }) => item);
+    const total = groupedItems.length;
+    const merged = groupedItems.slice(skip, skip + perPage);
 
     return NextResponse.json({
       items: merged,

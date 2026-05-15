@@ -1437,7 +1437,7 @@ export async function saveBlogPost(
       coverImage: post.coverImage,
       imageAttribution: post.imageAttribution ?? null,
       imageAlt: post.imageAlt ?? post.title,
-      published: true, // posts sempre publicados direto (sem revisão manual)
+      published: post.reviewApproved,
       reviewJson: post.reviewJson ?? "",
       aiModel: post.aiModel ?? "",
       categoria,

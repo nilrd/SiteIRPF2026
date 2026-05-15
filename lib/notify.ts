@@ -134,3 +134,7 @@ export async function notifyNewContato(contato: NotifyEntity) {
   const message = formatLeadMessage(contato, "contato");
   return notifyChannels(message);
 }
+
+export async function notifySystemAlert(message: string) {
+  return notifyChannels(message);
+}

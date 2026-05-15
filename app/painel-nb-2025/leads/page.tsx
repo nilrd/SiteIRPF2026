@@ -8,26 +8,7 @@ import LeadsActions from "./LeadsActions";
 import LeadsFilters, { FiltersState } from "@/components/admin/LeadsFilters";
 import LeadsTableRow from "@/components/admin/LeadsTableRow";
 import KanbanView from "@/components/admin/KanbanView";
-
-type PipelineItem = {
-  itemType: "lead" | "contato";
-  id: string;
-  nome: string;
-  email: string;
-  telefone?: string | null;
-  tipoDecl?: string | null;
-  assunto?: string | null;
-  origem: string;
-  status: string;
-  createdAt: string;
-  mensagem: string;
-};
-
-type PipelineResponse = {
-  items: PipelineItem[];
-  pagination: { page: number; perPage: number; total: number; totalPages: number };
-  counters: { novos: number; em_contato: number; convertidos: number; perdidos: number; nao_lidos: number };
-};
+import type { AdminPipelineItem, AdminPipelineResponse } from "@/lib/admin-pipeline-types";
 
 export default function LeadsPage() {
   const { data: session, status } = useSession();
@@ -43,7 +24,7 @@ export default function LeadsPage() {
   });
 
   const [data, setData] = useState<{
-    items: PipelineItem[];
+    items: AdminPipelineItem[];
     pagination: { page: number; perPage: number; total: number; totalPages: number };
     counters: { novos: number; em_contato: number; convertidos: number; perdidos: number; nao_lidos: number };
   } | null>(null);
@@ -83,7 +64,7 @@ export default function LeadsPage() {
         throw new Error(`Erro ao carregar pipeline: ${response.statusText}`);
       }
 
-      const result = (await response.json()) as PipelineResponse;
+      const result = (await response.json()) as AdminPipelineResponse;
       setData(result);
       setFilters(filtersToUse);
     } catch (err) {
@@ -114,7 +95,11 @@ export default function LeadsPage() {
   // Handle delete
   const handleDelete = async (itemId: string, itemType: "lead" | "contato") => {
     try {
-      const res = await fetch(`/api/admin/leads/${itemId}?tipo=${itemType}`, {
+      const item = data?.items.find((itemCandidate) => itemCandidate.id === itemId);
+      const targetId = item?.latestSourceId || itemId;
+      const targetType = item?.latestSourceType || itemType;
+
+      const res = await fetch(`/api/admin/leads/${targetId}?tipo=${targetType}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Falha ao excluir");
@@ -132,15 +117,16 @@ export default function LeadsPage() {
       const item = data?.items.find((itemCandidate) => itemCandidate.id === itemId);
       if (!item) return;
 
-      const endpoint =
-        item.itemType === "lead"
-          ? `/api/admin/leads/${itemId}/status`
-          : `/api/admin/leads/contatos/${itemId}/status`;
-
-      const response = await fetch(endpoint, {
+      const response = await fetch(`/api/admin/leads/group-status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({
+          status: newStatus,
+          relatedItems: item.relatedItems.map((relatedItem) => ({
+            id: relatedItem.id,
+            itemType: relatedItem.itemType,
+          })),
+        }),
       });
 
       if (!response.ok) {
@@ -316,7 +302,7 @@ export default function LeadsPage() {
               {data?.items && data.items.length > 0 ? (
                 data.items.map((item) => {
                   const isLead = item.itemType === "lead";
-                  const servico = item.tipoDecl || item.assunto || "—";
+                  const servico = item.servicos[0] || item.tipoDecl || item.assunto || "—";
                   const statusColors: Record<string, string> = {
                     novo: "text-white bg-white/10",
                     em_contato: "text-yellow-300 bg-yellow-500/15",
@@ -329,6 +315,9 @@ export default function LeadsPage() {
                         <div className="min-w-0">
                           <p className="font-semibold text-sm">{item.nome}</p>
                           <p className="text-xs opacity-50 truncate">{item.email}</p>
+                          <p className="text-[10px] uppercase tracking-widest opacity-35 mt-1">
+                            {item.registrationCount} cadastro{item.registrationCount > 1 ? "s" : ""} • {item.messageCount} mensagem{item.messageCount !== 1 ? "ens" : ""}
+                          </p>
                         </div>
                         <div className="flex flex-col items-end gap-1 shrink-0">
                           <span className={`text-[9px] uppercase tracking-widest px-2 py-0.5 ${statusColors[item.status] || "bg-white/10 text-white"}`}>
@@ -346,7 +335,9 @@ export default function LeadsPage() {
                           </a>
                         )}
                         <p className="truncate">{servico}</p>
-                        <p className="opacity-70">{item.origem} · {new Date(item.createdAt).toLocaleDateString("pt-BR")}</p>
+                        <p className="opacity-70">
+                          {item.origens.join(" • ") || item.origem} · {new Date(item.createdAt).toLocaleDateString("pt-BR")}
+                        </p>
                       </div>
                       {item.mensagem && (
                         <p className="text-[11px] opacity-30 line-clamp-2">{item.mensagem}</p>

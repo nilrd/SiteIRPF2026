@@ -11,8 +11,27 @@ interface ModalDetalheMensagemProps {
     telefone?: string | null;
     mensagem?: string | null;
     origem?: string | null;
+    origens?: string[];
     tipoDecl?: string | null;
     assunto?: string | null;
+    servicos?: string[];
+    sourceTypes?: Array<"lead" | "contato">;
+    registrationCount?: number;
+    messageCount?: number;
+    relatedItems?: Array<{
+      id: string;
+      itemType: "lead" | "contato";
+      nome: string;
+      email: string;
+      telefone?: string | null;
+      tipoDecl?: string | null;
+      servico?: string | null;
+      assunto?: string | null;
+      origem: string;
+      status: string;
+      createdAt: string | Date;
+      mensagem: string;
+    }>;
     status?: string | null;
     createdAt?: string | Date | null;
     itemType: "lead" | "contato";
@@ -27,6 +46,7 @@ export default function ModalDetalheMensagem({ isOpen, onClose, item }: ModalDet
   const telefone = item.telefone || "";
   const whatsappLink = telefone ? buildWhatsAppLink(telefone, item.nome, servico, origem) : "";
   const suggestedMessage = formatWhatsAppMessage(telefone, item.nome, servico, origem);
+  const hasHistory = (item.relatedItems?.length ?? 0) > 1;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
@@ -86,13 +106,31 @@ export default function ModalDetalheMensagem({ isOpen, onClose, item }: ModalDet
             {item.origem && (
               <div>
                 <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Origem</p>
-                <p className="text-sm opacity-80">{item.origem}</p>
+                <p className="text-sm opacity-80">{item.origens?.join(" • ") || item.origem}</p>
               </div>
             )}
             {item.status && (
               <div>
                 <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Status</p>
                 <p className="text-sm opacity-80">{item.status}</p>
+              </div>
+            )}
+            {!!item.registrationCount && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Cadastros vinculados</p>
+                <p className="text-sm opacity-80">{item.registrationCount}</p>
+              </div>
+            )}
+            {!!item.messageCount && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Mensagens</p>
+                <p className="text-sm opacity-80">{item.messageCount}</p>
+              </div>
+            )}
+            {!!item.servicos?.length && (
+              <div className="sm:col-span-2">
+                <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Serviços / assuntos</p>
+                <p className="text-sm opacity-80">{item.servicos.join(" • ")}</p>
               </div>
             )}
             {item.createdAt && (
@@ -114,6 +152,44 @@ export default function ModalDetalheMensagem({ isOpen, onClose, item }: ModalDet
               {item.mensagem || "Sem mensagem"}
             </div>
           </div>
+
+          {hasHistory && (
+            <div>
+              <p className="text-[10px] uppercase tracking-widest opacity-50 mb-2">Linha do tempo de cadastros</p>
+              <div className="space-y-3">
+                {item.relatedItems?.map((relatedItem) => {
+                  const label = relatedItem.itemType === "lead"
+                    ? relatedItem.tipoDecl || relatedItem.servico || "Lead"
+                    : relatedItem.assunto || "Contato";
+
+                  return (
+                    <div key={`${relatedItem.itemType}-${relatedItem.id}`} className="border border-white/10 bg-white/5 p-4">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div>
+                          <p className="text-sm font-semibold">{label}</p>
+                          <p className="text-[10px] uppercase tracking-widest opacity-40 mt-1">
+                            {relatedItem.itemType} • {relatedItem.origem} • {new Date(relatedItem.createdAt).toLocaleString("pt-BR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                        <span className="text-[10px] uppercase tracking-widest px-2 py-1 border border-white/10 text-white/60">
+                          {relatedItem.status}
+                        </span>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap text-white/80">
+                        {relatedItem.mensagem || "Sem mensagem registrada"}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div>
             <p className="text-[10px] uppercase tracking-widest opacity-50 mb-2">Sugestao WhatsApp</p>

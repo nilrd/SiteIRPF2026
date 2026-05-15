@@ -561,7 +561,7 @@ export async function saveMeiBlogPost(post: Awaited<ReturnType<typeof generateMe
       coverImage: post.coverImage ?? null,
       imageAlt: post.imageAlt ?? post.title,
       imageAttribution: post.imageAttribution ?? null,
-      published: true, // posts sempre publicados direto (sem revisão manual)
+      published: post.reviewApproved,
       reviewJson: post.reviewJson ?? "",
       aiModel: post.aiModel ?? "",
       categoria: post.categoria,

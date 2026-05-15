@@ -21,8 +21,46 @@ type Post = {
   categoria: string;
 };
 
+type AutomationRun = {
+  id: string;
+  automationKey: string;
+  trigger: string;
+  status: string;
+  startedAt: string;
+  finishedAt: string | null;
+  durationMs: number | null;
+  generatedCount: number;
+  publishedCount: number;
+  retainedCount: number;
+  errorCount: number;
+  metadataJson: string;
+};
+
+type AutomationStats = {
+  postsToday: number;
+  publishedToday: number;
+  runs24h: number;
+  failures24h: number;
+  partials24h: number;
+  lastRunAt: string | null;
+  lastRunStatus: string | null;
+  lastRunKey: string | null;
+};
+
 const CATEGORIA_TABS = ["TODOS", "IRPF", "MEI", "DESENROLA", "GERAL"] as const;
 type CategoriaTab = typeof CATEGORIA_TABS[number];
+
+const AUTOMATION_LABELS: Record<string, string> = {
+  "blog-auto": "Blog IRPF",
+  "blog-mei": "Blog MEI",
+};
+
+const RUN_STATUS_STYLES: Record<string, string> = {
+  success: "bg-green-500/15 text-green-300 border border-green-500/20",
+  partial: "bg-yellow-500/15 text-yellow-300 border border-yellow-500/20",
+  failed: "bg-red-500/15 text-red-300 border border-red-500/20",
+  started: "bg-blue-500/15 text-blue-300 border border-blue-500/20",
+};
 
 const CATEGORIA_COLORS: Record<string, string> = {
   IRPF:      "bg-blue-500/20 text-blue-300",
@@ -31,9 +69,30 @@ const CATEGORIA_COLORS: Record<string, string> = {
   GERAL:     "bg-white/10 text-white/40",
 };
 
+function formatDateTime(value: string | null) {
+  if (!value) return "—";
+  return new Date(value).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function BlogAdminContent() {
   const searchParams = useSearchParams();
   const [posts, setPosts]           = useState<Post[]>([]);
+  const [automationRuns, setAutomationRuns] = useState<AutomationRun[]>([]);
+  const [automationStats, setAutomationStats] = useState<AutomationStats>({
+    postsToday: 0,
+    publishedToday: 0,
+    runs24h: 0,
+    failures24h: 0,
+    partials24h: 0,
+    lastRunAt: null,
+    lastRunStatus: null,
+    lastRunKey: null,
+  });
   const [loading, setLoading]       = useState(true);
   const [keyword, setKeyword]       = useState("");
   const [generating, setGenerating]         = useState(false);
@@ -54,6 +113,8 @@ function BlogAdminContent() {
       const res = await fetch("/api/admin/blog");
       const data = await res.json();
       if (data.posts) setPosts(data.posts);
+      if (data.automationRuns) setAutomationRuns(data.automationRuns);
+      if (data.automationStats) setAutomationStats(data.automationStats);
     } catch {
       // silently fail
     } finally {
@@ -152,6 +213,9 @@ function BlogAdminContent() {
   const filteredPosts = categoriaFilter === "TODOS"
     ? posts
     : posts.filter((p) => (p.categoria || "IRPF") === categoriaFilter);
+  const lastRunLabel = automationStats.lastRunKey
+    ? AUTOMATION_LABELS[automationStats.lastRunKey] || automationStats.lastRunKey
+    : "Sem execucao";
 
   return (
     <div className="flex min-h-screen">
@@ -218,11 +282,84 @@ function BlogAdminContent() {
             <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20">
               <p className="text-sm">Post criado: <strong>{genResult.title}</strong></p>
               <p className="text-xs opacity-60 mt-1">
-                Ja foi publicado automaticamente no site e aparece na lista abaixo.
+                O resultado ja aparece na lista abaixo, publicado ou retido para revisao conforme a checagem automatica.
               </p>
             </div>
           )}
         </div>
+
+        <section className="border border-white/10 p-6 mb-10 space-y-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="font-serif text-xl">Monitoramento do Auto Post</h2>
+              <p className="text-sm text-white/45 mt-1">
+                Historico recente dos crons do blog, com contagem, retencao e falhas.
+              </p>
+            </div>
+            <div className="text-[11px] uppercase tracking-widest text-white/40">
+              Ultima execucao: {lastRunLabel} • {formatDateTime(automationStats.lastRunAt)}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Posts hoje</p>
+              <p className="text-3xl font-serif">{automationStats.postsToday}</p>
+            </div>
+            <div className="border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Publicados hoje</p>
+              <p className="text-3xl font-serif">{automationStats.publishedToday}</p>
+            </div>
+            <div className="border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Execucoes 24h</p>
+              <p className="text-3xl font-serif">{automationStats.runs24h}</p>
+            </div>
+            <div className="border border-white/10 bg-white/[0.03] p-4">
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Alertas 24h</p>
+              <p className="text-3xl font-serif">{automationStats.failures24h + automationStats.partials24h}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {automationRuns.length === 0 ? (
+              <div className="border border-dashed border-white/10 p-5 text-sm text-white/35">
+                Nenhuma execucao automatica registrada ainda.
+              </div>
+            ) : (
+              automationRuns.map((run) => (
+                <div
+                  key={run.id}
+                  className="border border-white/10 bg-[#0E0E0E] px-4 py-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                >
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold">
+                        {AUTOMATION_LABELS[run.automationKey] || run.automationKey}
+                      </span>
+                      <span className={`text-[10px] uppercase tracking-widest px-2 py-1 ${RUN_STATUS_STYLES[run.status] || "bg-white/10 text-white/50 border border-white/10"}`}>
+                        {run.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-white/45">
+                      Inicio: {formatDateTime(run.startedAt)} • Fim: {formatDateTime(run.finishedAt)}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px] uppercase tracking-widest text-white/55 md:min-w-[480px]">
+                    <span>Gerados {run.generatedCount}</span>
+                    <span>Publicados {run.publishedCount}</span>
+                    <span>Retidos {run.retainedCount}</span>
+                    <span>Erros {run.errorCount}</span>
+                  </div>
+
+                  <div className="text-xs text-white/35 md:text-right">
+                    {run.durationMs ? `${Math.round(run.durationMs / 1000)}s` : "—"}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
 
         {/* Posts list */}
         <h2 className="font-serif text-xl mb-4">Posts ({posts.length})</h2>
@@ -368,7 +505,7 @@ function BlogAdminContent() {
                 ))}
                 {filteredPosts.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center opacity-40">
+                    <td colSpan={8} className="py-8 text-center opacity-40">
                       Nenhum post ainda — gere o primeiro acima
                     </td>
                   </tr>

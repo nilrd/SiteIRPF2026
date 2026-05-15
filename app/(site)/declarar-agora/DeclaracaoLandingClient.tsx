@@ -301,10 +301,14 @@ export default function DeclaracaoLandingClient() {
                 </div>
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest text-white/40 mb-2">
-                    WhatsApp
+                    WhatsApp *
                   </label>
                   <input
                     type="tel"
+                    required
+                    minLength={10}
+                    maxLength={20}
+                    pattern="[0-9\s()\-+]*"
                     value={form.telefone}
                     onChange={(e) => setForm((f) => ({ ...f, telefone: e.target.value }))}
                     placeholder="(11) 99999-9999"

@@ -140,10 +140,14 @@ export default function ContatoSection() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="flex flex-col">
-                  <label className="text-[9px] uppercase tracking-widest text-white/35 mb-2">Telefone / WhatsApp</label>
+                  <label className="text-[9px] uppercase tracking-widest text-white/35 mb-2">Telefone / WhatsApp *</label>
                   <input
                     type="tel"
                     name="telefone"
+                    required
+                    minLength={10}
+                    maxLength={20}
+                    pattern="[0-9\s()\-+]*"
                     className="bg-transparent border-b border-white/20 py-3 outline-none focus:border-[#C6FF00] transition text-white placeholder:text-white/20 text-sm"
                     placeholder="(11) 99999-9999"
                   />

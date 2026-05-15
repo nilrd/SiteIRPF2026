@@ -32,6 +32,7 @@ export default function ExitIntentModal() {
   const [visible, setVisible] = useState(false);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const pathname = usePathname();
@@ -79,7 +80,7 @@ export default function ExitIntentModal() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nome.trim() || !email.trim()) return;
+    if (!nome.trim() || !email.trim() || !telefone.trim()) return;
     setLoading(true);
     try {
       await fetch("/api/contato", {
@@ -88,6 +89,7 @@ export default function ExitIntentModal() {
         body: JSON.stringify({
           nome,
           email,
+          telefone,
           servico: "Declaracao IRPF",
           mensagem: "Contato via modal de saída",
           origem: "exit-intent",
@@ -178,6 +180,22 @@ export default function ExitIntentModal() {
                   autoComplete="email"
                   className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#C6FF00] transition"
                   placeholder="seu@email.com"
+                />
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-widest text-white/40 mb-1">
+                  WhatsApp *
+                </label>
+                <input
+                  type="tel"
+                  value={telefone}
+                  onChange={(e) => setTelefone(e.target.value)}
+                  required
+                  minLength={10}
+                  maxLength={20}
+                  autoComplete="tel"
+                  className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#C6FF00] transition"
+                  placeholder="(11) 99999-9999"
                 />
               </div>
               <button

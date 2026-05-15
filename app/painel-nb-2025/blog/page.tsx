@@ -45,6 +45,12 @@ type AutomationStats = {
   lastRunAt: string | null;
   lastRunStatus: string | null;
   lastRunKey: string | null;
+  trackedPosts: number;
+  aiPostsToday: number;
+  aiPosts24h: number;
+  estimatedFromPosts: boolean;
+  historicalAiPosts: number;
+  untrackedAiPosts: number;
 };
 
 const CATEGORIA_TABS = ["TODOS", "IRPF", "MEI", "DESENROLA", "GERAL"] as const;
@@ -92,6 +98,12 @@ function BlogAdminContent() {
     lastRunAt: null,
     lastRunStatus: null,
     lastRunKey: null,
+    trackedPosts: 0,
+    aiPostsToday: 0,
+    aiPosts24h: 0,
+    estimatedFromPosts: false,
+    historicalAiPosts: 0,
+    untrackedAiPosts: 0,
   });
   const [loading, setLoading]       = useState(true);
   const [keyword, setKeyword]       = useState("");
@@ -293,7 +305,7 @@ function BlogAdminContent() {
             <div>
               <h2 className="font-serif text-xl">Monitoramento do Auto Post</h2>
               <p className="text-sm text-white/45 mt-1">
-                Historico recente dos crons do blog, com contagem, retencao e falhas.
+                Historico recente dos crons do blog, com contagem, retencao, falhas e sinalizacao de posts por IA fora do rastreio.
               </p>
             </div>
             <div className="text-[11px] uppercase tracking-widest text-white/40">
@@ -319,6 +331,62 @@ function BlogAdminContent() {
               <p className="text-3xl font-serif">{automationStats.failures24h + automationStats.partials24h}</p>
             </div>
           </div>
+
+          {automationStats.estimatedFromPosts ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="border border-white/10 bg-white/[0.02] p-4">
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Posts IA hoje</p>
+                  <p className="text-2xl font-serif">{automationStats.aiPostsToday}</p>
+                </div>
+                <div className="border border-white/10 bg-white/[0.02] p-4">
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Posts IA 24h</p>
+                  <p className="text-2xl font-serif">{automationStats.aiPosts24h}</p>
+                </div>
+              </div>
+
+              <div className="border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-100/85">
+                <p>
+                  Ainda nao existem execucoes registradas em automation_runs. Enquanto isso, o painel usa os posts por IA gravados no banco como estimativa operacional.
+                </p>
+                <p className="mt-2">
+                  Ha {automationStats.historicalAiPosts} post(s) por IA sem historico de execucao. Isso normalmente acontece quando o monitoramento foi implantado depois que esses posts ja existiam.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="border border-white/10 bg-white/[0.02] p-4">
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Posts rastreados</p>
+                  <p className="text-2xl font-serif">{automationStats.trackedPosts}</p>
+                </div>
+                <div className="border border-white/10 bg-white/[0.02] p-4">
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">IA antes do monitor</p>
+                  <p className="text-2xl font-serif">{automationStats.historicalAiPosts}</p>
+                </div>
+                <div className="border border-white/10 bg-white/[0.02] p-4">
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">IA sem execucao</p>
+                  <p className="text-2xl font-serif">{automationStats.untrackedAiPosts}</p>
+                </div>
+              </div>
+
+              {(automationStats.historicalAiPosts > 0 || automationStats.untrackedAiPosts > 0) && (
+                <div className="border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-100/85">
+                  {automationStats.historicalAiPosts > 0 && (
+                    <p>
+                      {automationStats.historicalAiPosts} post(s) por IA ficaram fora do historico de execucoes porque foram criados antes do monitoramento atual.
+                    </p>
+                  )}
+                  {automationStats.untrackedAiPosts > 0 && (
+                    <p className="mt-2">
+                      {automationStats.untrackedAiPosts} post(s) por IA seguem sem execucao vinculada. Isso pode indicar geracao manual pelo painel ou alguma lacuna de rastreio a revisar.
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
 
           <div className="space-y-2">
             {automationRuns.length === 0 ? (

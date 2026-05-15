@@ -4,6 +4,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+function getTrackedPostIds(metadataJson: string) {
+  try {
+    const parsed = JSON.parse(metadataJson || "{}") as { results?: Array<{ id?: unknown }> };
+    const results = Array.isArray(parsed?.results) ? parsed.results : [];
+    return results
+      .map((item) => (typeof item?.id === "string" ? item.id : null))
+      .filter((value): value is string => Boolean(value));
+  } catch {
+    return [];
+  }
+}
+
 // GET /api/admin/blog — lista todos os posts
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +29,7 @@ export async function GET(request: NextRequest) {
     dayStart.setHours(0, 0, 0, 0);
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    const [posts, automationRuns, postsToday, publishedToday] = await prisma.$transaction([
+    const [posts, automationRuns, trackedRunMetadata, postsToday, publishedToday, firstTrackedRun] = await prisma.$transaction([
       prisma.blogPost.findMany({
         orderBy: { createdAt: "desc" },
         select: {
@@ -60,6 +72,27 @@ export async function GET(request: NextRequest) {
           metadataJson: true,
         },
       }),
+      prisma.automationRun.findMany({
+        where: {
+          automationKey: {
+            in: ["blog-auto", "blog-mei"],
+          },
+        },
+        select: {
+          metadataJson: true,
+        },
+      }),
+      prisma.automationRun.findFirst({
+        where: {
+          automationKey: {
+            in: ["blog-auto", "blog-mei"],
+          },
+        },
+        orderBy: { startedAt: "asc" },
+        select: {
+          startedAt: true,
+        },
+      }),
       prisma.blogPost.count({
         where: {
           createdAt: { gte: dayStart },
@@ -75,6 +108,20 @@ export async function GET(request: NextRequest) {
 
     const recent24hRuns = automationRuns.filter((run) => run.startedAt >= last24h);
     const lastRun = automationRuns[0] ?? null;
+  const trackedPostIds = new Set(trackedRunMetadata.flatMap((run) => getTrackedPostIds(run.metadataJson)));
+    const aiPostsWithoutTrackedRun = posts.filter(
+      (post) => Boolean(post.aiModel?.trim()) && !trackedPostIds.has(post.id)
+    );
+    const aiPostsToday = posts.filter((post) => Boolean(post.aiModel?.trim()) && post.createdAt >= dayStart).length;
+    const aiPosts24h = posts.filter((post) => Boolean(post.aiModel?.trim()) && post.createdAt >= last24h).length;
+    const historicalAiPosts = aiPostsWithoutTrackedRun.filter((post) => {
+      if (!firstTrackedRun?.startedAt) return true;
+      return post.createdAt < firstTrackedRun.startedAt;
+    });
+    const currentUntrackedAiPosts = aiPostsWithoutTrackedRun.filter((post) => {
+      if (!firstTrackedRun?.startedAt) return false;
+      return post.createdAt >= firstTrackedRun.startedAt;
+    });
 
     return NextResponse.json({
       posts,
@@ -88,6 +135,12 @@ export async function GET(request: NextRequest) {
         lastRunAt: lastRun?.startedAt ?? null,
         lastRunStatus: lastRun?.status ?? null,
         lastRunKey: lastRun?.automationKey ?? null,
+        trackedPosts: trackedPostIds.size,
+        aiPostsToday,
+        aiPosts24h,
+        estimatedFromPosts: automationRuns.length === 0,
+        historicalAiPosts: historicalAiPosts.length,
+        untrackedAiPosts: currentUntrackedAiPosts.length,
       },
     });
   } catch (err) {

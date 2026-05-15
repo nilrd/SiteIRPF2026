@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { buildAdminNotificationEmail, buildContactConfirmationEmail } from "@/lib/email-templates";
 import { resend } from "@/lib/resend";
 import { notifyNewContato } from "@/lib/notify";
 
@@ -62,6 +63,10 @@ export async function POST(request: Request) {
     const data = schema.parse(body);
     const origem = data.origem || "site";
     const mensagem = `${data.servico ? `[${data.servico}] ` : ""}${data.mensagem || ""}`;
+    const waNum = (data.telefone || "").replace(/\D/g, "");
+    const waLink = waNum
+      ? `https://wa.me/55${waNum}?text=${encodeURIComponent(`Olá ${data.nome}! Recebi seu contato pelo site e posso ajudar com seu IRPF.`)}`
+      : null;
 
     const contato = await prisma.contato.create({
       data: {
@@ -90,16 +95,16 @@ export async function POST(request: Request) {
       from: fromAddress,
       to: adminEmail,
       subject: `Novo contato via site — ${data.nome}`,
-      html: `
-        <h2>Novo contato pelo site</h2>
-        <p><strong>Nome:</strong> ${data.nome}</p>
-        <p><strong>Email:</strong> ${data.email}</p>
-        <p><strong>Telefone:</strong> ${data.telefone || "Nao informado"}</p>
-        <p><strong>Servico:</strong> ${data.servico || "Nao especificado"}</p>
-        <p><strong>Mensagem:</strong> ${data.mensagem || "Nenhuma"}</p>
-        <br>
-        <a href="https://wa.me/55${(data.telefone || "").replace(/\D/g, "")}">Abrir WhatsApp</a>
-      `,
+      html: buildAdminNotificationEmail({
+        kind: "contato",
+        nome: data.nome,
+        email: data.email,
+        telefone: data.telefone,
+        origem,
+        servico: data.servico,
+        mensagem: data.mensagem,
+        whatsappUrl: waLink,
+      }),
     });
     if (!adminEmailResult.success) {
       console.error("[contato] Falha ao enviar email admin:", adminEmailResult.error);
@@ -114,14 +119,10 @@ export async function POST(request: Request) {
       from: fromAddress,
       to: data.email,
       subject: "Recebemos seu contato — IRPF NSB",
-      html: `
-        <h2>Ola, ${data.nome}!</h2>
-        <p>Recebemos sua mensagem e entraremos em contato em ate 24 horas.</p>
-        <p>Se preferir atendimento imediato, fale conosco pelo WhatsApp:</p>
-        <a href="https://wa.me/5511940825120">Abrir WhatsApp</a>
-        <br><br>
-        <p>Consultoria IRPF NSB</p>
-      `,
+      html: buildContactConfirmationEmail({
+        nome: data.nome,
+        servico: data.servico,
+      }),
     });
     if (!userEmailResult.success) {
       console.error("[contato] Falha ao enviar email confirmacao:", userEmailResult.error);

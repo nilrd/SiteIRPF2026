@@ -119,6 +119,25 @@ function getGroupedStatus(items: PipelineGroupItem["relatedItems"]) {
     })[0]?.status ?? "novo";
 }
 
+function buildGroupedCounters(items: ReturnType<typeof groupPipelineItems>) {
+  return items.reduce(
+    (acc, item) => {
+      if (item.status === "novo") acc.novos += 1;
+      if (item.status === "em_contato") acc.em_contato += 1;
+      if (item.status === "convertido") acc.convertidos += 1;
+      if (item.status === "perdido") acc.perdidos += 1;
+      return acc;
+    },
+    {
+      novos: 0,
+      em_contato: 0,
+      convertidos: 0,
+      perdidos: 0,
+      nao_lidos: 0,
+    }
+  );
+}
+
 function groupPipelineItems(items: PipelineSourceItem[]) {
   const groups = new Map<string, PipelineGroupItem>();
 
@@ -286,30 +305,6 @@ export async function GET(request: NextRequest) {
         : {}),
     };
 
-    const [leadCounters, contatoCounters, naoLidos] = await Promise.all([
-      Promise.all([
-        prisma.lead.count({ where: { status: "novo" } }),
-        prisma.lead.count({ where: { status: "em_contato" } }),
-        prisma.lead.count({ where: { status: "convertido" } }),
-        prisma.lead.count({ where: { status: "perdido" } }),
-      ]),
-      Promise.all([
-          prisma.contato.count({ where: { status: "novo" } }),
-          prisma.contato.count({ where: { status: "em_contato" } }),
-          prisma.contato.count({ where: { status: "convertido" } }),
-          prisma.contato.count({ where: { status: "perdido" } }),
-      ]),
-      prisma.contato.count({ where: { lido: false } }),
-    ]);
-
-    const counters = {
-      novos: leadCounters[0] + contatoCounters[0],
-      em_contato: leadCounters[1] + contatoCounters[1],
-      convertidos: leadCounters[2] + contatoCounters[2],
-      perdidos: leadCounters[3] + contatoCounters[3],
-      nao_lidos: naoLidos,
-    };
-
     const [leads, contatos] = await Promise.all([
       tipo === "contato"
         ? Promise.resolve([])
@@ -318,6 +313,14 @@ export async function GET(request: NextRequest) {
         ? Promise.resolve([])
         : prisma.contato.findMany({ where: contatoWhere, orderBy: { createdAt: "desc" } }),
     ]);
+
+    const unreadContatoIds = contatos.filter((contato) => !contato.lido).map((contato) => contato.id);
+    if (unreadContatoIds.length > 0) {
+      await prisma.contato.updateMany({
+        where: { id: { in: unreadContatoIds }, lido: false },
+        data: { lido: true },
+      });
+    }
 
     const groupedItems = groupPipelineItems([
       ...leads.map((lead) => ({
@@ -331,6 +334,7 @@ export async function GET(request: NextRequest) {
         sortDate: contato.createdAt,
       })),
     ]);
+    const counters = buildGroupedCounters(groupedItems);
 
     const total = groupedItems.length;
     const merged = groupedItems.slice(skip, skip + perPage);

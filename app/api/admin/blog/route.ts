@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     dayStart.setHours(0, 0, 0, 0);
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    const [posts, automationRuns, trackedRunMetadata, postsToday, publishedToday, firstTrackedRun] = await prisma.$transaction([
+    const [posts, automationRuns, trackedRunMetadata, firstTrackedRun, postsToday, publishedToday] = await prisma.$transaction([
       prisma.blogPost.findMany({
         orderBy: { createdAt: "desc" },
         select: {

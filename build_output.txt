@@ -1,0 +1,124 @@
+
+> irpf-site@1.0.0 build
+> prisma migrate deploy && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "postgres", schema "public" at "aws-1-sa-east-1.pooler.supabase.com:5432"
+
+5 migrations found in prisma/migrations
+
+
+No pending migrations to apply.
+ ⚠ You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+  ▲ Next.js 14.2.35
+  - Environments: .env.local, .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/43) ...
+[admin/leads/pipeline GET] B [Error]: Dynamic server usage: Route /api/admin/leads/pipeline couldn't be rendered statically because it used `request.cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
+    at V (e:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:21778)
+    at Object.get (e:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:29465)
+    at f (e:\Meus Documentos Imp\IRPF-SITE\.next\server\chunks\330.js:1:97320)
+    at g (e:\Meus Documentos Imp\IRPF-SITE\.next\server\app\api\admin\leads\pipeline\route.js:1:1086)
+    at e:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\next-server\app-route.runtime.prod.js:6:38417
+    at e:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\server\lib\trace\tracer.js:140:36
+    at NoopContextManager.with (e:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:7062)
+    at ContextAPI.with (e:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:518)
+    at NoopTracer.startActiveSpan (e:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18093)
+    at ProxyTracer.startActiveSpan (e:\Meus Documentos Imp\IRPF-SITE\node_modules\next\dist\compiled\@opentelemetry\api\index.js:1:18854) {
+  description: "Route /api/admin/leads/pipeline couldn't be rendered statically because it used `request.cookies`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
+  digest: 'DYNAMIC_SERVER_USAGE'
+}
+   Generating static pages (10/43) 
+   Generating static pages (21/43) 
+   Generating static pages (32/43) 
+ ✓ Generating static pages (43/43)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                Size     First Load JS
+┌ ○ /                                      6.46 kB         159 kB
+├ ○ /_not-found                            147 B          87.5 kB
+├ ƒ /api/admin/analytics                   0 B                0 B
+├ ƒ /api/admin/blog                        0 B                0 B
+├ ƒ /api/admin/blog/[id]                   0 B                0 B
+├ ƒ /api/admin/blog/[id]/fix               0 B                0 B
+├ ƒ /api/admin/blog/generate-image         0 B                0 B
+├ ƒ /api/admin/campanhas                   0 B                0 B
+├ ƒ /api/admin/campanhas/history           0 B                0 B
+├ ƒ /api/admin/chat                        0 B                0 B
+├ ƒ /api/admin/generate-ad-image           0 B                0 B
+├ ƒ /api/admin/leads/[id]                  0 B                0 B
+├ ƒ /api/admin/leads/[id]/status           0 B                0 B
+├ ƒ /api/admin/leads/contatos/[id]/status  0 B                0 B
+├ ƒ /api/admin/leads/export                0 B                0 B
+├ ƒ /api/admin/leads/group-status          0 B                0 B
+├ ƒ /api/admin/leads/pipeline              0 B                0 B
+├ ƒ /api/admin/setup                       0 B                0 B
+├ ƒ /api/admin/site-analyzer               0 B                0 B
+├ ƒ /api/admin/site-analyzer/history       0 B                0 B
+├ ƒ /api/admin/site-analyzer/history/[id]  0 B                0 B
+├ ƒ /api/analytics/event                   0 B                0 B
+├ ƒ /api/auth/[...nextauth]                0 B                0 B
+├ ƒ /api/blog/generate                     0 B                0 B
+├ ƒ /api/calculadora                       0 B                0 B
+├ ƒ /api/chatbot                           0 B                0 B
+├ ƒ /api/chatbot/speak                     0 B                0 B
+├ ƒ /api/chatbot/transcribe                0 B                0 B
+├ ƒ /api/contato                           0 B                0 B
+├ ƒ /api/cron/blog-auto                    0 B                0 B
+├ ƒ /api/cron/blog-mei                     0 B                0 B
+├ ƒ /api/cron/email-sequence               0 B                0 B
+├ ƒ /api/ebook                             0 B                0 B
+├ ƒ /api/leads                             0 B                0 B
+├ ƒ /api/revalidate                        0 B                0 B
+├ ƒ /api/upload                            0 B                0 B
+├ ƒ /api/upload/sign                       0 B                0 B
+├ ƒ /blog                                  2.72 kB         104 kB
+├ ƒ /blog/[slug]                           3.03 kB         104 kB
+├ ƒ /blog/[slug]/opengraph-image-fx5gi7    0 B                0 B
+├ ○ /como-funciona                         2.76 kB         143 kB
+├ ○ /consulte-sem-medo                     196 B           144 kB
+├ ○ /contato                               2.29 kB         143 kB
+├ ○ /declarar-agora                        4.99 kB        92.3 kB
+├ ○ /desenrola-brasil                      196 B           144 kB
+├ ○ /ebook                                 147 B          87.5 kB
+├ ○ /ferramentas/calculadora-ir            310 B           138 kB
+├ ○ /ferramentas/consulta-situacao         304 B           136 kB
+├ ○ /ferramentas/simulador-multa           1.85 kB         137 kB
+├ ○ /mei                                   1.71 kB        97.7 kB
+├ ○ /mei/abertura-mei                      1.71 kB        97.7 kB
+├ ○ /mei/cancelamento-mei                  1.71 kB        97.7 kB
+├ ○ /mei/declaracao-anual                  1.71 kB        97.7 kB
+├ ○ /mei/dividas-parcelamento              1.71 kB        97.7 kB
+├ ○ /mei/mei-e-irpf                        1.71 kB        97.7 kB
+├ ○ /news-sitemap.xml                      0 B                0 B
+├ ○ /painel-nb-2025                        1.34 kB        98.3 kB
+├ ○ /painel-nb-2025/analisador             6.82 kB         113 kB
+├ ○ /painel-nb-2025/blog                   5.41 kB         111 kB
+├ ƒ /painel-nb-2025/blog/[id]              4.64 kB         110 kB
+├ ○ /painel-nb-2025/campanhas              7.03 kB         113 kB
+├ ○ /painel-nb-2025/chat-ia                2.23 kB         108 kB
+├ ƒ /painel-nb-2025/dashboard              1.2 kB          107 kB
+├ ƒ /painel-nb-2025/imagens                4.25 kB         110 kB
+├ ○ /painel-nb-2025/leads                  8.07 kB         114 kB
+├ ○ /quem-deve-declarar-irpf-2026          4.3 kB          148 kB
+├ ○ /servicos                              304 B           136 kB
+├ ○ /sitemap.xml                           0 B                0 B
+├ ○ /sobre                                 203 B           144 kB
+└ ○ /tabela-irpf-2026                      4.18 kB         148 kB
++ First Load JS shared by all              87.3 kB
+  ├ chunks/2117-28eacd94c33da95a.js        31.7 kB
+  ├ chunks/fd9d1056-8859bb5547a4cf72.js    53.6 kB
+  └ other shared chunks (total)            1.95 kB
+
+
+ƒ Middleware                               26.4 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -79,7 +79,13 @@ export default function LeadsTableRow({ item, onStatusUpdate, onDelete, isUpdati
         )}
       </td>
       <td className="py-3 pr-4 opacity-60">{item.email}</td>
-      <td className="py-3 pr-4 opacity-60">{item.telefone || "—"}</td>
+      <td className="py-3 pr-4 opacity-60">
+        {item.telefone ? (
+          <a href={`tel:${item.telefone.replace(/\D/g, "")}`} className="hover:text-[#C6FF00] transition-colors">
+            {item.telefone}
+          </a>
+        ) : "—"}
+      </td>
       <td className="py-3 pr-4 opacity-60">
         {isLead ? item.tipoDecl || "—" : item.assunto || "—"}
       </td>
@@ -157,11 +163,14 @@ export default function LeadsTableRow({ item, onStatusUpdate, onDelete, isUpdati
         onClose={() => setIsModalOpen(false)}
         item={{
           nome: item.nome,
+          email: item.email,
           telefone: item.telefone,
           mensagem: item.mensagem,
           origem: item.origem,
           tipoDecl: item.tipoDecl,
           assunto: item.assunto,
+          status: item.status,
+          createdAt: item.createdAt,
           itemType: item.itemType,
         }}
       />

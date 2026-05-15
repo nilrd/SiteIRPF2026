@@ -138,29 +138,38 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const [leadTotal, contatoTotal, leads, contatos] = await Promise.all([
-      prisma.lead.count({ where: leadWhere }),
-      prisma.contato.count({ where: contatoWhere }),
+    const [leads, contatos] = await Promise.all([
       prisma.lead.findMany({ where: leadWhere, orderBy: { createdAt: "desc" }, take: 500 }),
       prisma.contato.findMany({ where: contatoWhere, orderBy: { createdAt: "desc" }, take: 500 }),
     ]);
 
-    const merged = [
+    const allSorted = [
       ...leads.map((lead) => ({ ...lead, itemType: "lead" as const, sortDate: lead.createdAt })),
       ...contatos.map((contato) => ({ ...contato, itemType: "contato" as const, sortDate: contato.createdAt })),
-    ]
-      .sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime())
+    ].sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
+
+    // Deduplicate: same email + normalized phone → keep most recent only
+    const seenKeys = new Set<string>();
+    const dedupedAll = allSorted.filter((item) => {
+      const phone = (item.telefone ?? "").replace(/\D/g, "");
+      const key = phone
+        ? `${item.email.toLowerCase()}::${phone}`
+        : `__unique__${item.id}`;
+      if (seenKeys.has(key)) return false;
+      seenKeys.add(key);
+      return true;
+    });
+
+    const total = dedupedAll.length;
+    const merged = dedupedAll
       .slice(skip, skip + perPage)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .map(({ sortDate, ...item }) => item);
-
-    const total = leadTotal + contatoTotal;
 
     return NextResponse.json({
       items: merged,
       pagination: { page, perPage, total, totalPages: Math.max(1, Math.ceil(total / perPage)) },
       counters,
-      note: "Modo todos usa janela de 500 por tipo para merge ordenado.",
     });
   } catch (error) {
     console.error("[admin/leads/pipeline GET]", error);

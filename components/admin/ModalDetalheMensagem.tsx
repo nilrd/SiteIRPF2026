@@ -7,11 +7,14 @@ interface ModalDetalheMensagemProps {
   onClose: () => void;
   item: {
     nome: string;
+    email?: string | null;
     telefone?: string | null;
     mensagem?: string | null;
     origem?: string | null;
     tipoDecl?: string | null;
     assunto?: string | null;
+    status?: string | null;
+    createdAt?: string | Date | null;
     itemType: "lead" | "contato";
   };
 }
@@ -40,10 +43,69 @@ export default function ModalDetalheMensagem({ isOpen, onClose, item }: ModalDet
         </div>
 
         <div className="p-6 space-y-6">
-          <div>
-            <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Contato</p>
-            <p className="text-lg">{item.nome}</p>
-            {item.telefone && <p className="text-sm opacity-60">{item.telefone}</p>}
+          {/* Main info */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Nome</p>
+              <p className="text-lg font-semibold">{item.nome}</p>
+            </div>
+            {item.email && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Email</p>
+                <a href={`mailto:${item.email}`} className="text-sm hover:text-[#C6FF00] transition-colors break-all">
+                  {item.email}
+                </a>
+              </div>
+            )}
+            {item.telefone && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Telefone / WhatsApp</p>
+                <a href={`tel:${item.telefone.replace(/\D/g, "")}`} className="text-sm hover:text-[#C6FF00] transition-colors">
+                  {item.telefone}
+                </a>
+              </div>
+            )}
+            <div>
+              <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Tipo</p>
+              <span className={`text-[10px] uppercase tracking-widest px-2 py-1 border ${
+                item.itemType === "lead"
+                  ? "border-[#C6FF00]/40 text-[#C6FF00]"
+                  : "border-blue-400/40 text-blue-400"
+              }`}>
+                {item.itemType === "lead" ? "Lead" : "Contato"}
+              </span>
+            </div>
+            {(item.tipoDecl || item.assunto) && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">
+                  {item.itemType === "lead" ? "Tipo de Declaração" : "Assunto"}
+                </p>
+                <p className="text-sm opacity-80">{item.tipoDecl || item.assunto}</p>
+              </div>
+            )}
+            {item.origem && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Origem</p>
+                <p className="text-sm opacity-80">{item.origem}</p>
+              </div>
+            )}
+            {item.status && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Status</p>
+                <p className="text-sm opacity-80">{item.status}</p>
+              </div>
+            )}
+            {item.createdAt && (
+              <div>
+                <p className="text-[10px] uppercase tracking-widest opacity-50 mb-1">Recebido em</p>
+                <p className="text-sm opacity-80">
+                  {new Date(item.createdAt).toLocaleString("pt-BR", {
+                    day: "2-digit", month: "2-digit", year: "numeric",
+                    hour: "2-digit", minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            )}
           </div>
 
           <div>

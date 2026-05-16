@@ -32,32 +32,85 @@ model Lead {
 }
 
 model BlogPost {
-  id         String   @id @default(cuid())
-  title      String
-  slug       String   @unique
-  summary    String?
-  content    String
-  faqsJson   String   @default("[]")
-  reviewJson String   @default("") @map("review_json")
-  aiModel    String   @default("") @map("ai_model")
-  tags       String[]
-  coverImage String?
-  imageAlt   String   @default("") @map("image_alt")
+  id               String         @id @default(cuid())
+  title            String
+  slug             String         @unique
+  summary          String?
+  content          String
+  faqsJson         String         @default("[]")
+  reviewJson       String         @default("") @map("review_json")
+  aiModel          String         @default("") @map("ai_model")
+  tags             String[]
+  coverImage       String?
+  imageAlt         String         @default("") @map("image_alt")
   imageAttribution String?  @map("image_attribution")
-  published  Boolean  @default(false)
-  metaTitle  String?
-  metaDesc   String?
-  keywords   String[]
-  views      Int      @default(0)
-  readTime   Int      @default(5)
-  categoria  String   @default("IRPF") // IRPF | MEI | DESENROLA | GERAL
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  published        Boolean        @default(false)
+  metaTitle        String?
+  metaDesc         String?
+  keywords         String[]
+  views            Int            @default(0)
+  readTime         Int            @default(5)
+  categoria        String         @default("IRPF") // IRPF | MEI | DESENROLA | GERAL
+  postType         String?        @map("post_type") // traffic | lead
+  audience         String?
+  searchIntent     String?        @map("search_intent")
+  factScore        Int?           @map("fact_score")
+  riskScore        Int?           @map("risk_score")
+  needsReview      Boolean        @default(false) @map("needs_review")
+  campaignMode     String?        @map("campaign_mode")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  trendKeywords    TrendKeyword[]
 
   @@index([slug])
   @@index([published, createdAt])
   @@index([categoria, published])
   @@map("blog_posts")
+}
+
+model TrendKeyword {
+  id                 String    @id @default(cuid())
+  keyword            String
+  source             String // serpapi_trends | serpapi_related | serpapi_interest | rss_fallback | evergreen
+  category           String // IRPF | IRPF_ATRASADO | CPF | MEI | DASN | PARCELAMENTO_MEI | FINANCAS
+  audience           String?
+  intent             String?
+  postType           String?   @map("post_type") // traffic | lead
+  trendScore         Int?      @map("trend_score")
+  businessScore      Int?      @map("business_score")
+  urgencyScore       Int?      @map("urgency_score")
+  seoScore           Int?      @map("seo_score")
+  riskScore          Int?      @map("risk_score")
+  breakoutStatus     Boolean   @default(false) @map("breakout_status")
+  geo                String    @default("BR")
+  relatedQueriesJson String?   @map("related_queries_json")
+  cachedUntil        DateTime  @map("cached_until")
+  usedInPostId       String?   @map("used_in_post_id")
+  rawPayload         String?   @map("raw_payload") @db.Text
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  usedInPost BlogPost? @relation(fields: [usedInPostId], references: [id], onDelete: SetNull)
+
+  @@index([keyword])
+  @@index([category, cachedUntil])
+  @@index([source, createdAt])
+  @@map("trend_keywords")
+}
+
+model ApiQuota {
+  id             String   @id @default(cuid())
+  apiName        String   @map("api_name")
+  date           DateTime
+  callsUsed      Int      @default(0) @map("calls_used")
+  callsLimit     Int      @default(8) @map("calls_limit")
+  monthCallsUsed Int      @default(0) @map("month_calls_used")
+  monthCallsLimit Int     @default(250) @map("month_calls_limit")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([apiName, date])
+  @@index([apiName, date])
+  @@map("api_quotas")
 }
 
 model Contato {

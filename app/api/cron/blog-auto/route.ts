@@ -1,9 +1,21 @@
 import { NextResponse } from "next/server";
-import { generateBlogPost, saveBlogPost, ALL_CLUSTERS } from "@/lib/blog-engine";
-import { finishAutomationRun, startAutomationRun, failAutomationRun } from "@/lib/automation-runs";
+import {
+  generateBlogPost,
+  saveBlogPost,
+  ALL_CLUSTERS,
+} from "@/lib/blog-engine";
+import {
+  finishAutomationRun,
+  startAutomationRun,
+  failAutomationRun,
+} from "@/lib/automation-runs";
 import { notifySystemAlert } from "@/lib/notify";
 import { resend } from "@/lib/resend";
-import { feedBrainFromOfficialSources, isKeywordRecent, markKeywordUsed } from "@/lib/knowledge-brain";
+import {
+  feedBrainFromOfficialSources,
+  isKeywordRecent,
+  markKeywordUsed,
+} from "@/lib/knowledge-brain";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // Vercel Pro: até 300s para gerar posts em sequência
@@ -39,7 +51,12 @@ export async function GET(request: Request) {
     console.log("[Cron] Alimentando cérebro com fontes oficiais...");
     await feedBrainFromOfficialSources();
 
-    const results: { id: string; title: string; slug: string; published: boolean }[] = [];
+    const results: {
+      id: string;
+      title: string;
+      slug: string;
+      published: boolean;
+    }[] = [];
     const errors: { index: number; error: string }[] = [];
     const cronStart = Date.now();
 
@@ -49,7 +66,9 @@ export async function GET(request: Request) {
       // Orçamento de tempo: se restar < 45s, aborta graciosamente antes de Vercel matar
       const elapsed = Date.now() - cronStart;
       if (elapsed > MAX_CRON_MS) {
-        console.warn(`[Cron] Orçamento de ${MAX_CRON_MS / 1000}s atingido após ${i} posts (${Math.round(elapsed / 1000)}s). Encerrando.`);
+        console.warn(
+          `[Cron] Orçamento de ${MAX_CRON_MS / 1000}s atingido após ${i} posts (${Math.round(elapsed / 1000)}s). Encerrando.`,
+        );
         break;
       }
 
@@ -59,18 +78,31 @@ export async function GET(request: Request) {
         for (let attempt = 0; attempt < 5; attempt++) {
           const primary = ALL_CLUSTERS[idx % ALL_CLUSTERS.length]?.primary;
           if (!primary || !(await isKeywordRecent(primary, 7))) break;
-          console.log(`[Cron][${i + 1}/${NUM_POSTS}] Keyword recente, tentando outro cluster: ${primary}`);
+          console.log(
+            `[Cron][${i + 1}/${NUM_POSTS}] Keyword recente, tentando outro cluster: ${primary}`,
+          );
           idx = Math.floor(Math.random() * ALL_CLUSTERS.length);
         }
-        const clusterName = ALL_CLUSTERS[idx % ALL_CLUSTERS.length]?.primary ?? "irpf";
-        console.log(`[Cron][${i + 1}/${NUM_POSTS}] Gerando post — cluster: ${clusterName}`);
+        const clusterName =
+          ALL_CLUSTERS[idx % ALL_CLUSTERS.length]?.primary ?? "irpf";
+        console.log(
+          `[Cron][${i + 1}/${NUM_POSTS}] Gerando post — cluster: ${clusterName}`,
+        );
         const post = await generateBlogPost(idx);
         const saved = await saveBlogPost(post);
         void markKeywordUsed(post.keyword, clusterName, saved.id);
-        results.push({ id: saved.id, title: saved.title, slug: saved.slug, published: saved.published });
-        console.log(`[Cron][${i + 1}/${NUM_POSTS}] ✅ ${saved.published ? "Publicado" : "Retido"}: ${saved.title}`);
+        results.push({
+          id: saved.id,
+          title: saved.title,
+          slug: saved.slug,
+          published: saved.published,
+        });
+        console.log(
+          `[Cron][${i + 1}/${NUM_POSTS}] ✅ ${saved.published ? "Publicado" : "Retido"}: ${saved.title}`,
+        );
       } catch (postErr) {
-        const msg = postErr instanceof Error ? postErr.message : String(postErr);
+        const msg =
+          postErr instanceof Error ? postErr.message : String(postErr);
         console.error(`[Cron][${i + 1}/${NUM_POSTS}] ❌ Erro:`, msg);
         errors.push({ index: i + 1, error: msg });
       }
@@ -171,29 +203,34 @@ export async function GET(request: Request) {
         "[ALERTA BLOG AUTO]",
         "Falha fatal no cron do blog.",
         error instanceof Error ? error.message : String(error),
-      ].join("\n")
+      ].join("\n"),
     ).catch((notifyError) => {
       console.error("[Cron] Falha ao enviar alerta operacional:", notifyError);
     });
 
     if (process.env.ADMIN_EMAIL) {
-      await resend.emails.send({
-        from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
-        to: process.env.ADMIN_EMAIL,
-        subject: "[ALERTA][Blog Auto] Falha fatal no cron",
-        html: `
+      await resend.emails
+        .send({
+          from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
+          to: process.env.ADMIN_EMAIL,
+          subject: "[ALERTA][Blog Auto] Falha fatal no cron",
+          html: `
           <h2>Falha fatal no cron do Blog Auto</h2>
           <p>${error instanceof Error ? error.message : String(error)}</p>
         `,
-      }).catch((emailError) => {
-        console.error("[Cron] Falha ao enviar alerta fatal por email:", emailError);
-      });
+        })
+        .catch((emailError) => {
+          console.error(
+            "[Cron] Falha ao enviar alerta fatal por email:",
+            emailError,
+          );
+        });
     }
 
     console.error("Blog cron error:", error);
     return NextResponse.json(
       { error: "Failed to generate blog post" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

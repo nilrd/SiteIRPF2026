@@ -12,11 +12,29 @@ import {
   MEI_KEYWORD_CLUSTERS,
   DESENROLA_KEYWORD_CLUSTERS,
 } from "./mei-context";
+import { TrendResearchService } from "./trend-research";
+import {
+  getCurrentCampaignModes,
+  getDailyPautaDistribution,
+} from "./campaign-priority";
+import {
+  classifyPostType,
+  rankKeywords,
+  selectDailyPauta,
+} from "./keyword-scoring";
+import { isKeywordRecent } from "./knowledge-brain";
 
-export const ALL_MEI_CLUSTERS = [...MEI_KEYWORD_CLUSTERS, ...DESENROLA_KEYWORD_CLUSTERS];
+export const ALL_MEI_CLUSTERS = [
+  ...MEI_KEYWORD_CLUSTERS,
+  ...DESENROLA_KEYWORD_CLUSTERS,
+];
 
 // ─── Tipos de imagem (isolados — sem importar blog-engine) ───────────────────
-type UnsplashAttribution = { photographerName: string; photographerUrl: string; photoUrl: string };
+type UnsplashAttribution = {
+  photographerName: string;
+  photographerUrl: string;
+  photoUrl: string;
+};
 type ImageResult = { url: string; attribution: UnsplashAttribution | null };
 type ResearchItem = { title: string; url: string; snippet: string };
 
@@ -37,21 +55,21 @@ function getRandomMeiCoverImage(): string {
 
 // ─── Mapa keyword MEI → visual query Unsplash (inglês) ──────────────────────
 const MEI_VISUAL_QUERY_MAP: Record<string, string> = {
-  "mei": "small business entrepreneur office laptop",
-  "dasn": "tax form deadline calendar documents",
-  "divida": "debt documents finance stress notebook",
-  "cancelamento": "closing business documents office",
-  "abertura": "new business registration documents",
-  "desenrola": "debt relief financial agreement signing",
-  "parcelamento": "installments payment agreement finance",
-  "empreendedor": "entrepreneur small business startup office",
-  "das": "tax payment receipt documents",
-  "simei": "small business tax simplified",
-  "cnpj": "business registration document certificate",
-  "faturamento": "invoice billing small business",
-  "irpf": "tax documents calculator professional",
+  mei: "small business entrepreneur office laptop",
+  dasn: "tax form deadline calendar documents",
+  divida: "debt documents finance stress notebook",
+  cancelamento: "closing business documents office",
+  abertura: "new business registration documents",
+  desenrola: "debt relief financial agreement signing",
+  parcelamento: "installments payment agreement finance",
+  empreendedor: "entrepreneur small business startup office",
+  das: "tax payment receipt documents",
+  simei: "small business tax simplified",
+  cnpj: "business registration document certificate",
+  faturamento: "invoice billing small business",
+  irpf: "tax documents calculator professional",
   "nota fiscal": "invoice receipt business documents",
-  "regularizar": "documents compliance checklist office",
+  regularizar: "documents compliance checklist office",
 };
 
 function getMeiVisualQuery(keyword: string): string {
@@ -66,8 +84,17 @@ function getMeiVisualQuery(keyword: string): string {
 }
 
 const MEI_EXCLUDED_LOCATIONS = [
-  "china", "japan", "korea", "taiwan", "hong kong", "beijing",
-  "shanghai", "tokyo", "singapore", "thailand", "vietnam",
+  "china",
+  "japan",
+  "korea",
+  "taiwan",
+  "hong kong",
+  "beijing",
+  "shanghai",
+  "tokyo",
+  "singapore",
+  "thailand",
+  "vietnam",
 ];
 function isMeiExcludedLocation(location?: string): boolean {
   if (!location) return false;
@@ -80,28 +107,32 @@ async function getMeiImageKeywords(title: string): Promise<string | null> {
   try {
     const completion = await groqMei.chat.completions.create({
       model: MODELS.blogVerifier,
-      messages: [{
-        role: "user",
-        content:
-          `You are a stock photo researcher for Brazilian MEI (Microempreendedor Individual) content.\n` +
-          `Given this blog post title about MEI/Desenrola Brasil, generate the BEST Unsplash search query.\n\n` +
-          `RULES:\n` +
-          `- Query must be in English\n` +
-          `- Use 3 to 5 words maximum\n` +
-          `- Focus on OBJECTS and SCENES visible in photos\n` +
-          `- NEVER use abstract words: tax, finance, money, brazil, mei\n` +
-          `- Examples:\n` +
-          `  'DASN-SIMEI prazo 2026' → 'calendar documents deadline office'\n` +
-          `  'abrir MEI passo a passo' → 'new business registration documents'\n` +
-          `  'dívidas MEI Desenrola' → 'debt relief agreement signing documents'\n` +
-          `  'cancelar MEI' → 'closing business documents office'\n\n` +
-          `POST TITLE: ${title}\n\n` +
-          `Return ONLY the search query, nothing else.`,
-      }],
+      messages: [
+        {
+          role: "user",
+          content:
+            `You are a stock photo researcher for Brazilian MEI (Microempreendedor Individual) content.\n` +
+            `Given this blog post title about MEI/Desenrola Brasil, generate the BEST Unsplash search query.\n\n` +
+            `RULES:\n` +
+            `- Query must be in English\n` +
+            `- Use 3 to 5 words maximum\n` +
+            `- Focus on OBJECTS and SCENES visible in photos\n` +
+            `- NEVER use abstract words: tax, finance, money, brazil, mei\n` +
+            `- Examples:\n` +
+            `  'DASN-SIMEI prazo 2026' → 'calendar documents deadline office'\n` +
+            `  'abrir MEI passo a passo' → 'new business registration documents'\n` +
+            `  'dívidas MEI Desenrola' → 'debt relief agreement signing documents'\n` +
+            `  'cancelar MEI' → 'closing business documents office'\n\n` +
+            `POST TITLE: ${title}\n\n` +
+            `Return ONLY the search query, nothing else.`,
+        },
+      ],
       temperature: 0.4,
       max_tokens: 30,
     });
-    const raw = (completion.choices?.[0]?.message?.content ?? "").trim().replace(/^["']|["']$/g, "");
+    const raw = (completion.choices?.[0]?.message?.content ?? "")
+      .trim()
+      .replace(/^["']|["']$/g, "");
     if (/^[a-zA-Z]+( [a-zA-Z]+){2,4}$/.test(raw)) return raw;
     return null;
   } catch {
@@ -110,7 +141,10 @@ async function getMeiImageKeywords(title: string): Promise<string | null> {
 }
 
 /** Busca imagem no Unsplash para post MEI. */
-async function getMeiCoverImage(keyword: string, title?: string): Promise<ImageResult> {
+async function getMeiCoverImage(
+  keyword: string,
+  title?: string,
+): Promise<ImageResult> {
   const accessKey = process.env.UNSPLASH_ACCESS_KEY;
   if (!accessKey) return { url: getRandomMeiCoverImage(), attribution: null };
 
@@ -126,38 +160,58 @@ async function getMeiCoverImage(keyword: string, title?: string): Promise<ImageR
     try {
       const res = await fetch(
         `https://api.unsplash.com/search/photos?query=${query}&orientation=landscape&content_filter=high&per_page=10`,
-        { headers: { Authorization: `Client-ID ${accessKey}` }, next: { revalidate: 0 } }
+        {
+          headers: { Authorization: `Client-ID ${accessKey}` },
+          next: { revalidate: 0 },
+        },
       );
       if (!res.ok) continue;
       const searchData = (await res.json()) as {
         results?: Array<{
           id?: string;
           urls?: { regular?: string };
-          user?: { name?: string; links?: { html?: string }; location?: string };
+          user?: {
+            name?: string;
+            links?: { html?: string };
+            location?: string;
+          };
           links?: { html?: string; download_location?: string };
         }>;
       };
       if (!searchData.results || searchData.results.length < 3) continue;
 
-      const filtered = searchData.results.filter((p) => !isMeiExcludedLocation(p.user?.location));
-      const pool = (filtered.length >= 2 ? filtered : searchData.results).slice(0, 8);
+      const filtered = searchData.results.filter(
+        (p) => !isMeiExcludedLocation(p.user?.location),
+      );
+      const pool = (filtered.length >= 2 ? filtered : searchData.results).slice(
+        0,
+        8,
+      );
       const data = pool[Math.floor(Math.random() * pool.length)];
       const rawUrl = data?.urls?.regular;
       if (!rawUrl) continue;
 
       const finalUrl = `${rawUrl.split("?")[0]}?auto=format&fit=crop&w=1200&h=630&q=85`;
       if (data.links?.download_location) {
-        fetch(`${data.links.download_location}&client_id=${accessKey}`, { method: "GET" }).catch(() => {});
+        fetch(`${data.links.download_location}&client_id=${accessKey}`, {
+          method: "GET",
+        }).catch(() => {});
       }
       const attribution: UnsplashAttribution | null = data.user?.name
         ? {
             photographerName: data.user.name,
-            photographerUrl: (data.user.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
-            photoUrl: (data.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
+            photographerUrl:
+              (data.user.links?.html ?? "https://unsplash.com") +
+              "?utm_source=irpf_nsb&utm_medium=referral",
+            photoUrl:
+              (data.links?.html ?? "https://unsplash.com") +
+              "?utm_source=irpf_nsb&utm_medium=referral",
           }
         : null;
       return { url: finalUrl, attribution };
-    } catch { /* tenta próxima query */ }
+    } catch {
+      /* tenta próxima query */
+    }
   }
 
   return { url: getRandomMeiCoverImage(), attribution: null };
@@ -168,56 +222,70 @@ const MEI_STATIC_SOURCES: ResearchItem[] = [
   {
     title: "Gov.br — Portal MEI Oficial: abertura, DAS, DASN e obrigações 2026",
     url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor",
-    snippet: "Portal oficial MEI 2026: limite faturamento R$ 81.000/ano. DAS mensal: R$ 73,00 comércio/indústria, R$ 79,90 serviços, R$ 80,90 misto. DASN-SIMEI: prazo até 31 de maio de 2026 (ano-base 2025). Abertura gratuita e online. Cancelamento (baixa) gratuito pelo portal.",
+    snippet:
+      "Portal oficial MEI 2026: limite faturamento R$ 81.000/ano. DAS mensal: R$ 73,00 comércio/indústria, R$ 79,90 serviços, R$ 80,90 misto. DASN-SIMEI: prazo até 31 de maio de 2026 (ano-base 2025). Abertura gratuita e online. Cancelamento (baixa) gratuito pelo portal.",
   },
   {
     title: "Gov.br — O que você precisa saber antes de ser MEI",
     url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/o-que-voce-precisa-saber-antes-de-se-tornar-um-mei",
-    snippet: "Pré-requisitos MEI: ser maior de 18 anos, ter CPF regular, não ser sócio ou administrador de outra empresa, limite de faturamento R$ 81.000/ano, ter no máximo 1 empregado. Vedado a profissões regulamentadas (médico, advogado, engenheiro, contador). Abertura gratuita em menos de 10 minutos pelo gov.br/mei.",
+    snippet:
+      "Pré-requisitos MEI: ser maior de 18 anos, ter CPF regular, não ser sócio ou administrador de outra empresa, limite de faturamento R$ 81.000/ano, ter no máximo 1 empregado. Vedado a profissões regulamentadas (médico, advogado, engenheiro, contador). Abertura gratuita em menos de 10 minutos pelo gov.br/mei.",
   },
   {
     title: "Gov.br — Atividades permitidas para MEI 2026",
     url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/atividades-permitidas",
-    snippet: "Lista oficial de mais de 600 ocupações permitidas ao MEI conforme Resolução CGSN 140/2018. MEI pode exercer atividades de comércio, indústria ou serviços (não regulamentadas). Exemplos: cabeleireiro, eletricista, pedreiro, vendedor ambulante, costureira, motorista de transporte por app.",
+    snippet:
+      "Lista oficial de mais de 600 ocupações permitidas ao MEI conforme Resolução CGSN 140/2018. MEI pode exercer atividades de comércio, indústria ou serviços (não regulamentadas). Exemplos: cabeleireiro, eletricista, pedreiro, vendedor ambulante, costureira, motorista de transporte por app.",
   },
   {
     title: "Gov.br — Direitos e obrigações do MEI",
     url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/direitos-e-obrigacoes",
-    snippet: "Obrigações MEI: pagar DAS mensalmente até dia 20, entregar DASN-SIMEI até 31 de maio, emitir nota fiscal para PJ. Direitos: INSS (aposentadoria por idade, auxílio-doença, salário-maternidade), CNPJ gratuito, acesso a crédito, sem contabilidade obrigatória, pode contratar 1 empregado.",
+    snippet:
+      "Obrigações MEI: pagar DAS mensalmente até dia 20, entregar DASN-SIMEI até 31 de maio, emitir nota fiscal para PJ. Direitos: INSS (aposentadoria por idade, auxílio-doença, salário-maternidade), CNPJ gratuito, acesso a crédito, sem contabilidade obrigatória, pode contratar 1 empregado.",
   },
   {
     title: "Gov.br — Verificar débitos do MEI",
     url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/verificar-debitos-do-mei",
-    snippet: "Ferramenta oficial para verificar débitos de DAS e outras pendências do MEI. Permite parcelamento do DAS em atraso em até 60 meses. Débitos acima de 90 dias geram juros Selic + multa máx 20%. MEI inadimplente pode perder o regime MEI e ir a dívida ativa.",
+    snippet:
+      "Ferramenta oficial para verificar débitos de DAS e outras pendências do MEI. Permite parcelamento do DAS em atraso em até 60 meses. Débitos acima de 90 dias geram juros Selic + multa máx 20%. MEI inadimplente pode perder o regime MEI e ir a dívida ativa.",
   },
   {
     title: "Gov.br — Receita Federal: MEI e Imposto de Renda Pessoa Física",
     url: "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
-    snippet: "MEI e IRPF PF 2026: o MEI é empresa (CNPJ), mas o titular continua sendo Pessoa Física. Se rendimentos totais da PF (pró-labore, aluguéis, salários) ultrapassaram R$ 35.584,00 em 2025, deve declarar IRPF 2026 (prazo 23/03 a 29/05/2026). Lucros MEI distribuídos ao titular são isentos de IR PF dentro dos limites do SIMEI.",
+    snippet:
+      "MEI e IRPF PF 2026: o MEI é empresa (CNPJ), mas o titular continua sendo Pessoa Física. Se rendimentos totais da PF (pró-labore, aluguéis, salários) ultrapassaram R$ 35.584,00 em 2025, deve declarar IRPF 2026 (prazo 23/03 a 29/05/2026). Lucros MEI distribuídos ao titular são isentos de IR PF dentro dos limites do SIMEI.",
   },
   {
-    title: "Novo Desenrola Brasil 2026 — Ministério da Fazenda: regras oficiais",
+    title:
+      "Novo Desenrola Brasil 2026 — Ministério da Fazenda: regras oficiais",
     url: "https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/novo-desenrola-brasil",
-    snippet: "Novo Desenrola Brasil 2026: mobilização de 90 dias para renegociação de dívidas. Desenrola Famílias: renda até R$ 8.105 (5 SM), dívidas cartão/cheque/CDC atrasadas 90 dias a 2 anos contratadas até 31/01/2026, descontos 30–90%, juros máx 1,99%/mês, prazo 48 meses, limite R$ 15 mil/IF. Garantia FGO. Uso de FGTS: 20% do saldo ou R$ 1.000 (maior) após renegociação.",
+    snippet:
+      "Novo Desenrola Brasil 2026: mobilização de 90 dias para renegociação de dívidas. Desenrola Famílias: renda até R$ 8.105 (5 SM), dívidas cartão/cheque/CDC atrasadas 90 dias a 2 anos contratadas até 31/01/2026, descontos 30–90%, juros máx 1,99%/mês, prazo 48 meses, limite R$ 15 mil/IF. Garantia FGO. Uso de FGTS: 20% do saldo ou R$ 1.000 (maior) após renegociação.",
   },
   {
     title: "Gov.br Fazenda — Anúncio Novo Desenrola Brasil maio 2026",
     url: "https://www.gov.br/fazenda/pt-br/assuntos/noticias/2026/maio/governo-federal-anuncia-programa-para-renegociacao-de-dividas-de-familias-estudantes-e-empresas",
-    snippet: "Governo Federal anuncia Novo Desenrola Brasil em maio/2026: Famílias (cartão/cheque/CDC, descontos até 90%, FGO), FIES (desconto até 99% CadÚnico), Empresas — Procred (MEI/ME, crédito até 50% faturamento, teto R$ 180 mil, carência 24 meses, prazo 96 meses) e Pronampe (MPE faturamento até R$ 4,8 mi, limite R$ 500 mil), Rural (prazo até 20/12/2026).",
+    snippet:
+      "Governo Federal anuncia Novo Desenrola Brasil em maio/2026: Famílias (cartão/cheque/CDC, descontos até 90%, FGO), FIES (desconto até 99% CadÚnico), Empresas — Procred (MEI/ME, crédito até 50% faturamento, teto R$ 180 mil, carência 24 meses, prazo 96 meses) e Pronampe (MPE faturamento até R$ 4,8 mi, limite R$ 500 mil), Rural (prazo até 20/12/2026).",
   },
   {
     title: "SEBRAE — O que é MEI e como se formalizar: passo a passo",
     url: "https://sebrae.com.br/empreendedores/conteudos/comecar/o-que-e-mei-e-como-se-formalizar-passo-a-passo-para-comecar",
-    snippet: "SEBRAE explica o MEI: Microempreendedor Individual é a categoria mais simples do Simples Nacional para quem fatura até R$ 81.000/ano. Abertura gratuita no Portal do Empreendedor (gov.br/mei) em menos de 10 minutos. Após abertura: emitir DAS todo mês, entregar DASN-SIMEI anual (até 31/mai) e emitir nota fiscal para pessoa jurídica.",
+    snippet:
+      "SEBRAE explica o MEI: Microempreendedor Individual é a categoria mais simples do Simples Nacional para quem fatura até R$ 81.000/ano. Abertura gratuita no Portal do Empreendedor (gov.br/mei) em menos de 10 minutos. Após abertura: emitir DAS todo mês, entregar DASN-SIMEI anual (até 31/mai) e emitir nota fiscal para pessoa jurídica.",
   },
   {
     title: "Banco do Brasil — Desenrola Brasil: como aderir",
     url: "https://www.bb.com.br/site/pra-voce/desenrola-brasil/",
-    snippet: "Banco do Brasil participa do Novo Desenrola Brasil 2026. Clientes BB podem renegociar dívidas elegíveis com descontos conforme tabela oficial. Acesso pelo app BB, internet banking ou agências. Dívidas elegíveis: cartão de crédito, cheque especial e crédito pessoal contratados até 31/01/2026 com atraso de 90 dias a 2 anos.",
+    snippet:
+      "Banco do Brasil participa do Novo Desenrola Brasil 2026. Clientes BB podem renegociar dívidas elegíveis com descontos conforme tabela oficial. Acesso pelo app BB, internet banking ou agências. Dívidas elegíveis: cartão de crédito, cheque especial e crédito pessoal contratados até 31/01/2026 com atraso de 90 dias a 2 anos.",
   },
 ];
 
-async function fetchWithTimeoutMei(url: string, timeoutMs = 8000): Promise<Response> {
+async function fetchWithTimeoutMei(
+  url: string,
+  timeoutMs = 8000,
+): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -231,11 +299,13 @@ async function fetchWithTimeoutMei(url: string, timeoutMs = 8000): Promise<Respo
   }
 }
 
-async function getMeiGoogleNewsResearch(keyword: string): Promise<ResearchItem[]> {
+async function getMeiGoogleNewsResearch(
+  keyword: string,
+): Promise<ResearchItem[]> {
   try {
     // Busca news sobre MEI/Desenrola em fontes confiáveis (gov.br, sebrae, g1, cnn, istoé, contábeis)
     const q = encodeURIComponent(
-      `${keyword} site:gov.br OR site:sebrae.com.br OR site:g1.globo.com OR site:cnnbrasil.com.br OR site:istoedinheiro.com.br OR site:contabeis.com.br OR site:infomoney.com.br`
+      `${keyword} site:gov.br OR site:sebrae.com.br OR site:g1.globo.com OR site:cnnbrasil.com.br OR site:istoedinheiro.com.br OR site:contabeis.com.br OR site:infomoney.com.br`,
     );
     const url = `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
     const res = await fetchWithTimeoutMei(url, 8000);
@@ -250,10 +320,16 @@ async function getMeiGoogleNewsResearch(keyword: string): Promise<ResearchItem[]
       .map((item) => {
         const titleMatch = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/);
         const linkMatch = item.match(/<link>(.*?)<\/link>/);
-        const descMatch = item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/);
+        const descMatch = item.match(
+          /<description><!\[CDATA\[(.*?)\]\]><\/description>/,
+        );
         const t = titleMatch?.[1]?.trim() || "";
         const u = linkMatch?.[1]?.trim() || "";
-        const snippet = (descMatch?.[1] || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 260);
+        const snippet = (descMatch?.[1] || "")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 260);
         if (!t || !u) return null;
         return { title: t, url: u, snippet } as ResearchItem;
       })
@@ -265,17 +341,41 @@ async function getMeiGoogleNewsResearch(keyword: string): Promise<ResearchItem[]
 
 // Fontes oficiais complementares para scraping direto (gov.br + confiáveis)
 const MEI_LIVE_SOURCES: { url: string; label: string }[] = [
-  { url: "https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/novo-desenrola-brasil", label: "Gov Fazenda Desenrola" },
-  { url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/direitos-e-obrigacoes", label: "Gov MEI Direitos" },
-  { url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/verificar-debitos-do-mei", label: "Gov MEI Débitos" },
-  { url: "https://sebrae.com.br/empreendedores/conteudos/comecar/o-que-e-mei-e-como-se-formalizar-passo-a-passo-para-comecar", label: "SEBRAE MEI formalizacao" },
+  {
+    url: "https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/novo-desenrola-brasil",
+    label: "Gov Fazenda Desenrola",
+  },
+  {
+    url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/quero-ser-mei/direitos-e-obrigacoes",
+    label: "Gov MEI Direitos",
+  },
+  {
+    url: "https://www.gov.br/empresas-e-negocios/pt-br/empreendedor/verificar-debitos-do-mei",
+    label: "Gov MEI Débitos",
+  },
+  {
+    url: "https://sebrae.com.br/empreendedores/conteudos/comecar/o-que-e-mei-e-como-se-formalizar-passo-a-passo-para-comecar",
+    label: "SEBRAE MEI formalizacao",
+  },
 ];
 
 /** Scraping direto de até 3 fontes vivas (gov.br/sebrae) para enriquecer o contexto */
 async function fetchLiveMeiSources(keyword: string): Promise<ResearchItem[]> {
-  const lower = keyword.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const lower = keyword
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
   // Seleciona as 3 fontes mais relevantes para a keyword
-  const desenrolaKeywords = ["desenrola", "divida", "renegociar", "debito", "procred", "pronampe", "fgts", "fies"];
+  const desenrolaKeywords = [
+    "desenrola",
+    "divida",
+    "renegociar",
+    "debito",
+    "procred",
+    "pronampe",
+    "fgts",
+    "fies",
+  ];
   const isDesenrola = desenrolaKeywords.some((k) => lower.includes(k));
   const sources = isDesenrola
     ? [MEI_LIVE_SOURCES[0], MEI_LIVE_SOURCES[2], MEI_LIVE_SOURCES[3]]
@@ -309,13 +409,17 @@ async function fetchLiveMeiSources(keyword: string): Promise<ResearchItem[]> {
         if (text.length > 100) {
           results.push({ title: label, url, snippet: text });
         }
-      } catch { /* ignora falha individual */ }
-    })
+      } catch {
+        /* ignora falha individual */
+      }
+    }),
   );
   return results;
 }
 
-async function collectMeiResearchContext(keyword: string): Promise<ResearchItem[]> {
+async function collectMeiResearchContext(
+  keyword: string,
+): Promise<ResearchItem[]> {
   // 3 fontes em paralelo: estáticas + Google News + scraping gov.br/sebrae ao vivo
   const [news, live] = await Promise.all([
     getMeiGoogleNewsResearch(keyword),
@@ -330,13 +434,14 @@ async function collectMeiResearchContext(keyword: string): Promise<ResearchItem[
 }
 
 // WA link para CTAs
-const WA_MEI_LINK =
-  `https://wa.me/5511940825120?text=${encodeURIComponent("Olá Nilson! Li o artigo do blog sobre MEI e preciso de ajuda.")}`;
-const WA_IRPF_LINK =
-  `https://wa.me/5511940825120?text=${encodeURIComponent("Olá! Vi o artigo sobre MEI e quero declarar meu IRPF 2026.")}`;
+const WA_MEI_LINK = `https://wa.me/5511940825120?text=${encodeURIComponent("Olá Nilson! Li o artigo do blog sobre MEI e preciso de ajuda.")}`;
+const WA_IRPF_LINK = `https://wa.me/5511940825120?text=${encodeURIComponent("Olá! Vi o artigo sobre MEI e quero declarar meu IRPF 2026.")}`;
 
 // ─── System prompt para blog MEI ─────────────────────────────────────────────
-function meiSystemPrompt(keyword: string, categoria: "MEI" | "DESENROLA"): string {
+function meiSystemPrompt(
+  keyword: string,
+  categoria: "MEI" | "DESENROLA",
+): string {
   const hoje = new Date().toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "long",
@@ -409,7 +514,10 @@ type MeiReview = {
   resumo: string;
 };
 
-async function verificarPostMei(content: string, categoria: "MEI" | "DESENROLA"): Promise<MeiReview> {
+async function verificarPostMei(
+  content: string,
+  categoria: "MEI" | "DESENROLA",
+): Promise<MeiReview> {
   try {
     const completion = await groqMei.chat.completions.create({
       model: MODELS.blogVerifier,
@@ -442,26 +550,98 @@ Critérios: baixo/médio = aprovado:true; alto/crítico = aprovado:false.`,
     });
 
     const raw = completion.choices?.[0]?.message?.content || "{}";
-    const parsed = JSON.parse(raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim());
+    const parsed = JSON.parse(
+      raw
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```\s*$/i, "")
+        .trim(),
+    );
     return {
       aprovado: parsed.aprovado === true,
       nivel_risco: parsed.nivel_risco || "medio",
-      itens_de_risco: Array.isArray(parsed.itens_de_risco) ? parsed.itens_de_risco : [],
+      itens_de_risco: Array.isArray(parsed.itens_de_risco)
+        ? parsed.itens_de_risco
+        : [],
       resumo: parsed.resumo || "Verificação sem resultado claro",
     };
   } catch {
-    return { aprovado: true, nivel_risco: "baixo", itens_de_risco: [], resumo: "Verificador indisponível" };
+    return {
+      aprovado: true,
+      nivel_risco: "baixo",
+      itens_de_risco: [],
+      resumo: "Verificador indisponível",
+    };
   }
 }
 
 // ─── Gerador principal ────────────────────────────────────────────────────────
-export async function generateMeiBlogPost(clusterIndex?: number, customKeyword?: string) {
+export async function generateMeiBlogPost(
+  clusterIndex?: number,
+  customKeyword?: string,
+) {
   const cluster =
     clusterIndex !== undefined
       ? ALL_MEI_CLUSTERS[clusterIndex % ALL_MEI_CLUSTERS.length]
       : ALL_MEI_CLUSTERS[Math.floor(Math.random() * ALL_MEI_CLUSTERS.length)];
 
-  const keyword = customKeyword || cluster.primary;
+  let trendKeyword: string | null = null;
+  let trendPostType: "traffic" | "lead" = "traffic";
+  let trendSearchIntent = "informacional";
+  let trendAudience = "microempreendedores";
+
+  if (!customKeyword && clusterIndex === undefined) {
+    try {
+      const service = new TrendResearchService();
+      const [meiTrends, dasnTrends] = await Promise.all([
+        service.getCachedTrends("MEI", 60),
+        service.getCachedTrends("DASN", 60),
+      ]);
+
+      const combined = [...meiTrends, ...dasnTrends];
+      if (combined.length > 0) {
+        const modes = getCurrentCampaignModes();
+        const ranked = rankKeywords(
+          combined.map((item) => ({
+            keyword: item.keyword,
+            category: item.category,
+            source: item.source,
+            audience: item.audience,
+            intent: item.intent,
+            trendScore: item.trendScore,
+            businessScore: item.businessScore,
+            urgencyScore: item.urgencyScore,
+            seoScore: item.seoScore,
+            riskScore: item.riskScore,
+            breakoutStatus: item.breakoutStatus,
+          })),
+          modes,
+        );
+
+        const pauta = selectDailyPauta(
+          ranked,
+          getDailyPautaDistribution(modes),
+        );
+        const pick = await (async () => {
+          for (const item of pauta) {
+            const recent = await isKeywordRecent(item.keyword, 7);
+            if (!recent) return item;
+          }
+          return pauta[0] ?? ranked[0] ?? null;
+        })();
+
+        if (pick) {
+          trendKeyword = pick.keyword;
+          trendPostType = pick.postType;
+          trendSearchIntent = pick.searchIntent;
+          trendAudience = pick.audience;
+        }
+      }
+    } catch {
+      trendKeyword = null;
+    }
+  }
+
+  const keyword = customKeyword || trendKeyword || cluster.primary;
   const categoria: "MEI" | "DESENROLA" =
     (cluster as { categoria?: "MEI" | "DESENROLA" }).categoria ??
     (keyword.toLowerCase().includes("desenrola") ? "DESENROLA" : "MEI");
@@ -493,7 +673,12 @@ export async function generateMeiBlogPost(clusterIndex?: number, customKeyword?:
       response_format: { type: "json_object" },
     });
     aiModel = result.model;
-    parsed = JSON.parse(result.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim());
+    parsed = JSON.parse(
+      result.text
+        .replace(/^```(?:json)?\s*/i, "")
+        .replace(/\s*```\s*$/i, "")
+        .trim(),
+    );
   } catch (err) {
     console.error("[MEI Blog] Erro na geração:", err);
     throw new Error(`Falha ao gerar post MEI para keyword: ${keyword}`);
@@ -502,7 +687,10 @@ export async function generateMeiBlogPost(clusterIndex?: number, customKeyword?:
   const content = (parsed.content as string) || "";
 
   // Verificador pós-geração obrigatório
-  const review = await verificarPostMei(`${parsed.title || keyword}\n\n${content}`, categoria);
+  const review = await verificarPostMei(
+    `${parsed.title || keyword}\n\n${content}`,
+    categoria,
+  );
 
   // Slug sanitizado
   const rawTitle = (parsed.title as string) || keyword;
@@ -528,13 +716,34 @@ export async function generateMeiBlogPost(clusterIndex?: number, customKeyword?:
     slug: baseSlug,
     summary: (parsed.summary as string) || "",
     content,
-    tags: Array.isArray(parsed.tags) ? (parsed.tags as string[]) : [categoria.toLowerCase()],
-    keywords: Array.isArray(parsed.keywords) ? (parsed.keywords as string[]) : [],
-    faqs: Array.isArray(parsed.faqs) ? (parsed.faqs as { question: string; answer: string }[]) : [],
-    imageQuery: (parsed.imageQuery as string) || "small business entrepreneur brazil",
+    tags: Array.isArray(parsed.tags)
+      ? (parsed.tags as string[])
+      : [categoria.toLowerCase()],
+    keywords: Array.isArray(parsed.keywords)
+      ? (parsed.keywords as string[])
+      : [],
+    faqs: Array.isArray(parsed.faqs)
+      ? (parsed.faqs as { question: string; answer: string }[])
+      : [],
+    imageQuery:
+      (parsed.imageQuery as string) || "small business entrepreneur brazil",
     imageAlt: (parsed.imageAlt as string) || rawTitle,
     coverImage: imageResult.url,
     imageAttribution,
+    postType: trendKeyword ? trendPostType : classifyPostType(keyword),
+    audience: trendAudience,
+    searchIntent: trendSearchIntent,
+    factScore: review.aprovado ? 85 : 55,
+    riskScore:
+      review.nivel_risco === "baixo"
+        ? 20
+        : review.nivel_risco === "medio"
+          ? 45
+          : review.nivel_risco === "alto"
+            ? 70
+            : 90,
+    needsReview: review.aprovado !== true,
+    campaignMode: getCurrentCampaignModes().join(","),
     reviewApproved: true, // publica sempre sem revisão manual
     reviewJson: JSON.stringify(review),
     aiModel,
@@ -542,9 +751,14 @@ export async function generateMeiBlogPost(clusterIndex?: number, customKeyword?:
 }
 
 // ─── Salvar post MEI no DB ──────────────────────────────────────────────────
-export async function saveMeiBlogPost(post: Awaited<ReturnType<typeof generateMeiBlogPost>>) {
+export async function saveMeiBlogPost(
+  post: Awaited<ReturnType<typeof generateMeiBlogPost>>,
+) {
   let slug = post.slug;
-  const exists = await prisma.blogPost.findFirst({ where: { slug }, select: { id: true } });
+  const exists = await prisma.blogPost.findFirst({
+    where: { slug },
+    select: { id: true },
+  });
   if (exists) {
     slug = `${slug}-${Date.now().toString(36)}`;
   }
@@ -562,6 +776,13 @@ export async function saveMeiBlogPost(post: Awaited<ReturnType<typeof generateMe
       imageAlt: post.imageAlt ?? post.title,
       imageAttribution: post.imageAttribution ?? null,
       published: post.reviewApproved,
+      postType: post.postType ?? null,
+      audience: post.audience ?? null,
+      searchIntent: post.searchIntent ?? null,
+      factScore: post.factScore ?? null,
+      riskScore: post.riskScore ?? null,
+      needsReview: post.needsReview ?? !post.reviewApproved,
+      campaignMode: post.campaignMode ?? null,
       reviewJson: post.reviewJson ?? "",
       aiModel: post.aiModel ?? "",
       categoria: post.categoria,

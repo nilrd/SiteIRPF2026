@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server";
-import { finishAutomationRun, startAutomationRun, failAutomationRun } from "@/lib/automation-runs";
-import { generateMeiBlogPost, saveMeiBlogPost, ALL_MEI_CLUSTERS } from "@/lib/mei-blog-engine";
-import { MEI_KEYWORD_CLUSTERS, DESENROLA_KEYWORD_CLUSTERS } from "@/lib/mei-context";
+import {
+  finishAutomationRun,
+  startAutomationRun,
+  failAutomationRun,
+} from "@/lib/automation-runs";
+import {
+  generateMeiBlogPost,
+  saveMeiBlogPost,
+  ALL_MEI_CLUSTERS,
+} from "@/lib/mei-blog-engine";
+import {
+  MEI_KEYWORD_CLUSTERS,
+  DESENROLA_KEYWORD_CLUSTERS,
+} from "@/lib/mei-context";
 import { resend } from "@/lib/resend";
 import { notifySystemAlert } from "@/lib/notify";
 
@@ -16,7 +27,8 @@ const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 // Seleção aleatória ponderada: 50% MEI, 50% Desenrola — sem memória (funciona em cold start)
 function pickClusterIdx(): number {
-  const useDesenrola = Math.random() < 0.5 && DESENROLA_KEYWORD_CLUSTERS.length > 0;
+  const useDesenrola =
+    Math.random() < 0.5 && DESENROLA_KEYWORD_CLUSTERS.length > 0;
   if (useDesenrola) {
     const i = Math.floor(Math.random() * DESENROLA_KEYWORD_CLUSTERS.length);
     return MEI_KEYWORD_CLUSTERS.length + i;
@@ -43,7 +55,13 @@ export async function GET(request: Request) {
     });
     runId = run.id;
 
-    const results: { id: string; title: string; slug: string; published: boolean; categoria: string }[] = [];
+    const results: {
+      id: string;
+      title: string;
+      slug: string;
+      published: boolean;
+      categoria: string;
+    }[] = [];
     const errors: { index: number; error: string }[] = [];
     const cronStart = Date.now();
 
@@ -52,14 +70,18 @@ export async function GET(request: Request) {
 
       const elapsed = Date.now() - cronStart;
       if (elapsed > MAX_CRON_MS) {
-        console.warn(`[Cron MEI] Orçamento de ${MAX_CRON_MS / 1000}s atingido após ${i} posts. Encerrando.`);
+        console.warn(
+          `[Cron MEI] Orçamento de ${MAX_CRON_MS / 1000}s atingido após ${i} posts. Encerrando.`,
+        );
         break;
       }
 
       try {
         const clusterIdx = pickClusterIdx();
         const clusterName = ALL_MEI_CLUSTERS[clusterIdx]?.primary ?? "mei";
-        console.log(`[Cron MEI][${i + 1}/${NUM_POSTS}] Gerando post — cluster: ${clusterName}`);
+        console.log(
+          `[Cron MEI][${i + 1}/${NUM_POSTS}] Gerando post — cluster: ${clusterName}`,
+        );
         const post = await generateMeiBlogPost(clusterIdx);
         const saved = await saveMeiBlogPost(post);
         results.push({
@@ -70,10 +92,11 @@ export async function GET(request: Request) {
           categoria: saved.categoria,
         });
         console.log(
-          `[Cron MEI][${i + 1}/${NUM_POSTS}] ${saved.published ? "✅ Publicado" : "⏸ Retido"}: ${saved.title}`
+          `[Cron MEI][${i + 1}/${NUM_POSTS}] ${saved.published ? "✅ Publicado" : "⏸ Retido"}: ${saved.title}`,
         );
       } catch (postErr) {
-        const msg = postErr instanceof Error ? postErr.message : String(postErr);
+        const msg =
+          postErr instanceof Error ? postErr.message : String(postErr);
         console.error(`[Cron MEI][${i + 1}/${NUM_POSTS}] ❌ Erro:`, msg);
         errors.push({ index: i + 1, error: msg });
       }
@@ -114,7 +137,10 @@ export async function GET(request: Request) {
           `,
         });
       } catch (emailError) {
-        console.error("[Cron MEI] Falha ao enviar resumo por email:", emailError);
+        console.error(
+          "[Cron MEI] Falha ao enviar resumo por email:",
+          emailError,
+        );
       }
     }
 
@@ -145,7 +171,10 @@ export async function GET(request: Request) {
             `,
           });
         } catch (emailError) {
-          console.error("[Cron MEI] Falha ao enviar alerta por email:", emailError);
+          console.error(
+            "[Cron MEI] Falha ao enviar alerta por email:",
+            emailError,
+          );
         }
       }
     }
@@ -165,7 +194,10 @@ export async function GET(request: Request) {
       await failAutomationRun(runId, err, {
         automationKey: "blog-mei",
       }).catch((runError) => {
-        console.error("[Cron MEI] Falha ao registrar erro no monitor:", runError);
+        console.error(
+          "[Cron MEI] Falha ao registrar erro no monitor:",
+          runError,
+        );
       });
     }
 
@@ -174,23 +206,31 @@ export async function GET(request: Request) {
         "[ALERTA BLOG MEI]",
         "Falha fatal no cron do blog MEI.",
         err instanceof Error ? err.message : String(err),
-      ].join("\n")
+      ].join("\n"),
     ).catch((notifyError) => {
-      console.error("[Cron MEI] Falha ao enviar alerta operacional:", notifyError);
+      console.error(
+        "[Cron MEI] Falha ao enviar alerta operacional:",
+        notifyError,
+      );
     });
 
     if (process.env.ADMIN_EMAIL) {
-      await resend.emails.send({
-        from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
-        to: process.env.ADMIN_EMAIL,
-        subject: "[ALERTA][Blog MEI] Falha fatal no cron",
-        html: `
+      await resend.emails
+        .send({
+          from: "IRPF NSB <noreply@irpf.qaplay.com.br>",
+          to: process.env.ADMIN_EMAIL,
+          subject: "[ALERTA][Blog MEI] Falha fatal no cron",
+          html: `
           <h2>Falha fatal no cron do Blog MEI</h2>
           <p>${err instanceof Error ? err.message : String(err)}</p>
         `,
-      }).catch((emailError) => {
-        console.error("[Cron MEI] Falha ao enviar alerta fatal por email:", emailError);
-      });
+        })
+        .catch((emailError) => {
+          console.error(
+            "[Cron MEI] Falha ao enviar alerta fatal por email:",
+            emailError,
+          );
+        });
     }
 
     const msg = err instanceof Error ? err.message : String(err);

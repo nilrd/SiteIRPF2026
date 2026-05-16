@@ -1,7 +1,22 @@
 import { groqLlama, MODELS, callWithFallback } from "./llm-providers";
 import { prisma } from "./prisma";
 import { IRPF_DATA_CONTEXT } from "./irpf-context";
-import { getBrainContext, saveToKnowledge } from "./knowledge-brain";
+import {
+  getBrainContext,
+  saveToKnowledge,
+  isKeywordRecent,
+} from "./knowledge-brain";
+import { TrendResearchService } from "./trend-research";
+import {
+  getCurrentCampaignModes,
+  getDailyPautaDistribution,
+} from "./campaign-priority";
+import {
+  classifyPostType,
+  rankKeywords,
+  selectDailyPauta,
+} from "./keyword-scoring";
+import { verifyIRPFPost } from "./fact-check";
 
 type ResearchItem = {
   title: string;
@@ -42,44 +57,54 @@ const TRUSTED_SOURCE_URLS = [
 // Usadas quando o scraping de TRUSTED_SOURCE_URLS falha
 const STATIC_SOURCES: ResearchItem[] = [
   {
-    title: "Receita Federal — IRPF 2026: prazo oficial 23/03/2026 a 29/05/2026 (DOU em 16/03/2026)",
+    title:
+      "Receita Federal — IRPF 2026: prazo oficial 23/03/2026 a 29/05/2026 (DOU em 16/03/2026)",
     url: "https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda",
-    snippet: "IRPF 2026 (ano-base 2025): prazo oficial de 23 de março a 29 de maio de 2026, conforme publicação da Receita Federal no DOU em 16/03/2026. Obrigados: rendimentos tributáveis acima de R$ 35.584,00 em 2025. Multa mínima por atraso: R$ 165,74 ou 1% ao mês (limite de 20%).",
+    snippet:
+      "IRPF 2026 (ano-base 2025): prazo oficial de 23 de março a 29 de maio de 2026, conforme publicação da Receita Federal no DOU em 16/03/2026. Obrigados: rendimentos tributáveis acima de R$ 35.584,00 em 2025. Multa mínima por atraso: R$ 165,74 ou 1% ao mês (limite de 20%).",
   },
   {
-    title: "G1 Economia — Receita informa prazo IRPF 2026: 23/03 a 29/05 e critérios de obrigatoriedade",
+    title:
+      "G1 Economia — Receita informa prazo IRPF 2026: 23/03 a 29/05 e critérios de obrigatoriedade",
     url: "https://g1.globo.com/economia/imposto-de-renda/noticia/2026/03/16/imposto-de-renda-2026-prazo-comeca-em-23-marco-e-se-estende-ate-29-de-maio-veja-quem-deve-declarar.ghtml",
-    snippet: "Cobertura jornalística com base na divulgação da Receita Federal: prazo de entrega de 23 de março a 29 de maio de 2026; obrigatoriedade para rendimentos tributáveis acima de R$ 35.584,00; desconto simplificado de 20% limitado a R$ 16.754,34; parcelamento em até 8 quotas, mínimo de R$ 50 por quota.",
+    snippet:
+      "Cobertura jornalística com base na divulgação da Receita Federal: prazo de entrega de 23 de março a 29 de maio de 2026; obrigatoriedade para rendimentos tributáveis acima de R$ 35.584,00; desconto simplificado de 20% limitado a R$ 16.754,34; parcelamento em até 8 quotas, mínimo de R$ 50 por quota.",
   },
   {
     title: "Lei nº 15.270/2025 — Nova tabela IRPF e isenção até R$ 5.000",
     url: "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/l15270.htm",
-    snippet: "Lei nº 15.270/2025 — altera tabela progressiva do IRPF a partir de 2026: isenção integral até R$ 2.428,80/mês; isenção efetiva até R$ 5.000/mês via dedução especial de R$ 1.571,19 para quem aplica o desconto simplificado. Faixas: 7,5% / 15% / 22,5% / 27,5%.",
+    snippet:
+      "Lei nº 15.270/2025 — altera tabela progressiva do IRPF a partir de 2026: isenção integral até R$ 2.428,80/mês; isenção efetiva até R$ 5.000/mês via dedução especial de R$ 1.571,19 para quem aplica o desconto simplificado. Faixas: 7,5% / 15% / 22,5% / 27,5%.",
   },
   {
     title: "Receita Federal — Deduções permitidas no IRPF 2026",
     url: "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/declaracoes-e-demonstrativos/dirpf",
-    snippet: "Deduções IRPF 2026: saúde (sem limite), educação até R$ 3.561,50 por dependente, dependente R$ 2.275,08/ano, pensão alimentícia integral, previdência oficial e PGBL até 12% da renda bruta. Livro-caixa para autônomos.",
+    snippet:
+      "Deduções IRPF 2026: saúde (sem limite), educação até R$ 3.561,50 por dependente, dependente R$ 2.275,08/ano, pensão alimentícia integral, previdência oficial e PGBL até 12% da renda bruta. Livro-caixa para autônomos.",
   },
   {
     title: "Banco Central do Brasil — Taxa Selic e tributação de renda fixa",
     url: "https://www.bcb.gov.br/controleinflacao/taxaselic",
-    snippet: "Taxa Selic definida pelo COPOM. Usada como referência para tributação de renda fixa (CDB, LCI, LCA, Tesouro Direto), atualização de débitos tributários e planejamento financeiro.",
+    snippet:
+      "Taxa Selic definida pelo COPOM. Usada como referência para tributação de renda fixa (CDB, LCI, LCA, Tesouro Direto), atualização de débitos tributários e planejamento financeiro.",
   },
   {
     title: "INSS — Tabela de contribuição 2026 e deduções no IRPF",
     url: "https://www.gov.br/inss/pt-br",
-    snippet: "Contribuições ao INSS são dedutíveis integralmente no IRPF. Tabela 2026: alíquotas de 7,5% a 14% conforme salário. Aposentados com doenças graves têm isenção de IR sobre proventos.",
+    snippet:
+      "Contribuições ao INSS são dedutíveis integralmente no IRPF. Tabela 2026: alíquotas de 7,5% a 14% conforme salário. Aposentados com doenças graves têm isenção de IR sobre proventos.",
   },
   {
     title: "Receita Federal — Malha fina: como evitar e regularizar",
     url: "https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/malha-fiscal/malha-fina",
-    snippet: "Principais motivos de malha fina 2026: omissão de rendimentos, despesas médicas incompatíveis, divergência de informes, pensão alimentícia irregular, deduções sem comprovante. Prazo para autorregularização antes da intimação.",
+    snippet:
+      "Principais motivos de malha fina 2026: omissão de rendimentos, despesas médicas incompatíveis, divergência de informes, pensão alimentícia irregular, deduções sem comprovante. Prazo para autorregularização antes da intimação.",
   },
   {
     title: "CVM — Tributação de renda variável e fundos de investimento",
     url: "https://www.gov.br/cvm/pt-br",
-    snippet: "Operações em bolsa: IR de 15% (swing trade) ou 20% (day trade) sobre lucros. Isenção para vendas de ações até R$ 20.000/mês no mercado à vista. FIIs: rendimentos isentos para PF; ganho de capital tributado a 20%.",
+    snippet:
+      "Operações em bolsa: IR de 15% (swing trade) ou 20% (day trade) sobre lucros. Isenção para vendas de ações até R$ 20.000/mês no mercado à vista. FIIs: rendimentos isentos para PF; ganho de capital tributado a 20%.",
   },
 ];
 
@@ -92,7 +117,10 @@ function stripHtml(input: string): string {
     .trim();
 }
 
-async function fetchWithTimeout(url: string, timeoutMs = 9000): Promise<Response> {
+async function fetchWithTimeout(
+  url: string,
+  timeoutMs = 9000,
+): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -110,16 +138,19 @@ async function getTrendTopicFromInternet(): Promise<string | null> {
   try {
     const res = await fetchWithTimeout(
       "https://trends.google.com/trending/rss?geo=BR",
-      8000
+      8000,
     );
     if (!res.ok) return null;
     const xml = await res.text();
-    const titles = Array.from(xml.matchAll(/<title><!\[CDATA\[(.*?)\]\]><\/title>/g))
+    const titles = Array.from(
+      xml.matchAll(/<title><!\[CDATA\[(.*?)\]\]><\/title>/g),
+    )
       .map((m) => m[1]?.trim())
       .filter(Boolean)
       .slice(1, 20) as string[];
 
-    const financePattern = /(imposto|irpf|receita federal|inss|aposentadoria|fgts|mei|selic|ipca|salario|renda)/i;
+    const financePattern =
+      /(imposto|irpf|receita federal|inss|aposentadoria|fgts|mei|selic|ipca|salario|renda)/i;
     const picked = titles.find((t) => financePattern.test(t));
     return picked ?? null;
   } catch {
@@ -130,7 +161,7 @@ async function getTrendTopicFromInternet(): Promise<string | null> {
 async function getGoogleNewsResearch(keyword: string): Promise<ResearchItem[]> {
   try {
     const q = encodeURIComponent(
-      `${keyword} site:gov.br OR site:receita.fazenda.gov.br OR site:bcb.gov.br OR site:planalto.gov.br OR site:g1.globo.com OR site:veja.abril.com.br OR site:infomoney.com.br`
+      `${keyword} site:gov.br OR site:receita.fazenda.gov.br OR site:bcb.gov.br OR site:planalto.gov.br OR site:g1.globo.com OR site:veja.abril.com.br OR site:infomoney.com.br`,
     );
     const url = `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`;
     const res = await fetchWithTimeout(url, 9000);
@@ -145,7 +176,9 @@ async function getGoogleNewsResearch(keyword: string): Promise<ResearchItem[]> {
       .map((item) => {
         const titleMatch = item.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/);
         const linkMatch = item.match(/<link>(.*?)<\/link>/);
-        const descMatch = item.match(/<description><!\[CDATA\[(.*?)\]\]><\/description>/);
+        const descMatch = item.match(
+          /<description><!\[CDATA\[(.*?)\]\]><\/description>/,
+        );
         const title = titleMatch?.[1]?.trim() || "";
         const url = linkMatch?.[1]?.trim() || "";
         const snippet = stripHtml(descMatch?.[1] || "").slice(0, 280);
@@ -159,7 +192,7 @@ async function getGoogleNewsResearch(keyword: string): Promise<ResearchItem[]> {
       rssItems.slice(0, 4).map(async (item) => {
         const deep = await fetchArticleDeep(item.url);
         return deep.length > 80 ? { ...item, snippet: deep } : item;
-      })
+      }),
     );
 
     return [...enriched, ...rssItems.slice(4)];
@@ -185,11 +218,11 @@ async function fetchArticleDeep(articleUrl: string): Promise<string> {
     const semantic =
       html.match(/<article[^>]*>([\s\S]*?)<\/article>/i) ??
       html.match(/<main[^>]*>([\s\S]*?)<\/main>/i) ??
-      html.match(/<div[^>]*class="[^"]*(?:content|article|post|corpo|materia|news-body)[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+      html.match(
+        /<div[^>]*class="[^"]*(?:content|article|post|corpo|materia|news-body)[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+      );
     const source = semantic ? semantic[1] : html;
-    const text = stripHtml(source)
-      .replace(/\s+/g, " ")
-      .trim();
+    const text = stripHtml(source).replace(/\s+/g, " ").trim();
     // Pula os primeiros 120 chars (geralmente nav/header) e retorna ate 700 chars de corpo real
     return text.slice(120, 820).trim();
   } catch {
@@ -197,7 +230,9 @@ async function fetchArticleDeep(articleUrl: string): Promise<string> {
   }
 }
 
-async function collectResearchContext(keyword: string): Promise<ResearchItem[]> {
+async function collectResearchContext(
+  keyword: string,
+): Promise<ResearchItem[]> {
   // STATIC_SOURCES: contexto factual permanente (prazos, tabela, deducoes)
   // getGoogleNewsResearch: artigos recentes com conteudo profundo (top 4 deep-fetched)
   const news = await getGoogleNewsResearch(keyword);
@@ -212,7 +247,7 @@ async function collectResearchContext(keyword: string): Promise<ResearchItem[]> 
 function ensureSourcesSection(
   content: string,
   sources: ResearchItem[],
-  usedUrls?: string[]
+  usedUrls?: string[],
 ): string {
   if (/fontes/i.test(content)) return content;
   if (!sources.length) return content;
@@ -230,7 +265,10 @@ function ensureSourcesSection(
   if (!usedSources.length) return content;
 
   const links = usedSources
-    .map((s) => `<li><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.title}</a></li>`)
+    .map(
+      (s) =>
+        `<li><a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.title}</a></li>`,
+    )
     .join("");
   return `${content}\n<h2>Fontes</h2><ul>${links}</ul>`;
 }
@@ -273,20 +311,71 @@ function countWordHits(text: string, words: string[]): number {
 function detectPortugueseContent(sample: string): LanguageCheck {
   const text = stripHtmlAndUrls(sample).toLowerCase();
   const portugueseWords = [
-    "de", "para", "com", "que", "nao", "não", "voce", "você", "seu", "sua",
-    "declaracao", "declaração", "imposto", "renda", "receita", "federal", "prazo",
-    "deducao", "dedução", "educacao", "educação", "saude", "saúde", "malha", "fina",
-    "restituicao", "restituição", "como", "quando", "brasil", "contribuinte",
+    "de",
+    "para",
+    "com",
+    "que",
+    "nao",
+    "não",
+    "voce",
+    "você",
+    "seu",
+    "sua",
+    "declaracao",
+    "declaração",
+    "imposto",
+    "renda",
+    "receita",
+    "federal",
+    "prazo",
+    "deducao",
+    "dedução",
+    "educacao",
+    "educação",
+    "saude",
+    "saúde",
+    "malha",
+    "fina",
+    "restituicao",
+    "restituição",
+    "como",
+    "quando",
+    "brasil",
+    "contribuinte",
   ];
   const englishWords = [
-    "the", "and", "for", "with", "that", "this", "from", "into", "your", "you",
-    "income", "tax", "deduction", "deadline", "refund", "federal", "return", "guide",
-    "how", "what", "when", "should", "must", "can", "article", "tips",
+    "the",
+    "and",
+    "for",
+    "with",
+    "that",
+    "this",
+    "from",
+    "into",
+    "your",
+    "you",
+    "income",
+    "tax",
+    "deduction",
+    "deadline",
+    "refund",
+    "federal",
+    "return",
+    "guide",
+    "how",
+    "what",
+    "when",
+    "should",
+    "must",
+    "can",
+    "article",
+    "tips",
   ];
 
   const portugueseHits = countWordHits(text, portugueseWords);
   const englishHits = countWordHits(text, englishWords);
-  const isPortuguese = portugueseHits >= 12 && portugueseHits >= englishHits * 1.2;
+  const isPortuguese =
+    portugueseHits >= 12 && portugueseHits >= englishHits * 1.2;
 
   return { isPortuguese, portugueseHits, englishHits };
 }
@@ -308,7 +397,10 @@ function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
   return union === 0 ? 0 : intersection / union;
 }
 
-function isTitleTooSimilar(candidateTitle: string, existingTitles: string[]): boolean {
+function isTitleTooSimilar(
+  candidateTitle: string,
+  existingTitles: string[],
+): boolean {
   const candNorm = normalizeText(candidateTitle);
   const candSet = tokenSet(candidateTitle);
 
@@ -316,7 +408,8 @@ function isTitleTooSimilar(candidateTitle: string, existingTitles: string[]): bo
     const existingNorm = normalizeText(title);
     if (!existingNorm) return false;
     if (candNorm === existingNorm) return true;
-    if (candNorm.includes(existingNorm) || existingNorm.includes(candNorm)) return true;
+    if (candNorm.includes(existingNorm) || existingNorm.includes(candNorm))
+      return true;
 
     const score = jaccardSimilarity(candSet, tokenSet(title));
     return score >= 0.62;
@@ -355,7 +448,7 @@ export async function getSelicAtual(): Promise<number> {
   try {
     const res = await fetch(
       "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json",
-      { next: { revalidate: 86400 } }
+      { next: { revalidate: 86400 } },
     );
     const data = await res.json();
     return parseFloat(data[0]?.valor || "13.25");
@@ -392,33 +485,33 @@ function getRandomCoverImage(): string {
 const VISUAL_QUERY_MAP: Record<string, string> = {
   // IRPF
   "malha fina": "tax audit inspection document warning",
-  "multa": "penalty deadline overdue bill calendar",
-  "restituicao": "money refund success finance",
-  "atrasado": "late deadline clock urgent",
-  "retific": "edit document correction",
-  "dependente": "family child document care",
-  "deducao": "savings reduce money calculator",
-  "aposentado": "retirement senior pension savings",
-  "autonomo": "freelancer laptop work independent",
-  "aluguel": "real estate house keys property",
-  "heranca": "inheritance signing document family",
-  "previdencia": "retirement planning pension fund",
-  "fgts": "savings worker protection fund",
+  multa: "penalty deadline overdue bill calendar",
+  restituicao: "money refund success finance",
+  atrasado: "late deadline clock urgent",
+  retific: "edit document correction",
+  dependente: "family child document care",
+  deducao: "savings reduce money calculator",
+  aposentado: "retirement senior pension savings",
+  autonomo: "freelancer laptop work independent",
+  aluguel: "real estate house keys property",
+  heranca: "inheritance signing document family",
+  previdencia: "retirement planning pension fund",
+  fgts: "savings worker protection fund",
   "cpf bloqueado": "blocked identity document locked",
-  "investimento": "investment chart growth stocks",
+  investimento: "investment chart growth stocks",
   "renda fixa": "bond certificate bank savings",
-  "declaracao": "tax documents paperwork professional",
+  declaracao: "tax documents paperwork professional",
   "imposto de renda": "income tax form calculator",
-  "irpf": "tax documents calculator finance",
-  "tabela": "spreadsheet data numbers finance",
+  irpf: "tax documents calculator finance",
+  tabela: "spreadsheet data numbers finance",
   // Financas gerais
   "planejamento financeiro": "financial planning budget notebook",
-  "selic": "interest rate economy central bank",
-  "inss": "social security welfare document",
-  "mei": "small business entrepreneur office",
+  selic: "interest rate economy central bank",
+  inss: "social security welfare document",
+  mei: "small business entrepreneur office",
   "salario minimo": "minimum wage paycheck worker",
-  "divida": "debt finance stress money",
-  "inflacao": "inflation economy market chart",
+  divida: "debt finance stress money",
+  inflacao: "inflation economy market chart",
 };
 
 function getVisualQuery(keyword: string): string {
@@ -434,9 +527,21 @@ function getVisualQuery(keyword: string): string {
 
 // Localizações que devem ser excluídas do Unsplash (evitar fotos asiáticas genéricas)
 const EXCLUDED_LOCATIONS = [
-  "china", "japan", "korea", "taiwan", "hong kong", "beijing",
-  "shanghai", "tokyo", "singapore", "thailand", "vietnam",
-  "indonesia", "malaysia", "philippines", "myanmar",
+  "china",
+  "japan",
+  "korea",
+  "taiwan",
+  "hong kong",
+  "beijing",
+  "shanghai",
+  "tokyo",
+  "singapore",
+  "thailand",
+  "vietnam",
+  "indonesia",
+  "malaysia",
+  "philippines",
+  "myanmar",
 ];
 
 function isExcludedLocation(location?: string): boolean {
@@ -459,8 +564,9 @@ type ImageResult = {
 /** Usa Groq para gerar 3 keywords visuais em ingles para busca no Unsplash.
  * Retorna null em caso de falha (usar fallback VISUAL_QUERY_MAP).
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function getGroqImageKeywords(title: string, _summary?: string): Promise<string | null> {
+async function getGroqImageKeywords(
+  title: string,
+): Promise<string | null> {
   try {
     const completion = await groqLlama.chat.completions.create({
       model: MODELS.blogVerifier,
@@ -492,7 +598,8 @@ async function getGroqImageKeywords(title: string, _summary?: string): Promise<s
       temperature: 0.4,
       max_tokens: 30,
     });
-    const raw = (completion.choices?.[0]?.message?.content ?? "").trim()
+    const raw = (completion.choices?.[0]?.message?.content ?? "")
+      .trim()
       .replace(/^["']|["']$/g, ""); // remove aspas se o modelo retornar
     // Valida: 3 a 5 palavras simples em ingles
     if (/^[a-zA-Z]+( [a-zA-Z]+){2,4}$/.test(raw)) return raw;
@@ -508,14 +615,18 @@ async function getGroqImageKeywords(title: string, _summary?: string): Promise<s
  * - Triggera o endpoint de download (obrigatorio pela politica da Unsplash)
  * - Retorna URL 1200x630 + dados de atribuicao do fotografo
  */
-async function getTopicSpecificImage(keyword: string, title?: string, summary?: string): Promise<ImageResult> {
+async function getTopicSpecificImage(
+  keyword: string,
+  title?: string,
+  summary?: string,
+): Promise<ImageResult> {
   const accessKey = process.env.UNSPLASH_ACCESS_KEY;
   if (!accessKey) return { url: getRandomCoverImage(), attribution: null };
 
   // Tenta Groq primeiro para keywords mais relevantes e visuais
   let groqQuery: string | null = null;
   if (title && summary) {
-    groqQuery = await getGroqImageKeywords(title, summary);
+    groqQuery = await getGroqImageKeywords(title);
   }
 
   const queries = [
@@ -531,7 +642,7 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
         {
           headers: { Authorization: `Client-ID ${accessKey}` },
           next: { revalidate: 0 },
-        }
+        },
       );
       if (!res.ok) continue;
 
@@ -540,7 +651,11 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
         results?: Array<{
           id?: string;
           urls?: { regular?: string };
-          user?: { name?: string; links?: { html?: string }; location?: string };
+          user?: {
+            name?: string;
+            links?: { html?: string };
+            location?: string;
+          };
           links?: { html?: string; download_location?: string };
         }>;
       };
@@ -550,10 +665,13 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
 
       // Filtra fotos de fotógrafos baseados em países asiáticos
       const filtered = searchData.results.filter(
-        (p) => !isExcludedLocation(p.user?.location)
+        (p) => !isExcludedLocation(p.user?.location),
       );
       // Usa pool filtrado se >= 2 resultados; caso contrário usa conjunto original
-      const pool = (filtered.length >= 2 ? filtered : searchData.results).slice(0, 8);
+      const pool = (filtered.length >= 2 ? filtered : searchData.results).slice(
+        0,
+        8,
+      );
       const data = pool[Math.floor(Math.random() * pool.length)];
 
       const rawUrl = data?.urls?.regular;
@@ -564,17 +682,22 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
 
       const downloadLocation = data.links?.download_location;
       if (downloadLocation) {
-        fetch(`${downloadLocation}&client_id=${accessKey}`, { method: "GET" }).catch(() => {});
+        fetch(`${downloadLocation}&client_id=${accessKey}`, {
+          method: "GET",
+        }).catch(() => {});
       }
 
-      const attribution: UnsplashAttribution | null =
-        data.user?.name
-          ? {
-              photographerName: data.user.name,
-              photographerUrl: (data.user.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
-              photoUrl: (data.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
-            }
-          : null;
+      const attribution: UnsplashAttribution | null = data.user?.name
+        ? {
+            photographerName: data.user.name,
+            photographerUrl:
+              (data.user.links?.html ?? "https://unsplash.com") +
+              "?utm_source=irpf_nsb&utm_medium=referral",
+            photoUrl:
+              (data.links?.html ?? "https://unsplash.com") +
+              "?utm_source=irpf_nsb&utm_medium=referral",
+          }
+        : null;
 
       return { url: finalUrl, attribution };
     } catch {
@@ -589,7 +712,7 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
       {
         headers: { Authorization: `Client-ID ${accessKey}` },
         next: { revalidate: 0 },
-      }
+      },
     );
     if (fallbackRes.ok) {
       const data = (await fallbackRes.json()) as {
@@ -601,21 +724,29 @@ async function getTopicSpecificImage(keyword: string, title?: string, summary?: 
       if (rawUrl) {
         const base = rawUrl.split("?")[0];
         if (data.links?.download_location) {
-          fetch(`${data.links.download_location}&client_id=${accessKey}`, { method: "GET" }).catch(() => {});
+          fetch(`${data.links.download_location}&client_id=${accessKey}`, {
+            method: "GET",
+          }).catch(() => {});
         }
         return {
           url: `${base}?auto=format&fit=crop&w=1200&h=630&q=85`,
           attribution: data.user?.name
             ? {
                 photographerName: data.user.name,
-                photographerUrl: (data.user.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
-                photoUrl: (data.links?.html ?? "https://unsplash.com") + "?utm_source=irpf_nsb&utm_medium=referral",
+                photographerUrl:
+                  (data.user.links?.html ?? "https://unsplash.com") +
+                  "?utm_source=irpf_nsb&utm_medium=referral",
+                photoUrl:
+                  (data.links?.html ?? "https://unsplash.com") +
+                  "?utm_source=irpf_nsb&utm_medium=referral",
               }
             : null,
         };
       }
     }
-  } catch { /* usa cover estatica */ }
+  } catch {
+    /* usa cover estatica */
+  }
 
   return { url: getRandomCoverImage(), attribution: null };
 }
@@ -702,13 +833,21 @@ export const KEYWORD_CLUSTERS = [
   },
   {
     primary: "declarar aluguel imposto de renda",
-    secondary: ["inquilino IRPF", "proprietario aluguel IR", "livro caixa aluguel"],
+    secondary: [
+      "inquilino IRPF",
+      "proprietario aluguel IR",
+      "livro caixa aluguel",
+    ],
     volume: "media",
     intent: "informacional",
   },
   {
     primary: "autônomo profissional liberal como declarar IR",
-    secondary: ["carnê-leão MEI IR", "profissional liberal IRPF", "calculo IR mensal autonomo"],
+    secondary: [
+      "carnê-leão MEI IR",
+      "profissional liberal IRPF",
+      "calculo IR mensal autonomo",
+    ],
     volume: "media",
     intent: "transacional",
   },
@@ -720,37 +859,61 @@ export const KEYWORD_CLUSTERS = [
   },
   {
     primary: "previdencia privada PGBL imposto de renda",
-    secondary: ["PGBL deducao IR", "VGBL diferenca IR", "PGBL 12 por cento renda"],
+    secondary: [
+      "PGBL deducao IR",
+      "VGBL diferenca IR",
+      "PGBL 12 por cento renda",
+    ],
     volume: "media",
     intent: "informacional",
   },
   {
     primary: "heranca e doacao IRPF como declarar",
-    secondary: ["receber heranca IR", "doacao bens ITCMD IRPF", "declarar imovel herdado"],
+    secondary: [
+      "receber heranca IR",
+      "doacao bens ITCMD IRPF",
+      "declarar imovel herdado",
+    ],
     volume: "media",
     intent: "informacional",
   },
   {
     primary: "rendimentos recebidos acumuladamente RRA imposto de renda",
-    secondary: ["calculo RRA", "rescisao trabalhista IR", "acao trabalhista IRPF"],
+    secondary: [
+      "calculo RRA",
+      "rescisao trabalhista IR",
+      "acao trabalhista IRPF",
+    ],
     volume: "media",
     intent: "informacional",
   },
   {
     primary: "renda fixa CDB LCI LCA imposto de renda",
-    secondary: ["IR rendimentos bancarios", "isencao LCI LCA IR", "declarar CDB IRPF"],
+    secondary: [
+      "IR rendimentos bancarios",
+      "isencao LCI LCA IR",
+      "declarar CDB IRPF",
+    ],
     volume: "media",
     intent: "informacional",
   },
   {
     primary: "pensao alimenticia imposto de renda",
-    secondary: ["pensao alimenticia e tributavel", "declarar pensao IRPF", "pensionista deducao IR"],
+    secondary: [
+      "pensao alimenticia e tributavel",
+      "declarar pensao IRPF",
+      "pensionista deducao IR",
+    ],
     volume: "media",
     intent: "informacional",
   },
   {
     primary: "simplificado x completo IRPF qual e melhor",
-    secondary: ["desconto padrao IR", "declaracao completa vantagens", "calcular melhor modelo IRPF"],
+    secondary: [
+      "desconto padrao IR",
+      "declaracao completa vantagens",
+      "calcular melhor modelo IRPF",
+    ],
     volume: "media",
     intent: "transacional",
   },
@@ -760,13 +923,19 @@ export const KEYWORD_CLUSTERS = [
 export const FINANCE_CLUSTERS = [
   {
     primary: "nova lei isencao imposto de renda 2026 lei 15270",
-    secondary: ["isencao IR salario 5000", "quem nao paga imposto de renda 2026"],
+    secondary: [
+      "isencao IR salario 5000",
+      "quem nao paga imposto de renda 2026",
+    ],
     volume: "alta",
     intent: "informacional",
   },
   {
     primary: "planejamento financeiro pessoal 2026",
-    secondary: ["como organizar financas pessoais", "metas financeiras ano novo"],
+    secondary: [
+      "como organizar financas pessoais",
+      "metas financeiras ano novo",
+    ],
     volume: "alta",
     intent: "informacional",
   },
@@ -778,43 +947,64 @@ export const FINANCE_CLUSTERS = [
   },
   {
     primary: "FGTS saque regras 2026",
-    secondary: ["FGTS aniversario saque antecipado", "FGTS demissao sem justa causa calculo"],
+    secondary: [
+      "FGTS aniversario saque antecipado",
+      "FGTS demissao sem justa causa calculo",
+    ],
     volume: "alta",
     intent: "informacional",
   },
   {
     primary: "aposentadoria INSS regras pontuacao 2026",
-    secondary: ["tempo de contribuicao aposentadoria", "calculo beneficio INSS 2026"],
+    secondary: [
+      "tempo de contribuicao aposentadoria",
+      "calculo beneficio INSS 2026",
+    ],
     volume: "alta",
     intent: "informacional",
   },
   {
     primary: "MEI simples nacional imposto 2026 limite faturamento",
-    secondary: ["MEI quanto paga de imposto mensal", "limite MEI 2026 microempreendedor"],
+    secondary: [
+      "MEI quanto paga de imposto mensal",
+      "limite MEI 2026 microempreendedor",
+    ],
     volume: "alta",
     intent: "informacional",
   },
   {
     primary: "salario minimo 2026 reajuste impacto",
-    secondary: ["novo salario minimo valor 2026", "impacto salario minimo beneficios sociais"],
+    secondary: [
+      "novo salario minimo valor 2026",
+      "impacto salario minimo beneficios sociais",
+    ],
     volume: "alta",
     intent: "informacional",
   },
   {
     primary: "como sair das dividas planejamento financeiro 2026",
-    secondary: ["renegociacao divida bancaria", "educacao financeira para iniciantes"],
+    secondary: [
+      "renegociacao divida bancaria",
+      "educacao financeira para iniciantes",
+    ],
     volume: "alta",
     intent: "informacional",
   },
   {
     primary: "inflacao IPCA 2026 impacto poder de compra",
-    secondary: ["IPCA acumulado 2025 resultado", "correcao salarial inflacao meta"],
+    secondary: [
+      "IPCA acumulado 2025 resultado",
+      "correcao salarial inflacao meta",
+    ],
     volume: "media",
     intent: "informacional",
   },
   {
     primary: "previdencia privada PGBL VGBL vale a pena 2026",
-    secondary: ["diferenca PGBL VGBL imposto renda", "previdencia privada vantagens desvantagens"],
+    secondary: [
+      "diferenca PGBL VGBL imposto renda",
+      "previdencia privada vantagens desvantagens",
+    ],
     volume: "media",
     intent: "informacional",
   },
@@ -848,20 +1038,40 @@ const TITLE_FORMATS = [
 ] as const;
 
 /** Seleciona formato de título evitando os mais recentemente usados */
-function selectMandatoryTitleFormat(existingPosts: ExistingPostSnapshot[]): string {
+function selectMandatoryTitleFormat(
+  existingPosts: ExistingPostSnapshot[],
+): string {
   const recentFormats = new Set(
-    existingPosts.slice(0, 6).map((p) => detectTitleFormat(p.title))
+    existingPosts.slice(0, 6).map((p) => detectTitleFormat(p.title)),
   );
   // Map grosseiro: cada template do array para formatos internos
   const templateFormats: string[] = [
-    "lista-numerada", "lista-numerada", "mitos", "lista-numerada",
-    "pergunta-indireta", "pergunta-indireta", "pergunta-indireta", "pergunta-indireta",
-    "pergunta", "pergunta", "novidade", "novidade",
-    "checklist", "comparativo", "descubra", "descubra",
-    "descubra", "novidade", "descubra", "descubra",
+    "lista-numerada",
+    "lista-numerada",
+    "mitos",
+    "lista-numerada",
+    "pergunta-indireta",
+    "pergunta-indireta",
+    "pergunta-indireta",
+    "pergunta-indireta",
+    "pergunta",
+    "pergunta",
+    "novidade",
+    "novidade",
+    "checklist",
+    "comparativo",
+    "descubra",
+    "descubra",
+    "descubra",
+    "novidade",
+    "descubra",
+    "descubra",
   ];
   // Prefere templates cujo formato não apareceu nos recentes
-  const candidates = TITLE_FORMATS.map((t, i) => ({ t, fmt: templateFormats[i] ?? "outro" }))
+  const candidates = TITLE_FORMATS.map((t, i) => ({
+    t,
+    fmt: templateFormats[i] ?? "outro",
+  }))
     .filter(({ fmt }) => !recentFormats.has(fmt))
     .map(({ t }) => t);
   const pool = candidates.length > 0 ? candidates : [...TITLE_FORMATS];
@@ -874,19 +1084,24 @@ function detectTitleFormat(title: string): string {
   const t = title.trim();
   if (/^\d+\s/.test(t)) return "lista-numerada";
   if (/\?$/.test(t)) return "pergunta";
-  if (/^(como|por que|quando|quem|onde|qual)\b/i.test(t)) return "pergunta-indireta";
+  if (/^(como|por que|quando|quem|onde|qual)\b/i.test(t))
+    return "pergunta-indireta";
   if (/\bguia\b|\bpasso a passo\b|\bcompleto\b/i.test(t)) return "guia";
   if (/\bchecklist\b/i.test(t)) return "checklist";
-  if (/\bo que muda\b|\bnovas regras\b|\bnovidades\b/i.test(t)) return "novidade";
+  if (/\bo que muda\b|\bnovas regras\b|\bnovidades\b/i.test(t))
+    return "novidade";
   if (/\bvs\b|\bdiferenca\b|\bcomparativo\b/i.test(t)) return "comparativo";
   if (/\bentenda\b|\bdescubra\b|\bveja\b|\bsaiba\b/i.test(t)) return "descubra";
   if (/\bmitos?\b|\bverdades?\b|\bmentira\b/i.test(t)) return "mitos";
-  if (/^(irpf|imposto|declaracao|receita|tributacao)/i.test(t)) return "tema-direto";
+  if (/^(irpf|imposto|declaracao|receita|tributacao)/i.test(t))
+    return "tema-direto";
   return "outro";
 }
 
 /* ---- Gera instrucao de diversidade de formato ---- */
-function buildFormatDiversityNotice(existingPosts: ExistingPostSnapshot[]): string {
+function buildFormatDiversityNotice(
+  existingPosts: ExistingPostSnapshot[],
+): string {
   const recent = existingPosts.slice(0, 8);
   if (!recent.length) return "";
 
@@ -906,12 +1121,16 @@ function buildFormatDiversityNotice(existingPosts: ExistingPostSnapshot[]): stri
 
   const parts: string[] = [];
   if (last3Formats.length) {
-    parts.push(`Formatos usados nos ultimos ${last3Formats.length} posts: ${last3Formats.join(", ")}.`);
+    parts.push(
+      `Formatos usados nos ultimos ${last3Formats.length} posts: ${last3Formats.join(", ")}.`,
+    );
   }
   if (overdoneFormats.length) {
     parts.push(`Formatos ja repetidos (evite): ${overdoneFormats.join(", ")}.`);
   }
-  parts.push("Escolha o formato que cria o MAIOR CONTRASTE com esses posts recentes, preservando relevancia para o tema.");
+  parts.push(
+    "Escolha o formato que cria o MAIOR CONTRASTE com esses posts recentes, preservando relevancia para o tema.",
+  );
   return parts.join(" ");
 }
 
@@ -922,12 +1141,19 @@ function blogSystemPrompt(
   existingPosts: ExistingPostSnapshot[],
   mandatoryFormat: string,
   compactMode: boolean = false,
-  brainContext: string = ""
+  brainContext: string = "",
 ) {
-  const hoje = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  const hoje = new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
   const researchBlock = research.length
     ? research
-        .map((r, idx) => `${idx + 1}. ${r.title}\nURL: ${r.url}\nResumo: ${r.snippet}`)
+        .map(
+          (r, idx) =>
+            `${idx + 1}. ${r.title}\nURL: ${r.url}\nResumo: ${r.snippet}`,
+        )
         .join("\n\n")
     : "Sem dados recentes de internet disponiveis. Use apenas fontes oficiais atemporais e explicite incertezas de data.";
 
@@ -1121,14 +1347,18 @@ REGRA 15 — FORMATO DO TÍTULO (SORTEADO — SIGA OBRIGATORIAMENTE)
    I) Comparativo:       "IRPF 2026 vs 2025: o que mudou na declaração"
    J) Novidade/Urgente:  "IRPF 2026 começa em março: o que fazer antes do prazo"
 
-${brainContext ? `═══════════════════════════════════════════
+${
+  brainContext
+    ? `═══════════════════════════════════════════
 DADOS VERIFICADOS — CÉREBRO (FONTES CACHEADAS E VERIFICADAS)
 ═══════════════════════════════════════════
 
 Use estes dados prioritariamente — são de fontes verificadas e mais estáveis que o Google News:
 ${brainContext}
 
-` : ""}═══════════════════════════════════════════
+`
+    : ""
+}═══════════════════════════════════════════
 DADOS PESQUISADOS NA INTERNET
 ═══════════════════════════════════════════
 
@@ -1175,8 +1405,17 @@ FORMATO DE SAÍDA (JSON estrito — TODOS os campos obrigatórios)
 
 /* ---- Filtro de temas fora do escopo IRPF ---- */
 const BLOCKED_TOPICS = [
-  "inss", "aposentadoria", "previdencia", "fgts", "clt", "trabalhista",
-  "beneficio previdenciario", "bpc", "loas", "auxilio doenca", "seguro desemprego",
+  "inss",
+  "aposentadoria",
+  "previdencia",
+  "fgts",
+  "clt",
+  "trabalhista",
+  "beneficio previdenciario",
+  "bpc",
+  "loas",
+  "auxilio doenca",
+  "seguro desemprego",
 ] as const;
 
 function isTopicOnScope(topic: string): boolean {
@@ -1185,9 +1424,11 @@ function isTopicOnScope(topic: string): boolean {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
   // Permitir menção ao INSS apenas no contexto de deduções do IRPF
-  const isInssDeduction = lower.includes("deducao") || lower.includes("contribuicao");
+  const isInssDeduction =
+    lower.includes("deducao") || lower.includes("contribuicao");
   return !BLOCKED_TOPICS.some((blocked) => {
-    if ((blocked === "inss" || blocked === "previdencia") && isInssDeduction) return false;
+    if ((blocked === "inss" || blocked === "previdencia") && isInssDeduction)
+      return false;
     return lower.includes(blocked);
   });
 }
@@ -1237,12 +1478,17 @@ Criterios: baixo/medio = aprovado:true (publicar); alto/critico = aprovado:false
     });
 
     const raw = completion.choices[0]?.message?.content || "{}";
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+    const cleaned = raw
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```\s*$/i, "")
+      .trim();
     const parsed = JSON.parse(cleaned);
     return {
       aprovado: parsed.aprovado === true,
       nivel_risco: parsed.nivel_risco || "medio",
-      itens_de_risco: Array.isArray(parsed.itens_de_risco) ? parsed.itens_de_risco : [],
+      itens_de_risco: Array.isArray(parsed.itens_de_risco)
+        ? parsed.itens_de_risco
+        : [],
       resumo: parsed.resumo || "Verificacao sem resultado claro",
     };
   } catch {
@@ -1259,22 +1505,90 @@ Criterios: baixo/medio = aprovado:true (publicar); alto/critico = aprovado:false
 /* ---- Generate blog post ---- */
 export async function generateBlogPost(
   clusterIndex?: number,
-  customKeyword?: string
+  customKeyword?: string,
 ) {
   const selicAtual = await getSelicAtual();
   const existingPosts = await getExistingPublishedPosts();
   const existingTitles = existingPosts.map((p) => p.title);
-  const cluster = clusterIndex !== undefined
-    ? ALL_CLUSTERS[clusterIndex % ALL_CLUSTERS.length]
-    : null;
+  const cluster =
+    clusterIndex !== undefined
+      ? ALL_CLUSTERS[clusterIndex % ALL_CLUSTERS.length]
+      : null;
+
+  // Camada editorial: usa cache de trends quando nao ha keyword forcada.
+  // Em caso de falha ou cache vazio, comportamento atual permanece (fallback total).
+  const campaignModes = getCurrentCampaignModes();
+  const campaignMode = campaignModes.join(",");
+  let trendPick: {
+    keyword: string;
+    postType: "traffic" | "lead";
+    searchIntent: string;
+    audience: string;
+  } | null = null;
+
+  if (!customKeyword && clusterIndex === undefined) {
+    try {
+      const trendService = new TrendResearchService();
+      const cachedTrends = await trendService.getCachedTrends(undefined, 120);
+      if (cachedTrends.length > 0) {
+        const ranked = rankKeywords(
+          cachedTrends.map((item) => ({
+            keyword: item.keyword,
+            category: item.category,
+            source: item.source,
+            audience: item.audience,
+            intent: item.intent,
+            trendScore: item.trendScore,
+            businessScore: item.businessScore,
+            urgencyScore: item.urgencyScore,
+            seoScore: item.seoScore,
+            riskScore: item.riskScore,
+            breakoutStatus: item.breakoutStatus,
+          })),
+          campaignModes,
+        );
+
+        const distribution = getDailyPautaDistribution(campaignModes);
+        const pauta = selectDailyPauta(ranked, distribution);
+        const freshPick = await (async () => {
+          for (const item of pauta) {
+            const recent = await isKeywordRecent(item.keyword, 7);
+            if (!recent) {
+              return item;
+            }
+          }
+          return pauta[0] ?? ranked[0] ?? null;
+        })();
+
+        if (freshPick) {
+          trendPick = {
+            keyword: freshPick.keyword,
+            postType: freshPick.postType,
+            searchIntent: freshPick.searchIntent,
+            audience: freshPick.audience,
+          };
+        }
+      }
+    } catch {
+      trendPick = null;
+    }
+  }
 
   const trendKeyword = customKeyword ? null : await getTrendTopicFromInternet();
-  const keyword = customKeyword || trendKeyword || cluster?.primary || "IRPF 2026";
+  const keyword =
+    customKeyword ||
+    (clusterIndex !== undefined ? cluster?.primary : null) ||
+    trendPick?.keyword ||
+    trendKeyword ||
+    cluster?.primary ||
+    "IRPF 2026";
   const secundarias = cluster?.secondary?.join(", ") || "";
 
   // Bloqueia temas fora do escopo IRPF antes de qualquer chamada de IA
   if (!isTopicOnScope(keyword)) {
-    throw new Error(`Tema "${keyword}" esta fora do escopo do blog IRPF (INSS, aposentadoria, FGTS, etc). Post nao gerado.`);
+    throw new Error(
+      `Tema "${keyword}" esta fora do escopo do blog IRPF (INSS, aposentadoria, FGTS, etc). Post nao gerado.`,
+    );
   }
 
   const research = await collectResearchContext(keyword);
@@ -1295,8 +1609,8 @@ export async function generateBlogPost(
           category: "noticia",
           year: 2026,
           ttlDays: 7,
-        })
-      )
+        }),
+      ),
   );
 
   const mandatoryFormat = selectMandatoryTitleFormat(existingPosts);
@@ -1307,11 +1621,25 @@ export async function generateBlogPost(
       : "";
 
     const systemContent =
-      blogSystemPrompt(selicAtual, research, existingPosts, mandatoryFormat, false, brainCtx) + customNotice;
+      blogSystemPrompt(
+        selicAtual,
+        research,
+        existingPosts,
+        mandatoryFormat,
+        false,
+        brainCtx,
+      ) + customNotice;
 
     // Versão compacta para o modelo 8b (último recurso — contexto menor)
     const compactSystemContent =
-      blogSystemPrompt(selicAtual, research, existingPosts, mandatoryFormat, true, brainCtx) + customNotice;
+      blogSystemPrompt(
+        selicAtual,
+        research,
+        existingPosts,
+        mandatoryFormat,
+        true,
+        brainCtx,
+      ) + customNotice;
 
     const userContent = `TEMA OBRIGATORIO DO ARTIGO: "${keyword}". Voce DEVE escrever exclusivamente sobre este tema — nao mude para outro assunto.${
       secundarias ? ` Keywords secundarias a incluir: ${secundarias}.` : ""
@@ -1333,15 +1661,21 @@ export async function generateBlogPost(
   // Trava de idioma: se vier em inglês, força regeneração em pt-BR.
   let forceUnpublished = false;
   let languageCheck = detectPortugueseContent(
-    `${parsed?.title || ""}\n${parsed?.summary || ""}\n${parsed?.content || ""}`.slice(0, 12000)
+    `${parsed?.title || ""}\n${parsed?.summary || ""}\n${parsed?.content || ""}`.slice(
+      0,
+      12000,
+    ),
   );
   if (!languageCheck.isPortuguese) {
     ({ data: parsed, model: aiModel } = await runGeneration(
-      "REGENERE O ARTIGO IMEDIATAMENTE EM PORTUGUES DO BRASIL. O post anterior saiu em ingles e foi rejeitado. Retorne TODO o JSON em pt-BR, incluindo title, summary, content e FAQs."
+      "REGENERE O ARTIGO IMEDIATAMENTE EM PORTUGUES DO BRASIL. O post anterior saiu em ingles e foi rejeitado. Retorne TODO o JSON em pt-BR, incluindo title, summary, content e FAQs.",
     ));
 
     languageCheck = detectPortugueseContent(
-      `${parsed?.title || ""}\n${parsed?.summary || ""}\n${parsed?.content || ""}`.slice(0, 12000)
+      `${parsed?.title || ""}\n${parsed?.summary || ""}\n${parsed?.content || ""}`.slice(
+        0,
+        12000,
+      ),
     );
   }
 
@@ -1349,13 +1683,13 @@ export async function generateBlogPost(
     // Não lança exceção — salva como rascunho para revisão manual
     forceUnpublished = true;
     console.warn(
-      `[Blog] Idioma suspeito após 2 tentativas (ptHits=${languageCheck.portugueseHits}, enHits=${languageCheck.englishHits}). Salvando como rascunho para revisão.`
+      `[Blog] Idioma suspeito após 2 tentativas (ptHits=${languageCheck.portugueseHits}, enHits=${languageCheck.englishHits}). Salvando como rascunho para revisão.`,
     );
   }
 
   if (parsed?.title && isTitleTooSimilar(parsed.title, existingTitles)) {
     ({ data: parsed, model: aiModel } = await runGeneration(
-      "O titulo proposto ficou parecido com outro post existente. Gere NOVO titulo e NOVO angulo editorial com foco em curiosidade legitima e alto CTR, sem sensacionalismo."
+      "O titulo proposto ficou parecido com outro post existente. Gere NOVO titulo e NOVO angulo editorial com foco em curiosidade legitima e alto CTR, sem sensacionalismo.",
     ));
   }
 
@@ -1372,7 +1706,9 @@ export async function generateBlogPost(
   const content = ensureSourcesSection(
     parsed.content || "",
     research,
-    Array.isArray(parsed.usedSourceUrls) ? (parsed.usedSourceUrls as string[]) : undefined
+    Array.isArray(parsed.usedSourceUrls)
+      ? (parsed.usedSourceUrls as string[])
+      : undefined,
   );
 
   // Usa imageQuery gerado pela IA (mais específico ao contexto do artigo)
@@ -1385,11 +1721,42 @@ export async function generateBlogPost(
   const imageResult = await getTopicSpecificImage(
     imageSearchTerm,
     parsed.title || keyword,
-    parsed.summary || ""
+    parsed.summary || "",
   );
 
   // Segunda chamada Groq (modelo leve) — verifica fatos antes de publicar
-  const review = await verificarPost(`${parsed.title || keyword}\n\n${content}`);
+  const review = await verificarPost(
+    `${parsed.title || keyword}\n\n${content}`,
+  );
+  const factCheck = await verifyIRPFPost({
+    title: parsed.title || keyword,
+    summary: parsed.summary || "",
+    content,
+    keyword,
+  });
+
+  const reviewApproved = !forceUnpublished && factCheck.autoPublish;
+  const needsReview = forceUnpublished || factCheck.needsReview;
+  const resolvedPostType = trendPick?.postType ?? classifyPostType(keyword);
+  const resolvedSearchIntent =
+    trendPick?.searchIntent ??
+    (resolvedPostType === "lead" ? "comercial" : "informacional");
+  const resolvedAudience = trendPick?.audience ?? "contribuintes pessoa fisica";
+
+  const reviewPayload = {
+    legacyReview: review,
+    factCheck,
+    languageCheck,
+    selectedTheme: {
+      keyword,
+      fromTrendCache: Boolean(trendPick),
+      campaignMode,
+      postType: resolvedPostType,
+      searchIntent: resolvedSearchIntent,
+      audience: resolvedAudience,
+    },
+    needsReview,
+  };
 
   return {
     keyword,
@@ -1404,11 +1771,26 @@ export async function generateBlogPost(
     imageAttribution: imageResult.attribution
       ? JSON.stringify(imageResult.attribution)
       : null,
-    imageAlt: (typeof parsed.imageAlt === "string" && parsed.imageAlt ? parsed.imageAlt : null) ?? (parsed.title || keyword),
-    articleSection: (typeof parsed.articleSection === "string" ? parsed.articleSection : null) ?? "IRPF",
-    isNewsworthy: typeof parsed.isNewsworthy === "boolean" ? parsed.isNewsworthy : false,
-    reviewApproved: !forceUnpublished, // publica sempre; forceUnpublished só ativo se idioma errado após 2 tentativas
-    reviewJson: JSON.stringify(review),
+    imageAlt:
+      (typeof parsed.imageAlt === "string" && parsed.imageAlt
+        ? parsed.imageAlt
+        : null) ??
+      (parsed.title || keyword),
+    articleSection:
+      (typeof parsed.articleSection === "string"
+        ? parsed.articleSection
+        : null) ?? "IRPF",
+    isNewsworthy:
+      typeof parsed.isNewsworthy === "boolean" ? parsed.isNewsworthy : false,
+    postType: resolvedPostType,
+    audience: resolvedAudience,
+    searchIntent: resolvedSearchIntent,
+    factScore: factCheck.factScore,
+    riskScore: factCheck.riskScore,
+    needsReview,
+    campaignMode,
+    reviewApproved,
+    reviewJson: JSON.stringify(reviewPayload),
     aiModel,
   };
 }
@@ -1416,11 +1798,14 @@ export async function generateBlogPost(
 /* ---- Save post to DB ---- */
 export async function saveBlogPost(
   post: Awaited<ReturnType<typeof generateBlogPost>>,
-  categoria: "IRPF" | "MEI" | "DESENROLA" | "GERAL" = "IRPF"
+  categoria: "IRPF" | "MEI" | "DESENROLA" | "GERAL" = "IRPF",
 ) {
   // Deduplicação de slug: se já existe, adiciona sufixo de timestamp
   let slug = post.slug;
-  const exists = await prisma.blogPost.findFirst({ where: { slug }, select: { id: true } });
+  const exists = await prisma.blogPost.findFirst({
+    where: { slug },
+    select: { id: true },
+  });
   if (exists) {
     slug = `${slug}-${Date.now().toString(36)}`;
   }
@@ -1438,6 +1823,13 @@ export async function saveBlogPost(
       imageAttribution: post.imageAttribution ?? null,
       imageAlt: post.imageAlt ?? post.title,
       published: post.reviewApproved,
+      postType: post.postType ?? null,
+      audience: post.audience ?? null,
+      searchIntent: post.searchIntent ?? null,
+      factScore: post.factScore ?? null,
+      riskScore: post.riskScore ?? null,
+      needsReview: post.needsReview ?? !post.reviewApproved,
+      campaignMode: post.campaignMode ?? null,
       reviewJson: post.reviewJson ?? "",
       aiModel: post.aiModel ?? "",
       categoria,

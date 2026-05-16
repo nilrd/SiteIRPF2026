@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { buildAdminNotificationEmail, buildLeadWelcomeEmail } from "@/lib/email-templates";
 import { prisma } from "@/lib/prisma";
-import { resend } from "@/lib/resend";
-import { notifyNewLead } from "@/lib/notify";
+import { notifyLead } from "@/lib/notification-hub";
 
 export const dynamic = "force-dynamic";
 
@@ -22,40 +20,6 @@ const schema = z.object({
   mensagem: z.string().max(500).optional(),
 });
 
-type SafeEmailResult = {
-  success: boolean;
-  skipped: boolean;
-  id: string | null;
-  error: string | null;
-};
-
-async function safeSendEmail(params: Parameters<typeof resend.emails.send>[0]): Promise<SafeEmailResult> {
-  try {
-    const { data, error } = await resend.emails.send(params);
-    if (error) {
-      return {
-        success: false,
-        skipped: false,
-        id: null,
-        error: typeof error === "string" ? error : JSON.stringify(error),
-      };
-    }
-
-    return {
-      success: true,
-      skipped: false,
-      id: data?.id ?? null,
-      error: null,
-    };
-  } catch (err) {
-    return {
-      success: false,
-      skipped: false,
-      id: null,
-      error: err instanceof Error ? err.message : "Erro desconhecido ao enviar email",
-    };
-  }
-}
 
 export async function POST(request: Request) {
   try {
@@ -78,67 +42,31 @@ export async function POST(request: Request) {
     const waNum = (data.telefone || "").replace(/\D/g, "");
     const waLink = waNum
       ? `https://wa.me/55${waNum}?text=${encodeURIComponent(`Olá ${data.nome}! Vi que você se cadastrou no nosso site. Como posso ajudar com seu IRPF?`)}`
-      : "#";
-    const primeiroNome = data.nome.split(" ")[0];
+      : null;
     const diasRestantes = Math.max(
       0,
       Math.ceil((new Date("2026-05-29T23:59:59-03:00").getTime() - Date.now()) / 86400000)
     );
 
-    const fromLead = process.env.FROM_EMAIL || "Nilson Brites - IRPF <onboarding@resend.dev>";
-    const fromAdmin = process.env.FROM_EMAIL || "IRPF NSB <onboarding@resend.dev>";
-    const adminEmail = process.env.ADMIN_EMAIL || "nilson.brites@gmail.com";
-
-    if (!process.env.FROM_EMAIL) {
-      console.warn("[leads] FROM_EMAIL nao configurado. Usando fallback onboarding@resend.dev.");
-    }
-    if (!process.env.ADMIN_EMAIL) {
-      console.warn("[leads] ADMIN_EMAIL nao configurado. Usando fallback nilson.brites@gmail.com.");
-    }
-
-    const leadEmailResult = await safeSendEmail({
-      from: fromLead,
-      to: data.email,
-      subject: `${primeiroNome}, recebemos seu contato - IRPF 2026 (prazo: 29 de maio)`,
-      html: buildLeadWelcomeEmail({
-        primeiroNome,
-        diasRestantes,
-      }),
-    });
-
-    const adminEmailResult = await safeSendEmail({
-      from: fromAdmin,
-      to: adminEmail,
-      subject: `Novo lead: ${data.nome}`,
-      html: buildAdminNotificationEmail({
-        kind: "lead",
-        nome: data.nome,
-        email: data.email,
-        telefone: data.telefone,
-        origem: data.origem || "site",
-        servico: data.servico || "IRPF",
-        mensagem: data.mensagem,
-        whatsappUrl: waLink === "#" ? null : waLink,
-      }),
-    });
-
-    const webhookResults = await notifyNewLead({
+    const notifications = await notifyLead({
       nome: data.nome,
       email: data.email,
       telefone: data.telefone,
       origem: data.origem || "site",
       servico: data.servico || "IRPF",
       mensagem: data.mensagem,
+      diasRestantes,
+      whatsappUrl: waLink,
     });
 
     return NextResponse.json({
       success: true,
       id: lead.id,
       emailSent: {
-        lead: leadEmailResult,
-        admin: adminEmailResult,
+        lead: notifications.emailToUser,
+        admin: notifications.emailToAdmin,
       },
-      webhookSent: webhookResults,
+      webhookSent: notifications.webhook,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

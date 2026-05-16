@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { buildAdminNotificationEmail, buildContactConfirmationEmail } from "@/lib/email-templates";
-import { resend } from "@/lib/resend";
-import { notifyNewContato } from "@/lib/notify";
+import { notifyContato } from "@/lib/notification-hub";
 
 export const dynamic = "force-dynamic";
 
@@ -22,40 +20,6 @@ const schema = z.object({
   mensagem: z.string().max(2000).optional(),
 });
 
-type SafeEmailResult = {
-  success: boolean;
-  skipped: boolean;
-  id: string | null;
-  error: string | null;
-};
-
-async function safeSendEmail(params: Parameters<typeof resend.emails.send>[0]): Promise<SafeEmailResult> {
-  try {
-    const { data, error } = await resend.emails.send(params);
-    if (error) {
-      return {
-        success: false,
-        skipped: false,
-        id: null,
-        error: typeof error === "string" ? error : JSON.stringify(error),
-      };
-    }
-
-    return {
-      success: true,
-      skipped: false,
-      id: data?.id ?? null,
-      error: null,
-    };
-  } catch (err) {
-    return {
-      success: false,
-      skipped: false,
-      id: null,
-      error: err instanceof Error ? err.message : "Erro desconhecido ao enviar email",
-    };
-  }
-}
 
 export async function POST(request: Request) {
   try {
@@ -79,74 +43,24 @@ export async function POST(request: Request) {
       },
     });
 
-    // Email — usa FROM_EMAIL do env (onboarding@resend.dev ou dominio verificado)
-    const fromAddress = process.env.FROM_EMAIL || "IRPF NSB <onboarding@resend.dev>";
-    const adminEmail = process.env.ADMIN_EMAIL || "nilson.brites@gmail.com";
-
-    if (!process.env.FROM_EMAIL) {
-      console.warn("[contato] FROM_EMAIL nao configurado. Usando fallback onboarding@resend.dev.");
-    }
-    if (!process.env.ADMIN_EMAIL) {
-      console.warn("[contato] ADMIN_EMAIL nao configurado. Usando fallback nilson.brites@gmail.com.");
-    }
-
-    // EMAIL 1 — Notificação para o Nilson
-    const adminEmailResult = await safeSendEmail({
-      from: fromAddress,
-      to: adminEmail,
-      subject: `Novo contato via site — ${data.nome}`,
-      html: buildAdminNotificationEmail({
-        kind: "contato",
-        nome: data.nome,
-        email: data.email,
-        telefone: data.telefone,
-        origem,
-        servico: data.servico,
-        mensagem: data.mensagem,
-        whatsappUrl: waLink,
-      }),
-    });
-    if (!adminEmailResult.success) {
-      console.error("[contato] Falha ao enviar email admin:", adminEmailResult.error);
-    } else {
-      console.log("[contato] Email admin enviado. ID:", adminEmailResult.id, "| to:", adminEmail);
-    }
-
-    // EMAIL 2 — Confirmação para o usuário
-    // Nota: com onboarding@resend.dev, só envia para o email da conta Resend.
-    // Quando domínio for verificado (FROM_EMAIL = noreply@irpf.qaplay.com.br), envia para qualquer email.
-    const userEmailResult = await safeSendEmail({
-      from: fromAddress,
-      to: data.email,
-      subject: "Recebemos seu contato — IRPF NSB",
-      html: buildContactConfirmationEmail({
-        nome: data.nome,
-        servico: data.servico,
-      }),
-    });
-    if (!userEmailResult.success) {
-      console.error("[contato] Falha ao enviar email confirmacao:", userEmailResult.error);
-    } else {
-      console.log("[contato] Email confirmacao enviado. ID:", userEmailResult.id);
-    }
-
-    const webhookResults = await notifyNewContato({
+    const notifications = await notifyContato({
       nome: data.nome,
       email: data.email,
       telefone: data.telefone,
       origem,
       servico: data.servico,
       mensagem: data.mensagem,
+      whatsappUrl: waLink,
     });
 
     return NextResponse.json({
       success: true,
       id: contato.id,
       emailSent: {
-        admin: adminEmailResult,
-        user: userEmailResult,
+        admin: notifications.emailToAdmin,
+        user: notifications.emailToUser,
       },
-      webhookSent: webhookResults,
+      webhookSent: notifications.webhook,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -42,6 +42,8 @@ type AutomationStats = {
   runs24h: number;
   failures24h: number;
   partials24h: number;
+  success24h: number;
+  stale24h: number;
   lastRunAt: string | null;
   lastRunStatus: string | null;
   lastRunKey: string | null;
@@ -50,11 +52,12 @@ type AutomationStats = {
   aiPosts24h: number;
   estimatedFromPosts: boolean;
   historicalAiPosts: number;
-  untrackedAiPosts: number;
+  stalledLinkedPosts: number;
+  unexplainedUntrackedPosts: number;
 };
 
 const CATEGORIA_TABS = ["TODOS", "IRPF", "MEI", "DESENROLA", "GERAL"] as const;
-type CategoriaTab = typeof CATEGORIA_TABS[number];
+type CategoriaTab = (typeof CATEGORIA_TABS)[number];
 
 const AUTOMATION_LABELS: Record<string, string> = {
   "blog-auto": "Blog IRPF",
@@ -66,13 +69,22 @@ const RUN_STATUS_STYLES: Record<string, string> = {
   partial: "bg-yellow-500/15 text-yellow-300 border border-yellow-500/20",
   failed: "bg-red-500/15 text-red-300 border border-red-500/20",
   started: "bg-blue-500/15 text-blue-300 border border-blue-500/20",
+  stale: "bg-orange-500/20 text-orange-200 border border-orange-500/30",
+};
+
+const RUN_STATUS_LABELS: Record<string, string> = {
+  success: "SUCCESS",
+  partial: "PARTIAL",
+  failed: "FAILED",
+  started: "STARTED",
+  stale: "TIMEOUT/STALE",
 };
 
 const CATEGORIA_COLORS: Record<string, string> = {
-  IRPF:      "bg-blue-500/20 text-blue-300",
-  MEI:       "bg-orange-500/20 text-orange-300",
+  IRPF: "bg-blue-500/20 text-blue-300",
+  MEI: "bg-orange-500/20 text-orange-300",
   DESENROLA: "bg-purple-500/20 text-purple-300",
-  GERAL:     "bg-white/10 text-white/40",
+  GERAL: "bg-white/10 text-white/40",
 };
 
 function formatDateTime(value: string | null) {
@@ -87,7 +99,7 @@ function formatDateTime(value: string | null) {
 
 function BlogAdminContent() {
   const searchParams = useSearchParams();
-  const [posts, setPosts]           = useState<Post[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [automationRuns, setAutomationRuns] = useState<AutomationRun[]>([]);
   const [automationStats, setAutomationStats] = useState<AutomationStats>({
     postsToday: 0,
@@ -95,6 +107,8 @@ function BlogAdminContent() {
     runs24h: 0,
     failures24h: 0,
     partials24h: 0,
+    success24h: 0,
+    stale24h: 0,
     lastRunAt: null,
     lastRunStatus: null,
     lastRunKey: null,
@@ -103,15 +117,22 @@ function BlogAdminContent() {
     aiPosts24h: 0,
     estimatedFromPosts: false,
     historicalAiPosts: 0,
-    untrackedAiPosts: 0,
+    stalledLinkedPosts: 0,
+    unexplainedUntrackedPosts: 0,
   });
-  const [loading, setLoading]       = useState(true);
-  const [keyword, setKeyword]       = useState("");
-  const [generating, setGenerating]         = useState(false);
-  const [genResult, setGenResult]           = useState<{ title: string; slug: string } | null>(null);
-  const [actionMsg, setActionMsg]           = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [keyword, setKeyword] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [genResult, setGenResult] = useState<{
+    title: string;
+    slug: string;
+  } | null>(null);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [categoriaFilter, setCategoriaFilter] = useState<CategoriaTab>("TODOS");
-  const [generatingImage, setGeneratingImage] = useState<{ postId: string; model: string } | null>(null);
+  const [generatingImage, setGeneratingImage] = useState<{
+    postId: string;
+    model: string;
+  } | null>(null);
 
   // Ler keyword/titulo da URL (link vindo do analisador)
   useEffect(() => {
@@ -134,7 +155,9 @@ function BlogAdminContent() {
     }
   }, []);
 
-  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   async function handleGenerate() {
     setGenerating(true);
@@ -150,7 +173,9 @@ function BlogAdminContent() {
         setGenResult(data.post);
         setKeyword("");
         if (data.pending) {
-          setActionMsg("Post gerado mas RETIDO para revisão — acesse o rascunho abaixo para verificar e publicar.");
+          setActionMsg(
+            "Post gerado mas RETIDO para revisão — acesse o rascunho abaixo para verificar e publicar.",
+          );
         } else {
           setActionMsg("Post gerado e publicado automaticamente no site.");
         }
@@ -172,7 +197,7 @@ function BlogAdminContent() {
         body: JSON.stringify({ published: !current }),
       });
       setPosts((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, published: !current } : p))
+        prev.map((p) => (p.id === id ? { ...p, published: !current } : p)),
       );
       setActionMsg(current ? "Post despublicado." : "Post publicado!");
       setTimeout(() => setActionMsg(null), 3000);
@@ -182,7 +207,8 @@ function BlogAdminContent() {
   }
 
   async function handleDelete(id: string, title: string) {
-    if (!confirm(`Deletar "${title}"? Essa acao nao pode ser desfeita.`)) return;
+    if (!confirm(`Deletar "${title}"? Essa acao nao pode ser desfeita.`))
+      return;
     try {
       await fetch(`/api/admin/blog/${id}`, { method: "DELETE" });
       setPosts((prev) => prev.filter((p) => p.id !== id));
@@ -204,12 +230,18 @@ function BlogAdminContent() {
       const data = await res.json();
       if (res.ok && data.imageUrl) {
         setPosts((prev) =>
-          prev.map((p) => (p.id === postId ? { ...p, coverImage: data.imageUrl } : p))
+          prev.map((p) =>
+            p.id === postId ? { ...p, coverImage: data.imageUrl } : p,
+          ),
         );
-        const scene = data.scene ? ` | Cena: "${data.scene.slice(0, 80)}..."` : "";
+        const scene = data.scene
+          ? ` | Cena: "${data.scene.slice(0, 80)}..."`
+          : "";
         setActionMsg(`✅ Imagem gerada (${model})!${scene}`);
       } else {
-        setActionMsg(`❌ Erro (${model}): ${data.error || "falha ao gerar imagem"}`);
+        setActionMsg(
+          `❌ Erro (${model}): ${data.error || "falha ao gerar imagem"}`,
+        );
       }
       setTimeout(() => setActionMsg(null), 6000);
     } catch {
@@ -221,12 +253,14 @@ function BlogAdminContent() {
   }
 
   const published = posts.filter((p) => p.published).length;
-  const drafts    = posts.filter((p) => !p.published).length;
-  const filteredPosts = categoriaFilter === "TODOS"
-    ? posts
-    : posts.filter((p) => (p.categoria || "IRPF") === categoriaFilter);
+  const drafts = posts.filter((p) => !p.published).length;
+  const filteredPosts =
+    categoriaFilter === "TODOS"
+      ? posts
+      : posts.filter((p) => (p.categoria || "IRPF") === categoriaFilter);
   const lastRunLabel = automationStats.lastRunKey
-    ? AUTOMATION_LABELS[automationStats.lastRunKey] || automationStats.lastRunKey
+    ? AUTOMATION_LABELS[automationStats.lastRunKey] ||
+      automationStats.lastRunKey
     : "Sem execucao";
 
   return (
@@ -263,7 +297,8 @@ function BlogAdminContent() {
               {tab}
               {tab !== "TODOS" && (
                 <span className="ml-2 opacity-60">
-                  ({posts.filter((p) => (p.categoria || "IRPF") === tab).length})
+                  ({posts.filter((p) => (p.categoria || "IRPF") === tab).length}
+                  )
                 </span>
               )}
             </button>
@@ -292,9 +327,12 @@ function BlogAdminContent() {
           </div>
           {genResult && (
             <div className="mt-4 p-4 bg-green-500/10 border border-green-500/20">
-              <p className="text-sm">Post criado: <strong>{genResult.title}</strong></p>
+              <p className="text-sm">
+                Post criado: <strong>{genResult.title}</strong>
+              </p>
               <p className="text-xs opacity-60 mt-1">
-                O resultado ja aparece na lista abaixo, publicado ou retido para revisao conforme a checagem automatica.
+                O resultado ja aparece na lista abaixo, publicado ou retido para
+                revisao conforme a checagem automatica.
               </p>
             </div>
           )}
@@ -305,30 +343,78 @@ function BlogAdminContent() {
             <div>
               <h2 className="font-serif text-xl">Monitoramento do Auto Post</h2>
               <p className="text-sm text-white/45 mt-1">
-                Historico recente dos crons do blog, com contagem, retencao, falhas e sinalizacao de posts por IA fora do rastreio.
+                Historico recente dos crons do blog, com contagem, retencao,
+                falhas e sinalizacao de posts por IA fora do rastreio.
+              </p>
+              <p className="text-xs text-white/35 mt-2">
+                &quot;Hoje&quot; usa o timezone America/Sao_Paulo.
               </p>
             </div>
             <div className="text-[11px] uppercase tracking-widest text-white/40">
-              Ultima execucao: {lastRunLabel} • {formatDateTime(automationStats.lastRunAt)}
+              Ultima execucao: {lastRunLabel} •{" "}
+              {formatDateTime(automationStats.lastRunAt)}
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Posts hoje</p>
-              <p className="text-3xl font-serif">{automationStats.postsToday}</p>
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                Posts hoje
+              </p>
+              <p className="text-3xl font-serif">
+                {automationStats.postsToday}
+              </p>
             </div>
             <div className="border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Publicados hoje</p>
-              <p className="text-3xl font-serif">{automationStats.publishedToday}</p>
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                Publicados hoje
+              </p>
+              <p className="text-3xl font-serif">
+                {automationStats.publishedToday}
+              </p>
             </div>
             <div className="border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Execucoes 24h</p>
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                Execucoes 24h
+              </p>
               <p className="text-3xl font-serif">{automationStats.runs24h}</p>
             </div>
             <div className="border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Alertas 24h</p>
-              <p className="text-3xl font-serif">{automationStats.failures24h + automationStats.partials24h}</p>
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                Alertas 24h
+              </p>
+              <p className="text-3xl font-serif">
+                {automationStats.failures24h +
+                  automationStats.partials24h +
+                  automationStats.stale24h}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="border border-white/10 bg-white/[0.02] p-4">
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                Execucoes concluidas
+              </p>
+              <p className="text-2xl font-serif">{automationStats.success24h}</p>
+            </div>
+            <div className="border border-white/10 bg-white/[0.02] p-4">
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                Execucoes parciais
+              </p>
+              <p className="text-2xl font-serif">{automationStats.partials24h}</p>
+            </div>
+            <div className="border border-white/10 bg-white/[0.02] p-4">
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                Execucoes com erro
+              </p>
+              <p className="text-2xl font-serif">{automationStats.failures24h}</p>
+            </div>
+            <div className="border border-white/10 bg-white/[0.02] p-4">
+              <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                Execucoes travadas
+              </p>
+              <p className="text-2xl font-serif">{automationStats.stale24h}</p>
             </div>
           </div>
 
@@ -336,21 +422,34 @@ function BlogAdminContent() {
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="border border-white/10 bg-white/[0.02] p-4">
-                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Posts IA hoje</p>
-                  <p className="text-2xl font-serif">{automationStats.aiPostsToday}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                    Posts IA hoje
+                  </p>
+                  <p className="text-2xl font-serif">
+                    {automationStats.aiPostsToday}
+                  </p>
                 </div>
                 <div className="border border-white/10 bg-white/[0.02] p-4">
-                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Posts IA 24h</p>
-                  <p className="text-2xl font-serif">{automationStats.aiPosts24h}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                    Posts IA 24h
+                  </p>
+                  <p className="text-2xl font-serif">
+                    {automationStats.aiPosts24h}
+                  </p>
                 </div>
               </div>
 
               <div className="border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-100/85">
                 <p>
-                  Ainda nao existem execucoes registradas em automation_runs. Enquanto isso, o painel usa os posts por IA gravados no banco como estimativa operacional.
+                  Ainda nao existem execucoes registradas em automation_runs.
+                  Enquanto isso, o painel usa os posts por IA gravados no banco
+                  como estimativa operacional.
                 </p>
                 <p className="mt-2">
-                  Ha {automationStats.historicalAiPosts} post(s) por IA sem historico de execucao. Isso normalmente acontece quando o monitoramento foi implantado depois que esses posts ja existiam.
+                  Ha {automationStats.historicalAiPosts} post(s) por IA sem
+                  historico de execucao. Isso normalmente acontece quando o
+                  monitoramento foi implantado depois que esses posts ja
+                  existiam.
                 </p>
               </div>
             </div>
@@ -358,29 +457,61 @@ function BlogAdminContent() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="border border-white/10 bg-white/[0.02] p-4">
-                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">Posts rastreados</p>
-                  <p className="text-2xl font-serif">{automationStats.trackedPosts}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                    Posts rastreados
+                  </p>
+                  <p className="text-2xl font-serif">
+                    {automationStats.trackedPosts}
+                  </p>
                 </div>
                 <div className="border border-white/10 bg-white/[0.02] p-4">
-                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">IA antes do monitor</p>
-                  <p className="text-2xl font-serif">{automationStats.historicalAiPosts}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                    Posts antigos sem rastreio
+                  </p>
+                  <p className="text-2xl font-serif">
+                    {automationStats.historicalAiPosts}
+                  </p>
                 </div>
                 <div className="border border-white/10 bg-white/[0.02] p-4">
-                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">IA sem execucao</p>
-                  <p className="text-2xl font-serif">{automationStats.untrackedAiPosts}</p>
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                    Posts de runs travados
+                  </p>
+                  <p className="text-2xl font-serif">
+                    {automationStats.stalledLinkedPosts}
+                  </p>
+                </div>
+                <div className="border border-white/10 bg-white/[0.02] p-4">
+                  <p className="text-[10px] uppercase tracking-widest text-white/35 mb-2">
+                    Sem vinculo finalizado
+                  </p>
+                  <p className="text-2xl font-serif">
+                    {automationStats.unexplainedUntrackedPosts}
+                  </p>
                 </div>
               </div>
 
-              {(automationStats.historicalAiPosts > 0 || automationStats.untrackedAiPosts > 0) && (
+              {(automationStats.historicalAiPosts > 0 ||
+                automationStats.stalledLinkedPosts > 0 ||
+                automationStats.unexplainedUntrackedPosts > 0) && (
                 <div className="border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-100/85">
                   {automationStats.historicalAiPosts > 0 && (
                     <p>
-                      {automationStats.historicalAiPosts} post(s) por IA ficaram fora do historico de execucoes porque foram criados antes do monitoramento atual.
+                      {automationStats.historicalAiPosts} post(s) por IA fazem
+                      parte do historico antigo (antes do monitoramento atual).
                     </p>
                   )}
-                  {automationStats.untrackedAiPosts > 0 && (
+                  {automationStats.stalledLinkedPosts > 0 && (
                     <p className="mt-2">
-                      {automationStats.untrackedAiPosts} post(s) por IA seguem sem execucao vinculada. Isso pode indicar geracao manual pelo painel ou alguma lacuna de rastreio a revisar.
+                      {automationStats.stalledLinkedPosts} post(s) parecem ter
+                      vindo de execucoes travadas (run iniciou, mas nao
+                      finalizou o rastreio).
+                    </p>
+                  )}
+                  {automationStats.unexplainedUntrackedPosts > 0 && (
+                    <p className="mt-2">
+                      {automationStats.unexplainedUntrackedPosts} post(s)
+                      seguem sem vinculo finalizado e pedem revisao de rastreio
+                      ou geracao manual.
                     </p>
                   )}
                 </div>
@@ -402,14 +533,18 @@ function BlogAdminContent() {
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-semibold">
-                        {AUTOMATION_LABELS[run.automationKey] || run.automationKey}
+                        {AUTOMATION_LABELS[run.automationKey] ||
+                          run.automationKey}
                       </span>
-                      <span className={`text-[10px] uppercase tracking-widest px-2 py-1 ${RUN_STATUS_STYLES[run.status] || "bg-white/10 text-white/50 border border-white/10"}`}>
-                        {run.status}
+                      <span
+                        className={`text-[10px] uppercase tracking-widest px-2 py-1 ${RUN_STATUS_STYLES[run.status] || "bg-white/10 text-white/50 border border-white/10"}`}
+                      >
+                        {RUN_STATUS_LABELS[run.status] || run.status}
                       </span>
                     </div>
                     <p className="text-xs text-white/45">
-                      Inicio: {formatDateTime(run.startedAt)} • Fim: {formatDateTime(run.finishedAt)}
+                      Inicio: {formatDateTime(run.startedAt)} • Fim:{" "}
+                      {formatDateTime(run.finishedAt)}
                     </p>
                   </div>
 
@@ -421,7 +556,9 @@ function BlogAdminContent() {
                   </div>
 
                   <div className="text-xs text-white/35 md:text-right">
-                    {run.durationMs ? `${Math.round(run.durationMs / 1000)}s` : "—"}
+                    {run.durationMs
+                      ? `${Math.round(run.durationMs / 1000)}s`
+                      : "—"}
                   </div>
                 </div>
               ))
@@ -438,27 +575,51 @@ function BlogAdminContent() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left">
-                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Titulo</th>
-                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Categoria</th>
-                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Modelo IA</th>
-                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Status</th>
-                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Views</th>
-                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Leitura</th>
-                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">Data</th>
-                  <th className="py-3 text-[10px] uppercase tracking-widest opacity-50">Acoes</th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">
+                    Titulo
+                  </th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">
+                    Categoria
+                  </th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">
+                    Modelo IA
+                  </th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">
+                    Status
+                  </th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">
+                    Views
+                  </th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">
+                    Leitura
+                  </th>
+                  <th className="py-3 pr-4 text-[10px] uppercase tracking-widest opacity-50">
+                    Data
+                  </th>
+                  <th className="py-3 text-[10px] uppercase tracking-widest opacity-50">
+                    Acoes
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredPosts.map((post) => (
-                  <tr key={post.id} className="border-b border-white/5 hover:bg-white/5">
+                  <tr
+                    key={post.id}
+                    className="border-b border-white/5 hover:bg-white/5"
+                  >
                     <td className="py-3 pr-4 max-w-xs">
                       <span className="block font-medium">{post.title}</span>
-                      <span className="block text-[10px] opacity-40 mt-0.5">{post.slug}</span>
+                      <span className="block text-[10px] opacity-40 mt-0.5">
+                        {post.slug}
+                      </span>
                     </td>
                     <td className="py-3 pr-4">
-                      <span className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
-                        CATEGORIA_COLORS[post.categoria || "IRPF"] || CATEGORIA_COLORS.GERAL
-                      }`}>
+                      <span
+                        className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
+                          CATEGORIA_COLORS[post.categoria || "IRPF"] ||
+                          CATEGORIA_COLORS.GERAL
+                        }`}
+                      >
                         {post.categoria || "IRPF"}
                       </span>
                     </td>
@@ -467,51 +628,78 @@ function BlogAdminContent() {
                         const m = post.aiModel || "";
                         const isGemini = m.includes("gemini");
                         const isMistral = m.includes("mistral");
-                        const isGithub = m.includes("Llama") || m.includes("Meta-") || m.includes("Phi");
-                        const isGroq = m.includes("llama") || m.includes("kimi") || m.includes("qwen") || m.includes("maverick");
+                        const isGithub =
+                          m.includes("Llama") ||
+                          m.includes("Meta-") ||
+                          m.includes("Phi");
+                        const isGroq =
+                          m.includes("llama") ||
+                          m.includes("kimi") ||
+                          m.includes("qwen") ||
+                          m.includes("maverick");
                         const isOpenAI = m.includes("gpt");
                         const color = isGemini
                           ? "bg-blue-500/20 text-blue-300"
                           : isMistral
-                          ? "bg-orange-500/20 text-orange-300"
-                          : isGithub
-                          ? "bg-purple-500/20 text-purple-300"
-                          : isGroq
-                          ? "bg-green-500/20 text-green-300"
-                          : isOpenAI
-                          ? "bg-yellow-500/20 text-yellow-300"
-                          : "bg-white/10 text-white/40";
+                            ? "bg-orange-500/20 text-orange-300"
+                            : isGithub
+                              ? "bg-purple-500/20 text-purple-300"
+                              : isGroq
+                                ? "bg-green-500/20 text-green-300"
+                                : isOpenAI
+                                  ? "bg-yellow-500/20 text-yellow-300"
+                                  : "bg-white/10 text-white/40";
                         const label = m
-                          ? m.replace("gemini-", "G:").replace("-latest", "").replace("mistral-", "M:").replace("Meta-Llama-", "GH:Llama-").replace("-Instruct", "").replace("moonshotai/", "").replace("meta-llama/", "")
+                          ? m
+                              .replace("gemini-", "G:")
+                              .replace("-latest", "")
+                              .replace("mistral-", "M:")
+                              .replace("Meta-Llama-", "GH:Llama-")
+                              .replace("-Instruct", "")
+                              .replace("moonshotai/", "")
+                              .replace("meta-llama/", "")
                           : "—";
                         return (
                           <span
                             title={m || "desconhecido"}
                             className={`text-[10px] font-mono px-2 py-1 ${color} whitespace-nowrap`}
                           >
-                            {label.length > 22 ? label.slice(0, 22) + "…" : label}
+                            {label.length > 22
+                              ? label.slice(0, 22) + "…"
+                              : label}
                           </span>
                         );
                       })()}
                     </td>
                     <td className="py-3 pr-4">
                       {(() => {
-                        const isPending = !post.published && post.reviewJson && post.reviewJson.length > 2;
+                        const isPending =
+                          !post.published &&
+                          post.reviewJson &&
+                          post.reviewJson.length > 2;
                         return (
-                          <span className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
-                            post.published
-                              ? "bg-green-500/20 text-green-300"
+                          <span
+                            className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
+                              post.published
+                                ? "bg-green-500/20 text-green-300"
+                                : isPending
+                                  ? "bg-yellow-500/20 text-yellow-300"
+                                  : "bg-white/10 text-white/60"
+                            }`}
+                          >
+                            {post.published
+                              ? "Publicado"
                               : isPending
-                              ? "bg-yellow-500/20 text-yellow-300"
-                              : "bg-white/10 text-white/60"
-                          }`}>
-                            {post.published ? "Publicado" : isPending ? "Aguard. Revisão" : "Rascunho"}
+                                ? "Aguard. Revisão"
+                                : "Rascunho"}
                           </span>
                         );
                       })()}
                     </td>
                     <td className="py-3 pr-4 opacity-60">{post.views}</td>
-                    <td className="py-3 pr-4 opacity-60">{post.readTime} min</td>
+                    <td className="py-3 pr-4 opacity-60">
+                      {post.readTime} min
+                    </td>
                     <td className="py-3 pr-4 opacity-40">
                       {new Date(post.createdAt).toLocaleDateString("pt-BR")}
                     </td>
@@ -547,14 +735,26 @@ function BlogAdminContent() {
                         </button>
                         {/* Geração de imagem — gpt-image-1 e Flux */}
                         {(["gpt-image-1", "flux"] as const).map((imgModel) => {
-                          const labels: Record<string, string> = { "gpt-image-1": "GPT-img1", "flux": "Flux" };
-                          const colors: Record<string, string> = { "gpt-image-1": "text-purple-300 hover:text-purple-100", "flux": "text-orange-300 hover:text-orange-100" };
-                          const isActive = generatingImage?.postId === post.id && generatingImage.model === imgModel;
-                          const isDisabled = generatingImage?.postId === post.id;
+                          const labels: Record<string, string> = {
+                            "gpt-image-1": "GPT-img1",
+                            flux: "Flux",
+                          };
+                          const colors: Record<string, string> = {
+                            "gpt-image-1":
+                              "text-purple-300 hover:text-purple-100",
+                            flux: "text-orange-300 hover:text-orange-100",
+                          };
+                          const isActive =
+                            generatingImage?.postId === post.id &&
+                            generatingImage.model === imgModel;
+                          const isDisabled =
+                            generatingImage?.postId === post.id;
                           return (
                             <button
                               key={imgModel}
-                              onClick={() => handleGenerateImage(post.id, imgModel)}
+                              onClick={() =>
+                                handleGenerateImage(post.id, imgModel)
+                              }
                               disabled={isDisabled}
                               title={`Gerar imagem com ${imgModel}`}
                               className={`text-xs transition disabled:opacity-40 shrink-0 ${colors[imgModel]}`}
@@ -563,7 +763,9 @@ function BlogAdminContent() {
                                 <span className="inline-flex items-center gap-0.5">
                                   <span className="w-2 h-2 border border-current border-t-transparent rounded-full animate-spin inline-block" />
                                 </span>
-                              ) : labels[imgModel]}
+                              ) : (
+                                labels[imgModel]
+                              )}
                             </button>
                           );
                         })}
@@ -589,11 +791,13 @@ function BlogAdminContent() {
 
 export default function BlogAdminPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center opacity-40 text-sm">
-        Carregando...
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center opacity-40 text-sm">
+          Carregando...
+        </div>
+      }
+    >
       <BlogAdminContent />
     </Suspense>
   );

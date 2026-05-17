@@ -11,6 +11,17 @@ const nextConfig = {
     minimumCacheTTL: 86400,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
   },
+  async redirects() {
+    return [
+      // Browsers requisitam /favicon.ico por padrão (legado HTTP).
+      // O projeto usa favicon.svg — redireciona para eliminar o 404.
+      {
+        source: "/favicon.ico",
+        destination: "/favicon.svg",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

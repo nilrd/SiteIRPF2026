@@ -225,8 +225,38 @@ FONTES OFICIAIS NOVO DESENROLA BRASIL:
 // Frase de disclaimer obrigatória em conteúdo MEI
 export const MEI_DISCLAIMER = `<p class="disclaimer" style="font-size:0.8em;color:#666;border-top:1px solid #eee;padding-top:16px;margin-top:32px;">Conteúdo de caráter educativo sobre MEI e Imposto de Renda. Para análise do seu caso específico, consulte o especialista <strong>Nilson Brites — Consultoria IRPF NSB</strong>. WhatsApp: +55 11 94082-5120.</p>`;
 
+export type MeiEditorialPhase =
+  | "before_deadline"
+  | "deadline_14d"
+  | "post_deadline";
+
+export type ClusterIntent =
+  | "Traffic Post"
+  | "Lead Post"
+  | "Urgency Post"
+  | "Regularization Post"
+  | "Service Intent Post";
+
+export type MeiClusterPhase =
+  | "before_deadline"
+  | "deadline_14d"
+  | "post_deadline"
+  | "always";
+
+export type MeiKeywordCluster = {
+  primary: string;
+  secondary: string[];
+  volume: "alta" | "media" | "baixa";
+  intent: "informacional" | "transacional";
+  categoria: "MEI" | "DESENROLA";
+  phases?: MeiClusterPhase[];
+  postIntent?: ClusterIntent;
+};
+
+export const DASN_2026_DEADLINE = new Date("2026-05-31T23:59:59.999Z");
+
 // Clusters de keywords MEI para o blog engine
-export const MEI_KEYWORD_CLUSTERS = [
+export const MEI_KEYWORD_CLUSTERS: MeiKeywordCluster[] = [
   // Cluster 1 — DASN / Declaração Anual
   {
     primary: "declaração anual MEI 2026 DASN prazo maio",
@@ -234,6 +264,8 @@ export const MEI_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "informacional",
     categoria: "MEI" as const,
+    phases: ["before_deadline", "deadline_14d"],
+    postIntent: "Urgency Post",
   },
   // Cluster 2 — MEI e IRPF PF
   {
@@ -242,6 +274,8 @@ export const MEI_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "informacional",
     categoria: "MEI" as const,
+    phases: ["always"],
+    postIntent: "Lead Post",
   },
   // Cluster 3 — Abertura MEI
   {
@@ -250,6 +284,8 @@ export const MEI_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "informacional",
     categoria: "MEI" as const,
+    phases: ["always"],
+    postIntent: "Traffic Post",
   },
   // Cluster 4 — Cancelamento/Baixa
   {
@@ -258,6 +294,8 @@ export const MEI_KEYWORD_CLUSTERS = [
     volume: "media",
     intent: "informacional",
     categoria: "MEI" as const,
+    phases: ["always"],
+    postIntent: "Service Intent Post",
   },
   // Cluster 5 — Dívidas DAS
   {
@@ -266,6 +304,8 @@ export const MEI_KEYWORD_CLUSTERS = [
     volume: "media",
     intent: "transacional",
     categoria: "MEI" as const,
+    phases: ["post_deadline"],
+    postIntent: "Regularization Post",
   },
   // Cluster 6 — Desenrola MEI
   {
@@ -274,6 +314,8 @@ export const MEI_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "transacional",
     categoria: "MEI" as const,
+    phases: ["always"],
+    postIntent: "Service Intent Post",
   },
   // Cluster 7 — Limite faturamento
   {
@@ -282,6 +324,8 @@ export const MEI_KEYWORD_CLUSTERS = [
     volume: "media",
     intent: "informacional",
     categoria: "MEI" as const,
+    phases: ["always"],
+    postIntent: "Lead Post",
   },
   // Cluster 8 — DAS valor / quanto paga
   {
@@ -290,11 +334,22 @@ export const MEI_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "informacional",
     categoria: "MEI" as const,
+    phases: ["before_deadline", "deadline_14d"],
+    postIntent: "Traffic Post",
+  },
+  {
+    primary: "DASN-SIMEI atrasada 2026 multa e como regularizar",
+    secondary: ["dasm multa atraso mei", "declaracao mei atrasada regularizar", "parcelamento mei apos prazo"],
+    volume: "alta",
+    intent: "transacional",
+    categoria: "MEI" as const,
+    phases: ["post_deadline"],
+    postIntent: "Regularization Post",
   },
 ];
 
 // Clusters Desenrola Brasil para blog
-export const DESENROLA_KEYWORD_CLUSTERS = [
+export const DESENROLA_KEYWORD_CLUSTERS: MeiKeywordCluster[] = [
   // ── Programa completo ────────────────────────────────────────────────────
   {
     primary: "Novo Desenrola Brasil 2026 como funciona fases participar",
@@ -302,6 +357,8 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "informacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Traffic Post",
   },
   // ── Famílias — visão geral ───────────────────────────────────────────────
   {
@@ -310,6 +367,8 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "informacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Lead Post",
   },
   // ── Famílias — tabela de descontos ───────────────────────────────────────
   {
@@ -318,6 +377,8 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "informacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Traffic Post",
   },
   // ── Famílias — FGTS ──────────────────────────────────────────────────────
   {
@@ -326,6 +387,8 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "transacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Lead Post",
   },
   // ── Famílias — contrapartidas / limpar nome ──────────────────────────────
   {
@@ -334,6 +397,8 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "transacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Regularization Post",
   },
   // ── FIES ─────────────────────────────────────────────────────────────────
   {
@@ -342,6 +407,8 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "media",
     intent: "transacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Lead Post",
   },
   // ── Empresas — MEI Procred ───────────────────────────────────────────────
   {
@@ -350,6 +417,8 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "transacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Service Intent Post",
   },
   // ── Pronampe micro e pequenas ────────────────────────────────────────────
   {
@@ -358,6 +427,8 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "media",
     intent: "transacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Service Intent Post",
   },
   // ── Consignado INSS aposentados ──────────────────────────────────────────
   {
@@ -366,6 +437,8 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "media",
     intent: "informacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Traffic Post",
   },
   // ── Desenrola Rural ──────────────────────────────────────────────────────
   {
@@ -374,6 +447,8 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "media",
     intent: "informacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Lead Post",
   },
   // ── Limpar nome + IR (funil para serviço) ────────────────────────────────
   {
@@ -382,6 +457,8 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "transacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Service Intent Post",
   },
   // ── MEI + Desenrola Empresas ─────────────────────────────────────────────
   {
@@ -390,5 +467,24 @@ export const DESENROLA_KEYWORD_CLUSTERS = [
     volume: "alta",
     intent: "transacional",
     categoria: "DESENROLA" as const,
+    phases: ["always"],
+    postIntent: "Regularization Post",
   },
 ];
+
+export function getMeiEditorialPhase(now: Date = new Date()): MeiEditorialPhase {
+  if (now > DASN_2026_DEADLINE) return "post_deadline";
+  const daysLeft = Math.ceil(
+    (DASN_2026_DEADLINE.getTime() - now.getTime()) / 86_400_000,
+  );
+  if (daysLeft <= 14) return "deadline_14d";
+  return "before_deadline";
+}
+
+export function isMeiClusterAllowedByPhase(
+  phases: MeiClusterPhase[] | undefined,
+  phase: MeiEditorialPhase,
+): boolean {
+  const allowed = phases && phases.length > 0 ? phases : ["always"];
+  return allowed.includes("always") || allowed.includes(phase);
+}

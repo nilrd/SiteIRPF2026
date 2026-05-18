@@ -3,6 +3,7 @@ import {
   generateBlogPost,
   saveBlogPost,
   ALL_CLUSTERS,
+  getAllowedIrpfClusterIndexes,
 } from "@/lib/blog-engine";
 import {
   finishAutomationRun,
@@ -73,18 +74,26 @@ export async function GET(request: Request) {
       }
 
       try {
-        // Seleciona cluster aleatório — evita repetir keyword usada nos últimos 7 dias
-        let idx = Math.floor(Math.random() * ALL_CLUSTERS.length);
-        for (let attempt = 0; attempt < 5; attempt++) {
-          const primary = ALL_CLUSTERS[idx % ALL_CLUSTERS.length]?.primary;
+        const allowedIndexes = getAllowedIrpfClusterIndexes(new Date());
+        if (allowedIndexes.length === 0) {
+          throw new Error("Nenhum cluster disponível para a fase fiscal atual.");
+        }
+
+        // Seleciona cluster permitido pela fase atual e evita repetir keyword dos últimos 7 dias
+        let idx =
+          allowedIndexes[Math.floor(Math.random() * allowedIndexes.length)] ??
+          allowedIndexes[0];
+        for (let attempt = 0; attempt < Math.min(allowedIndexes.length, 8); attempt++) {
+          const primary = ALL_CLUSTERS[idx]?.primary;
           if (!primary || !(await isKeywordRecent(primary, 7))) break;
           console.log(
             `[Cron][${i + 1}/${NUM_POSTS}] Keyword recente, tentando outro cluster: ${primary}`,
           );
-          idx = Math.floor(Math.random() * ALL_CLUSTERS.length);
+          idx =
+            allowedIndexes[Math.floor(Math.random() * allowedIndexes.length)] ??
+            allowedIndexes[0];
         }
-        const clusterName =
-          ALL_CLUSTERS[idx % ALL_CLUSTERS.length]?.primary ?? "irpf";
+        const clusterName = ALL_CLUSTERS[idx]?.primary ?? "irpf";
         console.log(
           `[Cron][${i + 1}/${NUM_POSTS}] Gerando post — cluster: ${clusterName}`,
         );

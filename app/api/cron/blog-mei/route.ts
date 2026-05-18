@@ -10,8 +10,8 @@ import {
   ALL_MEI_CLUSTERS,
 } from "@/lib/mei-blog-engine";
 import {
-  MEI_KEYWORD_CLUSTERS,
-  DESENROLA_KEYWORD_CLUSTERS,
+  getMeiEditorialPhase,
+  isMeiClusterAllowedByPhase,
 } from "@/lib/mei-context";
 import { resend } from "@/lib/resend";
 import { notifySystemAlert } from "@/lib/notify";
@@ -26,14 +26,29 @@ const MAX_CRON_MS = 150_000; // 150s de segurança
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 // Seleção aleatória ponderada: 50% MEI, 50% Desenrola — sem memória (funciona em cold start)
-function pickClusterIdx(): number {
-  const useDesenrola =
-    Math.random() < 0.5 && DESENROLA_KEYWORD_CLUSTERS.length > 0;
-  if (useDesenrola) {
-    const i = Math.floor(Math.random() * DESENROLA_KEYWORD_CLUSTERS.length);
-    return MEI_KEYWORD_CLUSTERS.length + i;
-  }
-  return Math.floor(Math.random() * MEI_KEYWORD_CLUSTERS.length);
+function pickClusterIdx(now: Date = new Date()): number {
+  const phase = getMeiEditorialPhase(now);
+
+  const eligible = ALL_MEI_CLUSTERS.map((cluster, index) => ({ cluster, index }))
+    .filter(({ cluster }) => isMeiClusterAllowedByPhase(cluster.phases, phase))
+    .map(({ index }) => index);
+
+  const fallback = () => Math.floor(Math.random() * ALL_MEI_CLUSTERS.length);
+  if (eligible.length === 0) return fallback();
+
+  const phasePriority = eligible.filter((idx) => {
+    const primary = (ALL_MEI_CLUSTERS[idx]?.primary ?? "").toLowerCase();
+    if (phase === "post_deadline") {
+      return /atrasad|multa|regulariz|parcel|divida/.test(primary);
+    }
+    if (phase === "deadline_14d" || phase === "before_deadline") {
+      return /dasn|simei|prazo|faturamento|declaracao anual/.test(primary);
+    }
+    return false;
+  });
+
+  const pool = phasePriority.length > 0 ? phasePriority : eligible;
+  return pool[Math.floor(Math.random() * pool.length)] ?? eligible[0] ?? fallback();
 }
 
 export async function GET(request: Request) {
@@ -77,7 +92,7 @@ export async function GET(request: Request) {
       }
 
       try {
-        const clusterIdx = pickClusterIdx();
+        const clusterIdx = pickClusterIdx(new Date());
         const clusterName = ALL_MEI_CLUSTERS[clusterIdx]?.primary ?? "mei";
         console.log(
           `[Cron MEI][${i + 1}/${NUM_POSTS}] Gerando post — cluster: ${clusterName}`,

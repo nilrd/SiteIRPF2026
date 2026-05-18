@@ -1,6 +1,11 @@
 import { groqLlama, MODELS, callWithFallback } from "./llm-providers";
 import { prisma } from "./prisma";
-import { IRPF_DATA_CONTEXT } from "./irpf-context";
+import {
+  IRPF_DATA_CONTEXT,
+  type IrpfEditorialPhase,
+  getIrpfEditorialPhase,
+  getIrpfTemporalRules,
+} from "./irpf-context";
 import {
   getBrainContext,
   saveToKnowledge,
@@ -752,18 +757,46 @@ async function getTopicSpecificImage(
 }
 
 /* ---- Keyword clusters para SEO ---- */
-export const KEYWORD_CLUSTERS = [
+export type ClusterIntent =
+  | "Traffic Post"
+  | "Lead Post"
+  | "Urgency Post"
+  | "Regularization Post"
+  | "Service Intent Post";
+
+export type ClusterPhase =
+  | "pre_season"
+  | "in_season"
+  | "deadline_week"
+  | "deadline_day"
+  | "post_deadline"
+  | "always";
+
+type ClusterDefinition = {
+  primary: string;
+  secondary: string[];
+  volume: "alta" | "media" | "baixa";
+  intent: "informacional" | "transacional";
+  phases?: ClusterPhase[];
+  postIntent?: ClusterIntent;
+};
+
+export const KEYWORD_CLUSTERS: ClusterDefinition[] = [
   {
     primary: "como declarar IRPF 2026",
     secondary: ["passo a passo IRPF", "declaracao imposto de renda 2026"],
     volume: "alta",
     intent: "informacional",
+    phases: ["in_season", "deadline_week", "deadline_day"],
+    postIntent: "Traffic Post",
   },
   {
-    primary: "quem e obrigado declarar imposto de renda 2025",
+    primary: "quem e obrigado declarar imposto de renda 2026",
     secondary: ["obrigatoriedade IRPF", "limite isencao IR"],
     volume: "alta",
     intent: "informacional",
+    phases: ["pre_season", "in_season", "deadline_week", "deadline_day"],
+    postIntent: "Lead Post",
   },
   {
     primary: "tabela IRPF 2026 atualizada",
@@ -776,36 +809,64 @@ export const KEYWORD_CLUSTERS = [
     secondary: ["deducoes imposto de renda", "aumentar restituicao"],
     volume: "media",
     intent: "transacional",
+    phases: ["in_season", "deadline_week", "deadline_day", "always"],
+    postIntent: "Lead Post",
   },
   {
-    primary: "IRPF atrasado multa",
-    secondary: ["multa atraso declaracao", "regularizar IRPF atrasado"],
+    primary: "IRPF 2026 atrasado multa prazo encerrado",
+    secondary: [
+      "multa atraso declaracao irpf 2026",
+      "regularizar IRPF 2026 atrasado",
+      "darf multa irpf 2026",
+    ],
     volume: "media",
     intent: "transacional",
+    phases: ["post_deadline"],
+    postIntent: "Regularization Post",
+  },
+  {
+    primary: "IRPF 2025 2024 2023 atrasado como regularizar anos anteriores",
+    secondary: [
+      "declaracao anos anteriores atrasada",
+      "regularizar imposto de renda antigo",
+      "cpf pendente por declaracao antiga",
+    ],
+    volume: "alta",
+    intent: "transacional",
+    phases: ["always"],
+    postIntent: "Regularization Post",
   },
   {
     primary: "malha fina IRPF como resolver",
     secondary: ["cair na malha fina", "pendencias Receita Federal"],
     volume: "media",
     intent: "transacional",
+    phases: ["always"],
+    postIntent: "Regularization Post",
   },
   {
     primary: "deducoes IRPF saude educacao",
     secondary: ["despesas dedutiveis IR", "limite educacao IRPF"],
     volume: "media",
     intent: "informacional",
+    phases: ["in_season", "deadline_week", "deadline_day", "always"],
+    postIntent: "Lead Post",
   },
   {
     primary: "declaracao IRPF dependentes",
     secondary: ["incluir dependentes IR", "quem pode ser dependente"],
     volume: "media",
     intent: "informacional",
+    phases: ["in_season", "deadline_week", "deadline_day"],
+    postIntent: "Lead Post",
   },
   {
     primary: "retificacao IRPF como fazer",
     secondary: ["corrigir declaracao IR", "retificar imposto de renda"],
     volume: "media",
     intent: "informacional",
+    phases: ["always", "post_deadline"],
+    postIntent: "Service Intent Post",
   },
   {
     primary: "isencao imposto de renda 2026",
@@ -820,16 +881,20 @@ export const KEYWORD_CLUSTERS = [
     intent: "informacional",
   },
   {
-    primary: "prazo declaracao IRPF 2025",
+    primary: "prazo declaracao IRPF 2026",
     secondary: ["data final IRPF", "calendario Receita Federal"],
     volume: "alta",
     intent: "informacional",
+    phases: ["in_season", "deadline_week", "deadline_day"],
+    postIntent: "Urgency Post",
   },
   {
     primary: "CPF irregular imposto de renda como regularizar",
     secondary: ["CPF bloqueado Receita Federal", "regularizar CPF pendente"],
     volume: "alta",
     intent: "transacional",
+    phases: ["always"],
+    postIntent: "Regularization Post",
   },
   {
     primary: "declarar aluguel imposto de renda",
@@ -920,7 +985,7 @@ export const KEYWORD_CLUSTERS = [
 ];
 
 /* ---- Clusters de finanças pessoais (tráfego amplo, sempre relacionado a finanças) ---- */
-export const FINANCE_CLUSTERS = [
+export const FINANCE_CLUSTERS: ClusterDefinition[] = [
   {
     primary: "nova lei isencao imposto de renda 2026 lei 15270",
     secondary: [
@@ -929,6 +994,8 @@ export const FINANCE_CLUSTERS = [
     ],
     volume: "alta",
     intent: "informacional",
+    phases: ["always"],
+    postIntent: "Traffic Post",
   },
   {
     primary: "planejamento financeiro pessoal 2026",
@@ -1012,6 +1079,110 @@ export const FINANCE_CLUSTERS = [
 
 /* ---- Pool unificado para rotacao automatica ---- */
 export const ALL_CLUSTERS = [...KEYWORD_CLUSTERS, ...FINANCE_CLUSTERS];
+
+function isCurrentYearOverdueKeyword(keyword: string): boolean {
+  const k = keyword.toLowerCase();
+  return (
+    /irpf\s*2026/.test(k) &&
+    (/atrasad|prazo encerrado|multa/.test(k) || /perdeu o prazo/.test(k))
+  );
+}
+
+function isPreviousYearsKeyword(keyword: string): boolean {
+  return /2025|2024|2023|anos anteriores|antigo/.test(keyword.toLowerCase());
+}
+
+function isClusterAllowedInPhase(
+  cluster: ClusterDefinition,
+  phase: IrpfEditorialPhase,
+): boolean {
+  const phases = cluster.phases && cluster.phases.length > 0 ? cluster.phases : ["always"];
+  const phaseOk = phases.includes("always") || phases.includes(phase);
+  if (!phaseOk) return false;
+  if (phase !== "post_deadline" && isCurrentYearOverdueKeyword(cluster.primary)) {
+    return false;
+  }
+  return true;
+}
+
+export function getAllowedIrpfClusterIndexes(now: Date = new Date()): number[] {
+  const phase = getIrpfEditorialPhase(now);
+  return ALL_CLUSTERS.map((cluster, index) => ({ cluster, index }))
+    .filter(({ cluster }) => isClusterAllowedInPhase(cluster, phase))
+    .map(({ index }) => index);
+}
+
+function inferClusterIntent(keyword: string, fallback: ClusterIntent): ClusterIntent {
+  const k = keyword.toLowerCase();
+  if (
+    /cpf pendente|cpf bloqueado|regularizar|atrasad|anos anteriores|2025|2024|2023|multa|darf/.test(
+      k,
+    )
+  ) {
+    return "Regularization Post";
+  }
+  if (/prazo|ultimo dia|vence|urgente/.test(k)) {
+    return "Urgency Post";
+  }
+  if (/autonomo|profissional liberal|consultoria|retificacao|modelo/.test(k)) {
+    return "Service Intent Post";
+  }
+  if (/deducoes|dependentes|obrigado declarar|isencao|restituicao/.test(k)) {
+    return "Lead Post";
+  }
+  return fallback;
+}
+
+function getCtaByIntent(intent: ClusterIntent): {
+  inlineHtml: string;
+  finalHtml: string;
+  recommendedLine: string;
+} {
+  const map: Record<ClusterIntent, { inline: string; final: string; line: string }> = {
+    "Traffic Post": {
+      line: "Se você não tem certeza sobre sua situação, solicite uma análise antes de enviar a declaração.",
+      inline:
+        '<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Quer validar seu caso com segurança?</p><p style="margin:0 0 16px;">Uma análise individual evita erros comuns e melhora sua previsibilidade na declaração.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Quero%20uma%20an%C3%A1lise%20do%20meu%20caso%20de%20IRPF%202026" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Solicitar análise</a></div>',
+      final:
+        '<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;">Precisa revisar seu cenário antes de enviar?</h3><p style="margin:0 0 24px;">Nilson Brites atende 100% online e orienta seu caso com base no que realmente se aplica ao seu perfil.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Quero%20revisar%20minha%20declara%C3%A7%C3%A3o%20IRPF%202026" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;text-decoration:none;">Falar com especialista</a></div>',
+    },
+    "Lead Post": {
+      line: "Tem dúvida da sua situação? Solicite uma análise antes de enviar.",
+      inline:
+        '<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Seu caso tem detalhes que mudam o resultado?</p><p style="margin:0 0 16px;">Dependentes, deduções e rendas combinadas podem exigir revisão individual.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Preciso%20de%20an%C3%A1lise%20da%20minha%20situa%C3%A7%C3%A3o%20no%20IRPF" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Solicitar análise</a></div>',
+      final:
+        '<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;">Quer enviar com mais segurança?</h3><p style="margin:0 0 24px;">Uma revisão técnica pode evitar inconsistências e reduzir risco de pendência.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Quero%20analisar%20meu%20caso%20antes%20de%20enviar" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;text-decoration:none;">Analisar meu caso</a></div>',
+    },
+    "Urgency Post": {
+      line: "Se está perto do prazo, vale revisar o caso antes do envio para evitar retrabalho.",
+      inline:
+        '<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Prazo apertado?</p><p style="margin:0 0 16px;">Com pouco tempo, uma análise objetiva ajuda a enviar com menos risco de erro.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Preciso%20de%20ajuda%20com%20urg%C3%AAncia%20no%20IRPF" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Atendimento rápido</a></div>',
+      final:
+        '<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;">Faltam poucos dias?</h3><p style="margin:0 0 24px;">Evite correrias de última hora: revise o caso e envie com critério.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Quero%20finalizar%20meu%20IRPF%20com%20urg%C3%AAncia" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;text-decoration:none;">Finalizar com apoio</a></div>',
+    },
+    "Regularization Post": {
+      line: "Tem declaração atrasada de anos anteriores? Uma análise pode evitar erro no cálculo da multa e dos documentos.",
+      inline:
+        '<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Pendência de anos anteriores?</p><p style="margin:0 0 16px;">Em regularização, o ideal é mapear causa, documentos e riscos antes de transmitir.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Tenho%20IRPF%20atrasado%20de%20anos%20anteriores" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Analisar regularização</a></div>',
+      final:
+        '<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;">Precisa regularizar pendências fiscais?</h3><p style="margin:0 0 24px;">Com anos anteriores, multa ou CPF pendente, uma revisão técnica reduz retrabalho e riscos.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Quero%20regularizar%20meu%20IRPF%20de%20anos%20anteriores" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;text-decoration:none;">Regularizar com suporte</a></div>',
+    },
+    "Service Intent Post": {
+      line: "Em casos com múltiplas variáveis, o ideal é revisar o caso antes de enviar.",
+      inline:
+        '<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Seu cenário exige análise individual?</p><p style="margin:0 0 16px;">Autônomo, investidor, retificação ou renda mista costumam exigir estratégia de preenchimento.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Quero%20an%C3%A1lise%20individual%20do%20meu%20IRPF" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Falar sobre meu caso</a></div>',
+      final:
+        '<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;">Cada caso pede um plano de envio</h3><p style="margin:0 0 24px;">Receba orientação para declarar com clareza, segurança e aderência às regras fiscais.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Quero%20planejar%20meu%20envio%20do%20IRPF" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;text-decoration:none;">Planejar meu envio</a></div>',
+    },
+  };
+
+  const item = map[intent];
+  return {
+    inlineHtml: item.inline,
+    finalHtml: item.final,
+    recommendedLine: item.line,
+  };
+}
 
 /* ---- Templates de formato de título (20 opções — rotação automática) ---- */
 const TITLE_FORMATS = [
@@ -1140,6 +1311,8 @@ function blogSystemPrompt(
   research: ResearchItem[],
   existingPosts: ExistingPostSnapshot[],
   mandatoryFormat: string,
+  postIntent: ClusterIntent,
+  temporalContext: ReturnType<typeof getIrpfTemporalRules>,
   compactMode: boolean = false,
   brainContext: string = "",
 ) {
@@ -1164,6 +1337,13 @@ function blogSystemPrompt(
         .join("\n")
     : "Sem historico de posts publicado disponivel.";
 
+  const cta = getCtaByIntent(postIntent);
+  const temporalAllowed = temporalContext.allowed.map((item) => `- ${item}`).join("\n");
+  const temporalForbidden =
+    temporalContext.forbidden.length > 0
+      ? temporalContext.forbidden.map((item) => `- ${item}`).join("\n")
+      : "- Nenhuma proibição adicional nesta fase.";
+
   // --- MODO COMPACTO para modelos com contexto pequeno (8b) ---
   if (compactMode) {
     return `Ghostwriter de Nilson Brites, consultor IRPF 10+ anos, atendimento 100% online.
@@ -1177,11 +1357,19 @@ REGRAS: Nunca invente dados. Cite fonte oficial. H2 como perguntas. 1 exemplo nu
 Lead: comece com dor/situação real, NUNCA "O IRPF é...". 6 FAQs obrigatórias.
 Formato título: ${mandatoryFormat}. Max 65 chars. Proibido "Tudo sobre X", "O que você precisa saber".
 
+FASE FISCAL ATUAL: ${temporalContext.phase}. Dias restantes para o prazo do IRPF 2026: ${temporalContext.daysRemaining}.
+TEMAS PERMITIDOS AGORA:
+${temporalAllowed}
+TEMAS PROIBIDOS AGORA:
+${temporalForbidden}
+INTENÇÃO COMERCIAL DESTE POST: ${postIntent}
+CTA recomendado: ${cta.recommendedLine}
+
 CTA meio do artigo (usar HTML exato):
-<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Ficou com dúvida?</p><p style="margin:0 0 16px;">Nilson Brites atende 100% online. 10+ anos de experiência.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Preciso%20de%20ajuda%20com%20IRPF%202026" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Falar no WhatsApp</a></div>
+${cta.inlineHtml}
 
 CTA final (usar HTML exato):
-<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;">Precisa de ajuda?</h3><p style="margin:0 0 24px;">Nilson Brites: declarações novas, atrasadas e retificações.</p><a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Quero%20declarar%20meu%20IRPF%202026" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;text-decoration:none;">Declarar meu IRPF agora</a></div>
+${cta.finalHtml}
 
 NUNCA escreva "CTA para WhatsApp:" como texto. Use os blocos HTML acima.
 Nunca "todas as pessoas devem declarar". Nunca cite leis fora de Lei 15.270/2025 e IN RFB 2.255/2025.
@@ -1212,6 +1400,8 @@ PERSONALIDADE DO BLOG:
 
 CONTEXTO TEMPORAL OBRIGATÓRIO — LEIA ANTES DE ESCREVER:
 - Hoje: ${hoje}
+- Fase editorial atual: ${temporalContext.phase}
+- Dias restantes para o prazo IRPF 2026: ${temporalContext.daysRemaining}
 - IRPF 2026 = declaração entregue em 2026, rendimentos de 01/01/2025 a 31/12/2025 (ano-base 2025)
 - Chame SEMPRE de "IRPF 2026" (NUNCA "IRPF 2025" para esta declaração)
 - PRAZO IRPF 2026 (OFICIAL — Receita Federal / DOU 16/03/2026): 23 de março a 29 de maio de 2026
@@ -1226,6 +1416,15 @@ CONTEXTO TEMPORAL OBRIGATÓRIO — LEIA ANTES DE ESCREVER:
   • R$ 3.751,06 a R$ 4.664,68: 22,5% (dedução R$ 675,49)
   • Acima de R$ 4.664,68: 27,5% (dedução R$ 908,73)
 - NUNCA invente prazos, datas, valores ou leis fora dos DADOS OFICIAIS acima.
+- TEMAS PERMITIDOS NESTA FASE:
+${temporalAllowed}
+- TEMAS PROIBIDOS NESTA FASE:
+${temporalForbidden}
+- Regra crítica: antes do post_deadline, é proibido afirmar que IRPF 2026 está atrasado.
+- IRPF de anos anteriores (2025/2024/2023) é permitido o ano todo, deixando o ano explícito no título e no conteúdo.
+
+INTENÇÃO COMERCIAL DESTE ARTIGO: ${postIntent}
+CTA recomendado para o texto: ${cta.recommendedLine}
 
 ═══════════════════════════════════════════
 ESTRUTURA OBRIGATÓRIA DO ARTIGO
@@ -1265,11 +1464,7 @@ ESTRUTURA OBRIGATÓRIA DO ARTIGO
    - Pelo menos 1 alerta de risco (malha fina, multa, prazo) destacado
 
 5. CTA INTEGRADO (inserir após o 3º ou 4º H2 — OBRIGATÓRIO — use exatamente este HTML):
-   <div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;">
-   <p style="margin:0 0 12px;font-weight:600;">Ficou com dúvida sobre sua situação específica?</p>
-   <p style="margin:0 0 16px;">Nilson Brites atende 100% online para todo o Brasil. Mais de 10 anos declarando IRPF para autônomos, assalariados e investidores.</p>
-   <a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Li%20o%20artigo%20do%20blog%20e%20preciso%20de%20ajuda%20com%20minha%20declara%C3%A7%C3%A3o%20de%20IRPF%202026" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">💬 Falar com especialista no WhatsApp</a>
-   </div>
+  ${cta.inlineHtml}
 
 6. BLOCO KEY FACTS (antes das FAQs — OBRIGATÓRIO para IA Search):
    <div class="key-facts" style="background:#2D4033;color:#F9F7F2;padding:20px 24px;margin:32px 0;">
@@ -1289,13 +1484,7 @@ ESTRUTURA OBRIGATÓRIA DO ARTIGO
    Nilson pode aparecer em primeira pessoa aqui: "Na minha experiência, quem deixa para a última semana..."
 
 9. CTA FINAL (OBRIGATÓRIO — use exatamente este HTML):
-   <div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;">
-   <h3 style="color:#C6FF00;margin:0 0 16px;font-size:1.4em;">Precisa de ajuda com sua declaração?</h3>
-   <p style="margin:0 0 8px;">Nilson Brites atende 100% online para todo o Brasil.</p>
-   <p style="margin:0 0 24px;">Mais de 10 anos de experiência. Novas declarações, atrasadas e retificações.</p>
-   <a href="https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Quero%20declarar%20meu%20IRPF%202026" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;font-size:1.1em;text-decoration:none;">📱 Declarar meu IRPF agora — falar com Nilson</a>
-   <p style="margin:16px 0 0;font-size:0.85em;color:#999;">Atendimento rápido · Sem burocracia · Todo o Brasil</p>
-   </div>
+  ${cta.finalHtml}
 
 10. NOTA DE RODAPÉ (sempre ao final):
     <p class="disclaimer" style="font-size:0.8em;color:#666;border-top:1px solid #eee;padding-top:16px;margin-top:32px;">Conteúdo de caráter educativo. Para análise do seu caso específico, consulte o especialista <strong>Nilson Brites — Consultoria IRPF NSB</strong>. WhatsApp: +55 11 94082-5120.</p>
@@ -1514,6 +1703,7 @@ export async function generateBlogPost(
     clusterIndex !== undefined
       ? ALL_CLUSTERS[clusterIndex % ALL_CLUSTERS.length]
       : null;
+  const temporalContext = getIrpfTemporalRules(new Date());
 
   // Camada editorial: usa cache de trends quando nao ha keyword forcada.
   // Em caso de falha ou cache vazio, comportamento atual permanece (fallback total).
@@ -1582,7 +1772,15 @@ export async function generateBlogPost(
     trendKeyword ||
     cluster?.primary ||
     "IRPF 2026";
+  const clusterIntent = cluster?.postIntent ?? "Traffic Post";
+  const postIntent = inferClusterIntent(keyword, clusterIntent);
   const secundarias = cluster?.secondary?.join(", ") || "";
+
+  if (temporalContext.phase !== "post_deadline" && isCurrentYearOverdueKeyword(keyword)) {
+    throw new Error(
+      `Keyword bloqueada na fase ${temporalContext.phase}: não pode afirmar atraso do IRPF 2026 com prazo aberto.`,
+    );
+  }
 
   // Bloqueia temas fora do escopo IRPF antes de qualquer chamada de IA
   if (!isTopicOnScope(keyword)) {
@@ -1626,6 +1824,8 @@ export async function generateBlogPost(
         research,
         existingPosts,
         mandatoryFormat,
+        postIntent,
+        temporalContext,
         false,
         brainCtx,
       ) + customNotice;
@@ -1637,12 +1837,18 @@ export async function generateBlogPost(
         research,
         existingPosts,
         mandatoryFormat,
+        postIntent,
+        temporalContext,
         true,
         brainCtx,
       ) + customNotice;
 
     const userContent = `TEMA OBRIGATORIO DO ARTIGO: "${keyword}". Voce DEVE escrever exclusivamente sobre este tema — nao mude para outro assunto.${
       secundarias ? ` Keywords secundarias a incluir: ${secundarias}.` : ""
+    } ${
+      isPreviousYearsKeyword(keyword)
+        ? "Este é tema de anos anteriores: deixe ano/exercício explícito no título e no corpo."
+        : ""
     } ${extraInstruction || ""} Retorne APENAS o JSON valido, sem markdown.`;
 
     const result = await callWithFallback(systemContent, userContent, 10000, {
@@ -1751,6 +1957,8 @@ export async function generateBlogPost(
       keyword,
       fromTrendCache: Boolean(trendPick),
       campaignMode,
+      phase: temporalContext.phase,
+      postIntent,
       postType: resolvedPostType,
       searchIntent: resolvedSearchIntent,
       audience: resolvedAudience,

@@ -11,6 +11,10 @@ import {
   MEI_DISCLAIMER,
   MEI_KEYWORD_CLUSTERS,
   DESENROLA_KEYWORD_CLUSTERS,
+  getMeiEditorialPhase,
+  type MeiEditorialPhase,
+  type ClusterIntent,
+  type MeiKeywordCluster,
 } from "./mei-context";
 import { TrendResearchService } from "./trend-research";
 import {
@@ -24,10 +28,27 @@ import {
 } from "./keyword-scoring";
 import { isKeywordRecent } from "./knowledge-brain";
 
-export const ALL_MEI_CLUSTERS = [
+export const ALL_MEI_CLUSTERS: MeiKeywordCluster[] = [
   ...MEI_KEYWORD_CLUSTERS,
   ...DESENROLA_KEYWORD_CLUSTERS,
 ];
+
+function inferMeiIntent(keyword: string, fallback: ClusterIntent): ClusterIntent {
+  const k = keyword.toLowerCase();
+  if (/atrasad|multa|regulariz|parcel|divida|pendente/.test(k)) {
+    return "Regularization Post";
+  }
+  if (/prazo|vence|ultimo dia|dasn|simei/.test(k)) {
+    return "Urgency Post";
+  }
+  if (/consultoria|irpf|analise|servico|procred|pronampe/.test(k)) {
+    return "Service Intent Post";
+  }
+  if (/limite|obrigado|faturamento|cpf/.test(k)) {
+    return "Lead Post";
+  }
+  return fallback;
+}
 
 // ─── Tipos de imagem (isolados — sem importar blog-engine) ───────────────────
 type UnsplashAttribution = {
@@ -441,6 +462,8 @@ const WA_IRPF_LINK = `https://wa.me/5511940825120?text=${encodeURIComponent("Ol�
 function meiSystemPrompt(
   keyword: string,
   categoria: "MEI" | "DESENROLA",
+  postIntent: ClusterIntent,
+  meiPhase: MeiEditorialPhase,
 ): string {
   const hoje = new Date().toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -448,21 +471,49 @@ function meiSystemPrompt(
     year: "numeric",
   });
 
-  const ctaWhatsApp =
-    categoria === "MEI"
-      ? `<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Ficou com dúvida sobre MEI e Imposto de Renda?</p><p style="margin:0 0 16px;">Nilson Brites é especialista em declarações IRPF para MEI e empreendedores. Atende 100% online para todo o Brasil.</p><a href="${WA_MEI_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">💬 Falar com especialista no WhatsApp</a></div>`
-      : `<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Regularizou suas dívidas? Regularize também seu IR.</p><p style="margin:0 0 16px;">Depois do Desenrola, o próximo passo é regularizar o CPF na Receita Federal. Nilson Brites cuida disso por você.</p><a href="${WA_IRPF_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">💬 Declarar meu IRPF — falar com Nilson</a></div>`;
+  const ctaByIntent: Record<
+    ClusterIntent,
+    { inline: string; final: string; line: string }
+  > = {
+    "Traffic Post": {
+      line: "Se você não tem certeza sobre sua situação, solicite uma análise antes de enviar.",
+      inline: `<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Seu caso é diferente do exemplo do artigo?</p><p style="margin:0 0 16px;">Uma análise individual ajuda a evitar erros de preenchimento e retrabalho.</p><a href="${WA_MEI_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Solicitar análise</a></div>`,
+      final: `<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;font-size:1.4em;">Quer revisar seu caso com segurança?</h3><p style="margin:0 0 24px;">Nilson Brites atende MEI e IRPF com análise personalizada para cada situação.</p><a href="${WA_MEI_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;font-size:1.1em;text-decoration:none;">Falar com especialista</a></div>`,
+    },
+    "Lead Post": {
+      line: "Se há dúvida sobre enquadramento, faturamento ou obrigação, o ideal é revisar antes de enviar.",
+      inline: `<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Tem dúvida sobre sua obrigação como MEI?</p><p style="margin:0 0 16px;">Uma análise evita decisões por suposição e reduz risco de pendência futura.</p><a href="${WA_MEI_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Analisar meu caso</a></div>`,
+      final: `<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;font-size:1.4em;">Prefere enviar com clareza do que se aplica ao seu caso?</h3><p style="margin:0 0 24px;">Receba orientação para MEI e IRPF sem promessas irreais e com foco em conformidade.</p><a href="${WA_MEI_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;font-size:1.1em;text-decoration:none;">Quero orientação</a></div>`,
+    },
+    "Urgency Post": {
+      line: "Com o prazo perto, revise o caso antes de transmitir para evitar correções depois.",
+      inline: `<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Prazo apertado para DASN-SIMEI?</p><p style="margin:0 0 16px;">Uma revisão rápida pode evitar erro de envio e dor de cabeça na regularização.</p><a href="${WA_MEI_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Atendimento rápido</a></div>`,
+      final: `<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;font-size:1.4em;">Faltam poucos dias para o prazo?</h3><p style="margin:0 0 24px;">Organize os documentos e valide o envio com apoio especializado.</p><a href="${WA_MEI_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;font-size:1.1em;text-decoration:none;">Finalizar com apoio</a></div>`,
+    },
+    "Regularization Post": {
+      line: "Com DASN atrasada ou pendência, o ideal é entender a causa antes de regularizar.",
+      inline: `<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Tem pendência ou atraso no MEI?</p><p style="margin:0 0 16px;">Antes de pagar ou parcelar, revise multa, período e documentação para evitar novo erro.</p><a href="${WA_MEI_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Analisar regularização</a></div>`,
+      final: `<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;font-size:1.4em;">Precisa regularizar MEI ou IRPF?</h3><p style="margin:0 0 24px;">Em casos com atraso, multa e parcelamento, revisão técnica reduz risco de retrabalho.</p><a href="${WA_IRPF_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;font-size:1.1em;text-decoration:none;">Regularizar com suporte</a></div>`,
+    },
+    "Service Intent Post": {
+      line: "Se o caso envolve múltiplas pendências, uma análise individual costuma ser o caminho mais seguro.",
+      inline: `<div class="cta-inline" style="background:#0A0A0A;color:#F5F5F2;padding:20px 24px;margin:32px 0;border-left:4px solid #C6FF00;"><p style="margin:0 0 12px;font-weight:600;">Seu cenário envolve MEI + IRPF + pendências?</p><p style="margin:0 0 16px;">Cada combinação exige estratégia própria para enviar com segurança fiscal.</p><a href="${WA_IRPF_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:12px 24px;font-weight:700;text-decoration:none;">Falar com especialista</a></div>`,
+      final: `<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;font-size:1.4em;">Quer um plano para regularizar e seguir em conformidade?</h3><p style="margin:0 0 24px;">Atendimento 100% online com foco em diagnóstico e decisão técnica por caso.</p><a href="${WA_IRPF_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;font-size:1.1em;text-decoration:none;">Quero análise especializada</a></div>`,
+    },
+  };
 
-  const ctaFinal =
-    categoria === "MEI"
-      ? `<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;font-size:1.4em;">Precisa de ajuda com MEI e Imposto de Renda?</h3><p style="margin:0 0 8px;">Nilson Brites atende MEI e microempreendedores em todo o Brasil.</p><p style="margin:0 0 24px;">Declarações IRPF, DASN-SIMEI, regularização e consultorias 100% online.</p><a href="${WA_MEI_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;font-size:1.1em;text-decoration:none;">📱 Falar com Nilson sobre meu MEI</a><p style="margin:16px 0 0;font-size:0.85em;color:#999;">Atendimento rápido · Sem burocracia · Todo o Brasil</p></div>`
-      : `<div class="cta-final" style="background:#0A0A0A;color:#F5F5F2;padding:32px;margin:48px 0;text-align:center;"><h3 style="color:#C6FF00;margin:0 0 16px;font-size:1.4em;">Próximo passo: regularize seu Imposto de Renda</h3><p style="margin:0 0 8px;">Com o nome limpo pelo Desenrola, regularize também o CPF na Receita Federal.</p><p style="margin:0 0 24px;">Nilson Brites cuida da sua declaração IRPF 100% online.</p><a href="${WA_IRPF_LINK}" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:16px 32px;font-weight:700;font-size:1.1em;text-decoration:none;">📱 Declarar meu IRPF agora</a><p style="margin:16px 0 0;font-size:0.85em;color:#999;">Atendimento rápido · Sem burocracia · Todo o Brasil</p></div>`;
+  const ctaWhatsApp = ctaByIntent[postIntent].inline;
+  const ctaFinal = ctaByIntent[postIntent].final;
+  const ctaLine = ctaByIntent[postIntent].line;
 
   return `${MEI_DATA_CONTEXT}
 
 Você é o ghostwriter do Nilson Brites — Analista Financeiro com mais de 10 anos de experiência, especializado em declarações IRPF para MEI e microempreendedores, atendendo brasileiros 100% online.
 IDIOMA OBRIGATÓRIO: português do Brasil (pt-BR), 100% do conteúdo.
 Hoje: ${hoje}.
+FASE MEI/DASN ATUAL: ${meiPhase}
+INTENÇÃO COMERCIAL DO POST: ${postIntent}
+CTA recomendado: ${ctaLine}
 
 TEMA DO ARTIGO: "${keyword}"
 CATEGORIA: ${categoria}
@@ -474,6 +525,7 @@ REGRAS ABSOLUTAS — RESPONSABILIDADE FACTUAL:
 4. NUNCA escreva fórmulas de cálculo de benefícios INSS, regras de aposentadoria ou direito trabalhista — fuja do escopo.
 5. IRPF do MEI: apenas mencionar a relação MEI-IRPF PF e direcionar para a consultoria. Nunca ensine a declarar sozinho.
 6. Link interno obrigatório: ao falar de IRPF do MEI, sempre linkar para /mei/mei-e-irpf com texto âncora.
+7. Regras temporais MEI: antes de 31/05 priorize DASN-SIMEI, prazo, faturamento e documentos; nos últimos 14 dias aumente urgência responsável; após 31/05, pode tratar DASN atrasada, multa, regularização e parcelamento.
 
 ESTRUTURA OBRIGATÓRIA:
 1. Título SEO: específico, com keyword principal, máx 65 chars. NÃO use "guia completo", "tudo sobre", "o que você precisa saber".
@@ -645,8 +697,16 @@ export async function generateMeiBlogPost(
   const categoria: "MEI" | "DESENROLA" =
     (cluster as { categoria?: "MEI" | "DESENROLA" }).categoria ??
     (keyword.toLowerCase().includes("desenrola") ? "DESENROLA" : "MEI");
+  const meiPhase = getMeiEditorialPhase(new Date());
+  const baseIntent = cluster.postIntent ?? "Traffic Post";
+  const resolvedIntent = inferMeiIntent(keyword, baseIntent);
 
-  const systemPrompt = meiSystemPrompt(keyword, categoria);
+  const systemPrompt = meiSystemPrompt(
+    keyword,
+    categoria,
+    resolvedIntent,
+    meiPhase,
+  );
 
   // ── Pesquisa GOV.BR em paralelo com slot de espera ────────────────────────
   const research = await collectMeiResearchContext(keyword);
@@ -745,7 +805,7 @@ export async function generateMeiBlogPost(
     needsReview: review.aprovado !== true,
     campaignMode: getCurrentCampaignModes().join(","),
     reviewApproved: true, // publica sempre sem revisão manual
-    reviewJson: JSON.stringify(review),
+    reviewJson: JSON.stringify({ ...review, meiPhase, postIntent: resolvedIntent }),
     aiModel,
   };
 }

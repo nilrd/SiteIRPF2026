@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 const WA_LINK = `https://wa.me/5511940825120?text=${encodeURIComponent(
-  "Olá Nilson! Vi o site e quero declarar meu IRPF 2026. Pode me ajudar com um orçamento?"
+  "Olá Nilson! Vi o site e quero declarar meu IRPF 2026. Pode me ajudar com um orçamento?",
 )}`;
 const PRAZO = new Date("2026-05-29T23:59:59-03:00");
 
@@ -125,7 +125,9 @@ export default function DeclaracaoLandingClient() {
     telefone: "",
     tipoDecl: "declaracao-nova",
   });
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -148,8 +150,8 @@ export default function DeclaracaoLandingClient() {
       {/* URGENCY BAR */}
       <div className="bg-[#C6FF00] text-black text-center py-3 px-4">
         <p className="text-[11px] uppercase tracking-widest font-bold">
-          ⚠️ Prazo IRPF 2026: 29 de Maio de 2026 — Multa mínima R$ 165,74 por entrega em
-          atraso
+          ⚠️ Prazo IRPF 2026: 29 de Maio de 2026 — Multa mínima R$ 165,74 por
+          entrega em atraso
         </p>
       </div>
 
@@ -170,8 +172,9 @@ export default function DeclaracaoLandingClient() {
                 agora.
               </h1>
               <p className="text-base text-white/60 leading-relaxed mb-8 max-w-md">
-                Declarações novas, atrasadas e retificações para todo o Brasil, 100%
-                online. Especialista com 10+ anos de experiência. Entrega em 24 horas.
+                Declarações novas, atrasadas e retificações para todo o Brasil,
+                100% online. Especialista com 10+ anos de experiência. Entrega
+                em 24 horas.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
@@ -216,19 +219,25 @@ export default function DeclaracaoLandingClient() {
               <div className="border-t border-white/10 pt-6 space-y-3">
                 <div className="flex justify-between text-xs">
                   <span className="text-white/40">Prazo oficial</span>
-                  <span className="text-white font-bold">29 de Maio de 2026</span>
+                  <span className="text-white font-bold">
+                    29 de Maio de 2026
+                  </span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-white/40">Multa mínima</span>
                   <span className="text-red-400 font-bold">R$ 165,74</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-white/40">Multa máx. sobre imposto</span>
+                  <span className="text-white/40">
+                    Multa máx. sobre imposto
+                  </span>
                   <span className="text-red-400 font-bold">20% ao mês</span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-white/40">CPF irregular</span>
-                  <span className="text-red-400">Após 30 dias sem declarar</span>
+                  <span className="text-red-400">
+                    Após 30 dias sem declarar
+                  </span>
                 </div>
               </div>
             </div>
@@ -237,7 +246,10 @@ export default function DeclaracaoLandingClient() {
       </section>
 
       {/* LEAD FORM */}
-      <section className="border-b border-white/10 py-16 bg-white/[0.02]" id="declarar">
+      <section
+        className="border-b border-white/10 py-16 bg-white/[0.02]"
+        id="declarar"
+      >
         <div className="max-w-2xl mx-auto px-6">
           <div className="text-center mb-10">
             <span className="text-[10px] uppercase tracking-widest text-[#C6FF00]">
@@ -247,8 +259,8 @@ export default function DeclaracaoLandingClient() {
               Solicite seu orçamento
             </h2>
             <p className="text-sm text-white/50">
-              Preencha abaixo. Entramos em contato em até 1 hora via WhatsApp com todas as
-              informações.
+              Preencha abaixo. Entramos em contato em até 1 hora via WhatsApp
+              com todas as informações.
             </p>
           </div>
 
@@ -258,8 +270,8 @@ export default function DeclaracaoLandingClient() {
                 Recebemos seu contato!
               </p>
               <p className="text-white/60 text-sm mb-8">
-                Entraremos em contato em até 1 hora pelo WhatsApp com orientações e
-                orçamento personalizado.
+                Entraremos em contato em até 1 hora pelo WhatsApp com
+                orientações e orçamento personalizado.
               </p>
               <a
                 href={WA_LINK}
@@ -281,7 +293,9 @@ export default function DeclaracaoLandingClient() {
                     type="text"
                     required
                     value={form.nome}
-                    onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, nome: e.target.value }))
+                    }
                     placeholder="Seu nome"
                     className="w-full bg-transparent border-b border-white/20 py-3 text-white placeholder:text-white/20 outline-none focus:border-[#C6FF00] transition"
                   />
@@ -294,7 +308,9 @@ export default function DeclaracaoLandingClient() {
                     type="email"
                     required
                     value={form.email}
-                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, email: e.target.value }))
+                    }
                     placeholder="seu@email.com"
                     className="w-full bg-transparent border-b border-white/20 py-3 text-white placeholder:text-white/20 outline-none focus:border-[#C6FF00] transition"
                   />
@@ -308,9 +324,11 @@ export default function DeclaracaoLandingClient() {
                     required
                     minLength={10}
                     maxLength={20}
-                    pattern="[0-9\s()\-+]*"
+                    pattern="[0-9 ()+\-]*"
                     value={form.telefone}
-                    onChange={(e) => setForm((f) => ({ ...f, telefone: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, telefone: e.target.value }))
+                    }
                     placeholder="(11) 99999-9999"
                     className="w-full bg-transparent border-b border-white/20 py-3 text-white placeholder:text-white/20 outline-none focus:border-[#C6FF00] transition"
                   />
@@ -321,13 +339,23 @@ export default function DeclaracaoLandingClient() {
                   </label>
                   <select
                     value={form.tipoDecl}
-                    onChange={(e) => setForm((f) => ({ ...f, tipoDecl: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, tipoDecl: e.target.value }))
+                    }
                     className="w-full bg-[#0A0A0A] border-b border-white/20 py-3 text-white outline-none focus:border-[#C6FF00] transition [&>option]:bg-[#0A0A0A]"
                   >
-                    <option value="declaracao-nova">Declaração nova 2026</option>
-                    <option value="irpf-atrasado">IRPF atrasado (anos anteriores)</option>
-                    <option value="retificacao">Retificação de declaração</option>
-                    <option value="malha-fina">Malha fina / pendências Receita</option>
+                    <option value="declaracao-nova">
+                      Declaração nova 2026
+                    </option>
+                    <option value="irpf-atrasado">
+                      IRPF atrasado (anos anteriores)
+                    </option>
+                    <option value="retificacao">
+                      Retificação de declaração
+                    </option>
+                    <option value="malha-fina">
+                      Malha fina / pendências Receita
+                    </option>
                   </select>
                 </div>
               </div>
@@ -374,8 +402,12 @@ export default function DeclaracaoLandingClient() {
                 <div className="text-[#C6FF00] font-black text-4xl mb-4 leading-none">
                   {b.num}
                 </div>
-                <h3 className="font-black uppercase text-sm tracking-wide mb-3">{b.titulo}</h3>
-                <p className="text-xs text-white/50 leading-relaxed">{b.desc}</p>
+                <h3 className="font-black uppercase text-sm tracking-wide mb-3">
+                  {b.titulo}
+                </h3>
+                <p className="text-xs text-white/50 leading-relaxed">
+                  {b.desc}
+                </p>
               </div>
             ))}
           </div>
@@ -387,8 +419,7 @@ export default function DeclaracaoLandingClient() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-black uppercase">
-              Como funciona em{" "}
-              <span className="text-[#C6FF00]">3 passos</span>
+              Como funciona em <span className="text-[#C6FF00]">3 passos</span>
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-12">
@@ -400,7 +431,9 @@ export default function DeclaracaoLandingClient() {
                 <h3 className="font-black uppercase text-sm tracking-wide mb-3 -mt-8">
                   {p.titulo}
                 </h3>
-                <p className="text-xs text-white/50 leading-relaxed">{p.desc}</p>
+                <p className="text-xs text-white/50 leading-relaxed">
+                  {p.desc}
+                </p>
               </div>
             ))}
           </div>
@@ -411,7 +444,9 @@ export default function DeclaracaoLandingClient() {
       <section className="border-b border-white/10 py-16">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-black uppercase">O que dizem nossos clientes</h2>
+            <h2 className="text-3xl font-black uppercase">
+              O que dizem nossos clientes
+            </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {depoimentos.map((t, i) => (
@@ -420,7 +455,9 @@ export default function DeclaracaoLandingClient() {
                   &ldquo;{t.texto}&rdquo;
                 </p>
                 <div className="border-t border-white/10 pt-4">
-                  <p className="text-xs font-black uppercase tracking-wide">{t.nome}</p>
+                  <p className="text-xs font-black uppercase tracking-wide">
+                    {t.nome}
+                  </p>
                   <p className="text-[10px] text-white/30">{t.cidade}</p>
                 </div>
               </div>
@@ -433,7 +470,9 @@ export default function DeclaracaoLandingClient() {
       <section className="border-b border-white/10 py-16 bg-white/[0.02]">
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-black uppercase">Perguntas frequentes</h2>
+            <h2 className="text-3xl font-black uppercase">
+              Perguntas frequentes
+            </h2>
           </div>
           <div className="space-y-0">
             {faqs.map((faq, i) => (
@@ -442,7 +481,9 @@ export default function DeclaracaoLandingClient() {
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full text-left py-6 flex justify-between items-start gap-4"
                 >
-                  <span className="text-sm font-bold uppercase tracking-wide">{faq.q}</span>
+                  <span className="text-sm font-bold uppercase tracking-wide">
+                    {faq.q}
+                  </span>
                   <span className="text-[#C6FF00] shrink-0 text-xl leading-none font-black">
                     {openFaq === i ? "−" : "+"}
                   </span>
@@ -472,7 +513,8 @@ export default function DeclaracaoLandingClient() {
             nem seu CPF.
           </h2>
           <p className="text-sm text-white/50 mb-10 max-w-lg mx-auto">
-            Orçamento gratuito, sem compromisso. Resposta em até 1 hora pelo WhatsApp.
+            Orçamento gratuito, sem compromisso. Resposta em até 1 hora pelo
+            WhatsApp.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a

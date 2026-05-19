@@ -2,13 +2,14 @@ import { Resend } from "resend";
 
 /**
  * Retorna o endereço "from" padronizado para todos os emails transacionais.
- * Prioridade: FROM_EMAIL (env) → fallback seguro com domínio verificado.
+ * Prioridade: FROM_EMAIL (env) → fallback seguro com domínio verificado no Resend.
+ * Domínio verificado atual: qaplay.com.br.
  * Centraliza o remetente para facilitar SPF/DKIM/DMARC.
  */
 export function getFromEmail(): string {
   return (
     process.env.FROM_EMAIL ||
-    "Nilson Brites | Consultoria IRPF <noreply@irpf.qaplay.com.br>"
+    "Consultoria IRPF NSB <noreply@qaplay.com.br>"
   );
 }
 

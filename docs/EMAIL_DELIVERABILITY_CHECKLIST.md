@@ -7,10 +7,13 @@
 
 ### Pré-requisito: qual domínio está verificado no Resend?
 - Acesse [resend.com/domains](https://resend.com/domains)
-- Confirme se `qaplay.com.br`, `irpf.qaplay.com.br` ou ambos estão verificados
-- **O `FROM_EMAIL` no `.env` e no Vercel deve usar EXATAMENTE o domínio verificado**
+- Confirme se o domínio está com status **Verified** (ícone verde)
+- **Domínio verificado atual:** `qaplay.com.br`
+- **O `FROM_EMAIL` no Vercel deve usar EXATAMENTE o domínio verificado**
+- `irpf.qaplay.com.br` só deve ser usado no FROM após ser verificado separadamente no Resend
 
-> **Atenção:** O `.env` atual usa `noreply@qaplay.com.br`, mas vários arquivos hardcoded usavam `noreply@irpf.qaplay.com.br`. Após esta sprint, todos os emails transacionais usam `FROM_EMAIL`. Confirme e unifique o domínio.
+> **FROM_EMAIL recomendado:** `Consultoria IRPF NSB <noreply@qaplay.com.br>`
+> Todos os emails transacionais usam `FROM_EMAIL` (env). O fallback do código também aponta para `qaplay.com.br`.
 
 ---
 

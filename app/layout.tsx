@@ -100,37 +100,47 @@ export default function RootLayout({
   const ga4Id = process.env.NEXT_PUBLIC_GA4_ID || "G-7FYYGX7C12";
   const fbPixelId = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
 
+  // Carrega tags de rastreamento apenas no ambiente de produção Vercel.
+  // VERCEL_ENV === "production" → irpf.qaplay.com.br
+  // VERCEL_ENV === "preview"    → domínios *.vercel.app / deployments de preview
+  // VERCEL_ENV undefined        → localhost / dev local
+  const isProduction = process.env.VERCEL_ENV === "production";
+
   return (
     <html lang="pt-br" className={`${playfair.variable} ${inter.variable}`}>
       <body className="font-sans antialiased bg-base text-preto">
-        {/* Google Ads — carregado via next/script para garantia em SSR + SPA navigation */}
-        <Script
-          id="google-ads-load"
-          strategy="afterInteractive"
-          src={`https://www.googletagmanager.com/gtag/js?id=${googleAdsId}`}
-        />
-        <Script id="google-ads-init" strategy="afterInteractive">
-          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${googleAdsId}');`}
-        </Script>
+        {/* Google Ads + GA4 + Meta Pixel — carregados SOMENTE em produção */}
+        {isProduction && (
+          <>
+            <Script
+              id="google-ads-load"
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${googleAdsId}`}
+            />
+            <Script id="google-ads-init" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${googleAdsId}');`}
+            </Script>
+            {ga4Id && (
+              <>
+                <Script
+                  strategy="afterInteractive"
+                  src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}
+                />
+                <Script id="ga4-init" strategy="afterInteractive">
+                  {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${ga4Id}');`}
+                </Script>
+              </>
+            )}
+            {fbPixelId && (
+              <Script id="fb-pixel" strategy="afterInteractive">
+                {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${fbPixelId}');fbq('track','PageView');`}
+              </Script>
+            )}
+          </>
+        )}
         <WhatsAppConversionTracker />
         <JsonLdWebSite />
         {children}
-        {ga4Id && (
-          <>
-            <Script
-              strategy="afterInteractive"
-              src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`}
-            />
-            <Script id="ga4-init" strategy="afterInteractive">
-              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${ga4Id}');`}
-            </Script>
-          </>
-        )}
-        {fbPixelId && (
-          <Script id="fb-pixel" strategy="afterInteractive">
-            {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${fbPixelId}');fbq('track','PageView');`}
-          </Script>
-        )}
       </body>
     </html>
   );

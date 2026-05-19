@@ -21,7 +21,7 @@ import {
 export const dynamic = "force-dynamic";
 export const maxDuration = 300; // Vercel Pro: até 300s para gerar posts em sequência
 
-const NUM_POSTS = 6; // Reduzido de 8→6: orçamento de ~240s (6×30s + delays + brain)
+const NUM_POSTS = 1; // 1 post por execução para distribuir ao longo do dia
 const DELAY_BETWEEN_POSTS_MS = 3000;
 // Orçamento de tempo: aborta o loop se restar < 45s para o maxDuration
 // Evita que Vercel mate a função no meio de uma geração e perca o post

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 const ALLOWED_STATUS = ["novo", "em_contato", "convertido", "perdido"] as const;
 const ALLOWED_TIPO = ["lead", "contato", "todos"] as const;
 const STATUS_PRIORITY = {
@@ -71,7 +73,9 @@ function parsePositiveInt(value: string | null, fallback: number) {
   return parsed;
 }
 
-function isAllowedStatus(value: string): value is (typeof ALLOWED_STATUS)[number] {
+function isAllowedStatus(
+  value: string,
+): value is (typeof ALLOWED_STATUS)[number] {
   return (ALLOWED_STATUS as readonly string[]).includes(value);
 }
 
@@ -107,8 +111,8 @@ function getServiceLabel(item: PipelineSourceItem) {
 }
 
 function getGroupedStatus(items: PipelineGroupItem["relatedItems"]) {
-  return [...items]
-    .sort((a, b) => {
+  return (
+    [...items].sort((a, b) => {
       const priorityDiff =
         (STATUS_PRIORITY[b.status as keyof typeof STATUS_PRIORITY] ?? 0) -
         (STATUS_PRIORITY[a.status as keyof typeof STATUS_PRIORITY] ?? 0);
@@ -116,7 +120,8 @@ function getGroupedStatus(items: PipelineGroupItem["relatedItems"]) {
       if (priorityDiff !== 0) return priorityDiff;
 
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    })[0]?.status ?? "novo";
+    })[0]?.status ?? "novo"
+  );
 }
 
 function buildGroupedCounters(items: ReturnType<typeof groupPipelineItems>) {
@@ -134,7 +139,7 @@ function buildGroupedCounters(items: ReturnType<typeof groupPipelineItems>) {
       convertidos: 0,
       perdidos: 0,
       nao_lidos: 0,
-    }
+    },
   );
 }
 
@@ -223,7 +228,8 @@ function groupPipelineItems(items: PipelineSourceItem[]) {
   return Array.from(groups.values())
     .map((group) => {
       const relatedItems = [...group.relatedItems].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
       const latest = relatedItems[0];
 
@@ -250,7 +256,10 @@ function groupPipelineItems(items: PipelineSourceItem[]) {
 
 export async function GET(request: NextRequest) {
   try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
     if (!token) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
@@ -260,18 +269,29 @@ export async function GET(request: NextRequest) {
     const tipo = tipoRaw.toLowerCase();
 
     if (!isAllowedTipo(tipo)) {
-      return NextResponse.json({ error: "tipo inválido. Use: lead, contato, todos" }, { status: 400 });
+      return NextResponse.json(
+        { error: "tipo inválido. Use: lead, contato, todos" },
+        { status: 400 },
+      );
     }
 
     const status = searchParams.get("status")?.trim().toLowerCase();
     if (status && !isAllowedStatus(status)) {
-      return NextResponse.json({ error: "status inválido. Use: novo, em_contato, convertido, perdido" }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "status inválido. Use: novo, em_contato, convertido, perdido",
+        },
+        { status: 400 },
+      );
     }
 
     const origem = searchParams.get("origem")?.trim();
     const q = searchParams.get("q")?.trim();
     const page = parsePositiveInt(searchParams.get("page"), 1);
-    const perPage = Math.min(parsePositiveInt(searchParams.get("per_page"), 20), 100);
+    const perPage = Math.min(
+      parsePositiveInt(searchParams.get("per_page"), 20),
+      100,
+    );
     const skip = (page - 1) * perPage;
 
     const leadWhere = {
@@ -308,13 +328,21 @@ export async function GET(request: NextRequest) {
     const [leads, contatos] = await Promise.all([
       tipo === "contato"
         ? Promise.resolve([])
-        : prisma.lead.findMany({ where: leadWhere, orderBy: { createdAt: "desc" } }),
+        : prisma.lead.findMany({
+            where: leadWhere,
+            orderBy: { createdAt: "desc" },
+          }),
       tipo === "lead"
         ? Promise.resolve([])
-        : prisma.contato.findMany({ where: contatoWhere, orderBy: { createdAt: "desc" } }),
+        : prisma.contato.findMany({
+            where: contatoWhere,
+            orderBy: { createdAt: "desc" },
+          }),
     ]);
 
-    const unreadContatoIds = contatos.filter((contato) => !contato.lido).map((contato) => contato.id);
+    const unreadContatoIds = contatos
+      .filter((contato) => !contato.lido)
+      .map((contato) => contato.id);
     if (unreadContatoIds.length > 0) {
       await prisma.contato.updateMany({
         where: { id: { in: unreadContatoIds }, lido: false },
@@ -341,7 +369,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       items: merged,
-      pagination: { page, perPage, total, totalPages: Math.max(1, Math.ceil(total / perPage)) },
+      pagination: {
+        page,
+        perPage,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / perPage)),
+      },
       counters,
     });
   } catch (error) {

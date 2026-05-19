@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import Navbar from "@/components/site/Navbar";
 import Footer from "@/components/site/Footer";
 import WhatsAppFloat from "@/components/site/WhatsAppFloat";
-import ChatbotWidget from "@/components/site/ChatbotWidget";
-import ExitIntentModal from "@/components/site/ExitIntentModal";
 import { JsonLdWebsite } from "@/components/seo/JsonLd";
-import AnalyticsTracker from "@/components/analytics/AnalyticsTracker";
+
+const ChatbotWidget = dynamic(
+  () => import("@/components/site/ChatbotWidget"),
+  { ssr: false },
+);
+const ExitIntentModal = dynamic(
+  () => import("@/components/site/ExitIntentModal"),
+  { ssr: false },
+);
+const AnalyticsTracker = dynamic(
+  () => import("@/components/analytics/AnalyticsTracker"),
+  { ssr: false },
+);
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://irpf.qaplay.com.br"),

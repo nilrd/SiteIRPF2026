@@ -5,17 +5,22 @@ import { prisma } from "@/lib/prisma";
 
 const groupStatusSchema = z.object({
   status: z.enum(["novo", "em_contato", "convertido", "perdido"]),
-  relatedItems: z.array(
-    z.object({
-      id: z.string().min(1),
-      itemType: z.enum(["lead", "contato"]),
-    })
-  ).min(1),
+  relatedItems: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        itemType: z.enum(["lead", "contato"]),
+      }),
+    )
+    .min(1),
 });
 
 export async function PATCH(request: NextRequest) {
   try {
-    const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
     if (!token) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
@@ -30,26 +35,28 @@ export async function PATCH(request: NextRequest) {
       .filter((item) => item.itemType === "contato")
       .map((item) => item.id);
 
-    const { leadCount, contatoCount } = await prisma.$transaction(async (tx) => {
-      const leadResult = leadIds.length
-        ? await tx.lead.updateMany({
-            where: { id: { in: leadIds } },
-            data: { status: data.status },
-          })
-        : { count: 0 };
+    const { leadCount, contatoCount } = await prisma.$transaction(
+      async (tx) => {
+        const leadResult = leadIds.length
+          ? await tx.lead.updateMany({
+              where: { id: { in: leadIds } },
+              data: { status: data.status },
+            })
+          : { count: 0 };
 
-      const contatoResult = contatoIds.length
-        ? await tx.contato.updateMany({
-            where: { id: { in: contatoIds } },
-            data: { status: data.status },
-          })
-        : { count: 0 };
+        const contatoResult = contatoIds.length
+          ? await tx.contato.updateMany({
+              where: { id: { in: contatoIds } },
+              data: { status: data.status },
+            })
+          : { count: 0 };
 
-      return {
-        leadCount: leadResult.count,
-        contatoCount: contatoResult.count,
-      };
-    });
+        return {
+          leadCount: leadResult.count,
+          contatoCount: contatoResult.count,
+        };
+      },
+    );
 
     return NextResponse.json({
       success: true,
@@ -60,7 +67,7 @@ export async function PATCH(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Payload inválido", details: error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

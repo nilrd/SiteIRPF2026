@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resend, getFromEmail } from "@/lib/resend";
 
-export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// DESABILITADO: cron de sequência de emails removido por decisão do cliente
+// export const dynamic = "force-dynamic";
+// export const maxDuration = 60;
 
 const CRON_SECRET = "xP9aKm2wR4nQ7vL3hT8uY6sZ";
 const WA_LINK = "https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson%21%20Quero%20declarar%20meu%20IRPF%202026.";
@@ -275,89 +276,5 @@ function email5(nome: string, diasRestantes: number): string {
 
 /* ── Cron Handler ───────────────────────────────────────────── */
 
-export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get("secret");
-  if (secret !== CRON_SECRET) {
-    return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
-  }
-
-  try {
-    const now = new Date();
-    const prazo = new Date("2026-05-29T23:59:59-03:00");
-    const diasRestantes = Math.max(
-      0,
-      Math.ceil((prazo.getTime() - now.getTime()) / 86400000)
-    );
-
-    const leads = await prisma.lead.findMany({
-      where: { emailSeqStep: { lt: 5 }, email: { not: "" } },
-      select: { id: true, nome: true, email: true, emailSeqStep: true, createdAt: true },
-    });
-
-    const results = { sent: 0, skipped: 0, errors: 0 };
-
-    for (const lead of leads) {
-      const daysSinceCreation = Math.floor(
-        (now.getTime() - lead.createdAt.getTime()) / 86400000
-      );
-
-      // Step rules: step 0 is sent at creation; cron handles steps 1-4
-      // step 1 → send email #2 at day 2
-      // step 2 → send email #3 at day 4
-      // step 3 → send email #4 at day 7
-      // step 4 → send email #5 at day 10
-      const stepThresholds: Record<number, number> = { 1: 2, 2: 4, 3: 7, 4: 10 };
-      const threshold = stepThresholds[lead.emailSeqStep];
-
-      if (!threshold || daysSinceCreation < threshold) {
-        results.skipped++;
-        continue;
-      }
-
-      let subject = "";
-      let html = "";
-      let text = "";
-
-      if (lead.emailSeqStep === 1) {
-        subject = "Documentos necessários para declarar seu IRPF 2026";
-        html = email2(lead.nome.split(" ")[0]);
-        text = email2Text(lead.nome.split(" ")[0]);
-      } else if (lead.emailSeqStep === 2) {
-        subject = "Caso real: como Marcos regularizou e recebeu a restituição retida";
-        html = email3(lead.nome.split(" ")[0]);
-        text = email3Text(lead.nome.split(" ")[0]);
-      } else if (lead.emailSeqStep === 3) {
-        subject = `${diasRestantes} dias para o prazo do IRPF 2026 — você já declarou?`;
-        html = email4(lead.nome.split(" ")[0], diasRestantes);
-        text = email4Text(lead.nome.split(" ")[0], diasRestantes);
-      } else if (lead.emailSeqStep === 4) {
-        subject = `Antes do prazo: ainda dá tempo para o IRPF 2026, ${lead.nome.split(" ")[0]}`;
-        html = email5(lead.nome.split(" ")[0], diasRestantes);
-        text = email5Text(lead.nome.split(" ")[0], diasRestantes);
-      }
-
-      if (!subject) {
-        results.skipped++;
-        continue;
-      }
-
-      try {
-        await resend.emails.send({ from: getFromEmail(), to: lead.email, subject, html, text });
-        await prisma.lead.update({
-          where: { id: lead.id },
-          data: { emailSeqStep: lead.emailSeqStep + 1, emailSeqAt: now },
-        });
-        results.sent++;
-      } catch (emailErr) {
-        console.error(`[email-sequence] Erro ao enviar para ${lead.email}:`, emailErr);
-        results.errors++;
-      }
-    }
-
-    console.log(`[email-sequence] Resultado: ${JSON.stringify(results)}`);
-    return NextResponse.json({ success: true, ...results });
-  } catch (err) {
-    console.error("[email-sequence] Erro geral:", err);
-    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
-  }
-}
+// DESABILITADO: função de cron de sequência de emails removida por decisão do cliente
+// export async function GET(req: NextRequest) { /* ... */ }

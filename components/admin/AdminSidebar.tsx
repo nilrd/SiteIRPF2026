@@ -6,12 +6,12 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
 const NAV = [
-  { href: "/painel-nb-2025/dashboard",  label: "Dashboard" },
-  { href: "/painel-nb-2025/leads",      label: "Leads"     },
-  { href: "/painel-nb-2025/blog",       label: "Blog"      },
-  { href: "/painel-nb-2025/imagens",    label: "Imagens"   },
-  { href: "/painel-nb-2025/chat-ia",    label: "Chat IA"   },
-  { href: "/painel-nb-2025/campanhas",  label: "Campanhas" },
+  { href: "/painel-nb-2025/dashboard", label: "Dashboard" },
+  { href: "/painel-nb-2025/leads", label: "Leads" },
+  { href: "/painel-nb-2025/blog", label: "Blog" },
+  { href: "/painel-nb-2025/imagens", label: "Imagens" },
+  { href: "/painel-nb-2025/chat-ia", label: "Chat IA" },
+  { href: "/painel-nb-2025/campanhas", label: "Campanhas" },
   { href: "/painel-nb-2025/analisador", label: "Analisador" },
 ];
 

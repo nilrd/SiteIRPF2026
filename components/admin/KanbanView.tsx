@@ -86,16 +86,18 @@ function KanbanCard({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const otherCols = COLUMNS.filter((c) => c.key !== item.status);
-  const servico = item.servicos[0] || item.tipoDecl || item.servico || item.assunto || "Consultoria IRPF";
+  const servico =
+    item.servicos[0] ||
+    item.tipoDecl ||
+    item.servico ||
+    item.assunto ||
+    "Consultoria IRPF";
   const waLink = item.telefone
     ? buildWhatsAppLink(item.telefone, item.nome, servico, item.origem)
     : "";
   const isLead = item.itemType === "lead";
-  const typeLabel = item.sourceTypes.length > 1
-    ? "Lead + Ctto"
-    : isLead
-    ? "Lead"
-    : "Ctto";
+  const typeLabel =
+    item.sourceTypes.length > 1 ? "Lead + Ctto" : isLead ? "Lead" : "Ctto";
 
   return (
     <>
@@ -119,9 +121,13 @@ function KanbanCard({
           {/* Header: name + type badge */}
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <p className="font-semibold text-[13px] leading-tight">{item.nome}</p>
+              <p className="font-semibold text-[13px] leading-tight">
+                {item.nome}
+              </p>
               <p className="text-[10px] uppercase tracking-widest opacity-35 mt-1">
-                {item.registrationCount} cadastro{item.registrationCount > 1 ? "s" : ""} • {item.messageCount} mensagem{item.messageCount !== 1 ? "ens" : ""}
+                {item.registrationCount} cadastro
+                {item.registrationCount > 1 ? "s" : ""} • {item.messageCount}{" "}
+                mensagem{item.messageCount !== 1 ? "ens" : ""}
               </p>
             </div>
             <span
@@ -213,7 +219,9 @@ function KanbanCard({
                       disabled={isUpdating}
                       className="flex items-center gap-2 w-full px-3 py-2.5 text-[11px] hover:bg-white/10 transition-colors text-white/70 hover:text-white disabled:opacity-40"
                     >
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
+                      <span
+                        className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`}
+                      />
                       {col.label}
                     </button>
                   ))}
@@ -309,7 +317,11 @@ function KanbanColumn({
   );
 }
 
-export default function KanbanView({ items, onStatusUpdate, isUpdating }: KanbanViewProps) {
+export default function KanbanView({
+  items,
+  onStatusUpdate,
+  isUpdating,
+}: KanbanViewProps) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<ColKey | null>(null);
   const [mobileActiveCol, setMobileActiveCol] = useState<ColKey>("novo");
@@ -342,7 +354,9 @@ export default function KanbanView({ items, onStatusUpdate, isUpdating }: Kanban
     <div className="space-y-4">
       {/* Summary bar */}
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] text-white/40">
-        <span>{items.length} item{items.length !== 1 ? "s" : ""} no board</span>
+        <span>
+          {items.length} item{items.length !== 1 ? "s" : ""} no board
+        </span>
         {COLUMNS.map((col) => {
           const count = items.filter((i) => i.status === col.key).length;
           return count > 0 ? (
@@ -353,7 +367,9 @@ export default function KanbanView({ items, onStatusUpdate, isUpdating }: Kanban
           ) : null;
         })}
         {draggedId && (
-          <span className="text-[#C6FF00]/60 ml-2">Arraste para uma coluna...</span>
+          <span className="text-[#C6FF00]/60 ml-2">
+            Arraste para uma coluna...
+          </span>
         )}
       </div>
 
@@ -367,7 +383,9 @@ export default function KanbanView({ items, onStatusUpdate, isUpdating }: Kanban
               key={col.key}
               onClick={() => setMobileActiveCol(col.key)}
               className={`flex-1 py-2.5 text-[10px] uppercase tracking-widest transition-colors ${
-                isActive ? col.tabActiveColor : "text-white/30 hover:text-white/60"
+                isActive
+                  ? col.tabActiveColor
+                  : "text-white/30 hover:text-white/60"
               }`}
             >
               {col.label}
@@ -378,7 +396,10 @@ export default function KanbanView({ items, onStatusUpdate, isUpdating }: Kanban
       </div>
 
       {/* Desktop: all columns */}
-      <div className="hidden md:flex gap-2.5 overflow-x-auto pb-4" style={{ minHeight: "480px" }}>
+      <div
+        className="hidden md:flex gap-2.5 overflow-x-auto pb-4"
+        style={{ minHeight: "480px" }}
+      >
         {COLUMNS.map((col) => (
           <KanbanColumn
             key={col.key}
@@ -404,7 +425,10 @@ export default function KanbanView({ items, onStatusUpdate, isUpdating }: Kanban
         {COLUMNS.filter((col) => col.key === mobileActiveCol).map((col) => {
           const colItems = items.filter((i) => i.status === col.key);
           return (
-            <div key={col.key} className={`border-t-2 ${col.borderColor} bg-[#0D0D0D]`}>
+            <div
+              key={col.key}
+              className={`border-t-2 ${col.borderColor} bg-[#0D0D0D]`}
+            >
               <div className="p-3 space-y-3">
                 {colItems.length === 0 ? (
                   <div className="py-12 text-center text-[11px] opacity-20 uppercase tracking-widest">
@@ -431,4 +455,3 @@ export default function KanbanView({ items, onStatusUpdate, isUpdating }: Kanban
     </div>
   );
 }
-

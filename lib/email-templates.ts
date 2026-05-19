@@ -173,25 +173,31 @@ export function buildLeadWelcomeEmail({
   primeiroNome,
   diasRestantes,
 }: LeadWelcomeParams) {
+
   const urgencyBlock = `
     <div style="margin:26px 0;padding:18px 20px;background:#171717;border-left:4px solid #C6FF00;">
       <p style="margin:0 0 8px 0;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#C6FF00;font-weight:800;">Prazo IRPF 2026</p>
-      <p style="margin:0;font-size:14px;line-height:1.7;color:#D5D5D0;">Faltam <strong style="color:#FFFFFF;">${diasRestantes} dias</strong> para o prazo final de envio. Quanto antes organizarmos sua declaracao, maior a chance de aproveitar deducoes e evitar correria.</p>
+      <p style="margin:0;font-size:14px;line-height:1.7;color:#D5D5D0;">Faltam <strong style="color:#FFFFFF;">${diasRestantes} dias</strong> para o prazo final de envio. Quanto antes organizarmos sua declaração, melhor para garantir deduções e evitar correria.</p>
     </div>
   `;
 
   const bodyHtml = `
     ${urgencyBlock}
     <div style="margin-top:24px;">
-      <p style="margin:0 0 14px 0;font-size:14px;line-height:1.75;color:#CFCFCB;">Ja podemos acelerar seu atendimento por WhatsApp. Assim eu reviso seu caso, informo os documentos necessarios e te passo o melhor caminho para envio da declaracao.</p>
-      <p style="margin:0 0 14px 0;font-size:14px;line-height:1.75;color:#CFCFCB;">Voce tera apoio para identificar pendencias, organizar comprovantes, transmitir a declaracao e acompanhar qualquer ajuste posterior.</p>
+      <p style="margin:0 0 14px 0;font-size:14px;line-height:1.75;color:#CFCFCB;">
+        Nossa equipe atende <strong>de domingo a domingo</strong> e responde o mais rápido possível.<br>
+        Para agilizar, envie uma mensagem no WhatsApp assim que puder — assim já analisamos seu caso e orientamos os próximos passos.
+      </p>
+      <p style="margin:0 0 14px 0;font-size:14px;line-height:1.75;color:#CFCFCB;">
+        Você receberá apoio para identificar pendências, organizar comprovantes, transmitir a declaração e acompanhar qualquer ajuste posterior.
+      </p>
     </div>
     <div style="margin-top:24px;padding:18px 20px;border:1px solid #272727;">
-      <p style="margin:0 0 10px 0;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#C6FF00;font-weight:800;">Proximos passos</p>
+      <p style="margin:0 0 10px 0;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#C6FF00;font-weight:800;">Como funciona o atendimento</p>
       <ul style="margin:0;padding-left:18px;color:#E5E5E0;font-size:14px;line-height:1.9;">
-        <li>Me envie uma mensagem com sua principal duvida ou situacao.</li>
-        <li>Eu retorno com a orientacao inicial e a lista de documentos.</li>
-        <li>Seguimos com a declaracao e transmissao oficial para a Receita.</li>
+        <li>Envie sua principal dúvida ou situação pelo WhatsApp.</li>
+        <li>Respondemos rapidamente com orientação inicial e lista de documentos.</li>
+        <li>Seguimos juntos até a transmissão oficial para a Receita Federal.</li>
       </ul>
     </div>
   `;

@@ -15,7 +15,11 @@ type FinishAutomationRunParams = {
   metadata?: Record<string, unknown>;
 };
 
-function getRunStatus({ generatedCount, retainedCount, errorCount }: FinishAutomationRunParams) {
+function getRunStatus({
+  generatedCount,
+  retainedCount,
+  errorCount,
+}: FinishAutomationRunParams) {
   if (generatedCount === 0 && errorCount > 0) return "failed";
   if (errorCount > 0 || retainedCount > 0) return "partial";
   return "success";
@@ -42,14 +46,26 @@ export async function startAutomationRun({
 
 export async function finishAutomationRun(
   runId: string,
-  { generatedCount, publishedCount, retainedCount, errorCount, durationMs, metadata = {} }: FinishAutomationRunParams
+  {
+    generatedCount,
+    publishedCount,
+    retainedCount,
+    errorCount,
+    durationMs,
+    metadata = {},
+  }: FinishAutomationRunParams,
 ) {
   const finishedAt = new Date();
 
   return prisma.automationRun.update({
     where: { id: runId },
     data: {
-      status: getRunStatus({ generatedCount, publishedCount, retainedCount, errorCount }),
+      status: getRunStatus({
+        generatedCount,
+        publishedCount,
+        retainedCount,
+        errorCount,
+      }),
       finishedAt,
       durationMs,
       generatedCount,
@@ -61,7 +77,11 @@ export async function finishAutomationRun(
   });
 }
 
-export async function failAutomationRun(runId: string, error: unknown, metadata: Record<string, unknown> = {}) {
+export async function failAutomationRun(
+  runId: string,
+  error: unknown,
+  metadata: Record<string, unknown> = {},
+) {
   const message = error instanceof Error ? error.message : String(error);
 
   return prisma.automationRun.update({

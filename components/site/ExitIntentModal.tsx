@@ -25,7 +25,9 @@ function canShow(): boolean {
 function markShown() {
   try {
     localStorage.setItem("exit_shown_at", String(Date.now()));
-  } catch { /* sem acesso ao localStorage */ }
+  } catch {
+    /* sem acesso ao localStorage */
+  }
 }
 
 export default function ExitIntentModal() {
@@ -68,7 +70,9 @@ export default function ExitIntentModal() {
     // Aguarda 8s para que o usuário leia antes de monitorar
     const readyTimer: ReturnType<typeof setTimeout> = setTimeout(() => {
       document.addEventListener("mouseleave", handleMouseLeave);
-      document.addEventListener("touchmove", handleTouchMove, { passive: true });
+      document.addEventListener("touchmove", handleTouchMove, {
+        passive: true,
+      });
     }, 8000);
 
     return () => {
@@ -125,7 +129,9 @@ export default function ExitIntentModal() {
         {sent ? (
           <div className="text-center py-4">
             <span className="block text-[#C6FF00] text-4xl mb-4">✓</span>
-            <p className="text-white font-bold text-lg mb-2">Mensagem recebida!</p>
+            <p className="text-white font-bold text-lg mb-2">
+              Mensagem recebida!
+            </p>
             <p className="text-white/60 text-sm">
               Nilson Brites entrará em contato em breve.
             </p>
@@ -150,7 +156,8 @@ export default function ExitIntentModal() {
                 : "Prazo encerrado — regularize agora"}
             </h2>
             <p className="text-white/60 text-sm mb-6">
-              Deixe suas informações e receba orientação gratuita. Sem compromisso.
+              Deixe suas informações e receba orientação gratuita. Sem
+              compromisso.
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">

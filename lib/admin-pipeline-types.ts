@@ -41,6 +41,17 @@ export type AdminPipelineItem = {
 
 export type AdminPipelineResponse = {
   items: AdminPipelineItem[];
-  pagination: { page: number; perPage: number; total: number; totalPages: number };
-  counters: { novos: number; em_contato: number; convertidos: number; perdidos: number; nao_lidos: number };
+  pagination: {
+    page: number;
+    perPage: number;
+    total: number;
+    totalPages: number;
+  };
+  counters: {
+    novos: number;
+    em_contato: number;
+    convertidos: number;
+    perdidos: number;
+    nao_lidos: number;
+  };
 };

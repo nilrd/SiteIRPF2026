@@ -8,18 +8,18 @@ export const dynamic = "force-dynamic";
 const schema = z.object({
   nome: z.string().min(2).max(200),
   email: z.string().email().max(200),
-  telefone: z.string()
+  telefone: z
+    .string()
     .min(10, "Telefone deve ter no mínimo 10 dígitos")
     .max(20, "Telefone deve ter no máximo 20 caracteres")
     .refine(
       (tel) => /\d{10,}/g.test(tel.replace(/\D/g, "")),
-      "Telefone inválido. Use formato (XX) 9XXXX-XXXX"
+      "Telefone inválido. Use formato (XX) 9XXXX-XXXX",
     ),
   origem: z.string().max(100).optional(),
   servico: z.string().max(50).optional(),
   mensagem: z.string().max(2000).optional(),
 });
-
 
 export async function POST(request: Request) {
   try {
@@ -66,13 +66,10 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Dados invalidos", details: error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     console.error("Contato API error:", error);
-    return NextResponse.json(
-      { error: "Erro interno" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

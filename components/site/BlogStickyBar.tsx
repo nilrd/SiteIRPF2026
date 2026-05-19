@@ -126,7 +126,9 @@ export default function BlogStickyBar() {
         ) : (
           <>
             <p className="flex-1 text-white text-sm">
-              <span className="text-[#C6FF00] font-bold">Dúvida sobre sua declaração?</span>{" "}
+              <span className="text-[#C6FF00] font-bold">
+                Dúvida sobre sua declaração?
+              </span>{" "}
               Fale com Nilson Brites — mais de 10 anos de experiência.
             </p>
             <a

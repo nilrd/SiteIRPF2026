@@ -28,11 +28,14 @@ async function notifyTelegram(message: string): Promise<NotifyResult> {
   }
 
   try {
-    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text: message }),
-    });
+    const response = await fetch(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text: message }),
+      },
+    );
 
     if (!response.ok) {
       const body = await response.text();
@@ -95,7 +98,10 @@ async function notifySlack(message: string): Promise<NotifyResult> {
   }
 }
 
-function formatLeadMessage(entity: NotifyEntity, entityType: "lead" | "contato") {
+function formatLeadMessage(
+  entity: NotifyEntity,
+  entityType: "lead" | "contato",
+) {
   return [
     `Novo ${entityType} recebido`,
     `Nome: ${entity.nome}`,
@@ -110,7 +116,10 @@ function formatLeadMessage(entity: NotifyEntity, entityType: "lead" | "contato")
 }
 
 async function notifyChannels(message: string) {
-  const results = await Promise.allSettled([notifyTelegram(message), notifySlack(message)]);
+  const results = await Promise.allSettled([
+    notifyTelegram(message),
+    notifySlack(message),
+  ]);
 
   return results.map((result, index) => {
     const channel = index === 0 ? "telegram" : "slack";
@@ -120,7 +129,10 @@ async function notifyChannels(message: string) {
       channel,
       success: false,
       skipped: false,
-      error: result.reason instanceof Error ? result.reason.message : "Erro desconhecido",
+      error:
+        result.reason instanceof Error
+          ? result.reason.message
+          : "Erro desconhecido",
     } satisfies NotifyResult;
   });
 }

@@ -1,0 +1,80 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "echo-check",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/c",
+				"echo TASK_OK"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "build-capture",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "build-final-check",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/d",
+				"/c",
+				"npm exec prisma validate && npm exec tsc --noEmit && npm run build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "deps-react-check",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"ls",
+				"react",
+				"react-dom"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "build-nodeenv-prod",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/d",
+				"/c",
+				"set NODE_ENV=production&& npm run build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "final-validate-build",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/d",
+				"/c",
+				"npm exec prisma validate && npm exec tsc --noEmit && npm run build"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "final-validate-build-2",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+				"/d",
+				"/c",
+				"npm exec prisma validate && npm exec tsc --noEmit && npm run build"
+			],
+			"isBackground": false
+		}
+	]
+}

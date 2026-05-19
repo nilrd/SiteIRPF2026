@@ -39,13 +39,4 @@
     "tailwind.config.*": "postcss.config.*",
     ".env": ".env.*, .gitignore"
   },
-  "terminal.integrated.env.linux": {
-    "NODE_ENV": "development"
-  },
-  "terminal.integrated.env.osx": {
-    "NODE_ENV": "development"
-  },
-  "terminal.integrated.env.windows": {
-    "NODE_ENV": "development"
-  }
 }

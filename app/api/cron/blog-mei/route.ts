@@ -19,7 +19,7 @@ import { notifySystemAlert } from "@/lib/notify";
 export const dynamic = "force-dynamic";
 export const maxDuration = 180; // 3min — gera 2 posts MEI por cron run
 
-const NUM_POSTS = 2;
+const NUM_POSTS = 1;
 const DELAY_MS = 4000;
 const MAX_CRON_MS = 150_000; // 150s de segurança
 

@@ -1,5 +1,17 @@
 import { Resend } from "resend";
 
+/**
+ * Retorna o endereço "from" padronizado para todos os emails transacionais.
+ * Prioridade: FROM_EMAIL (env) → fallback seguro com domínio verificado.
+ * Centraliza o remetente para facilitar SPF/DKIM/DMARC.
+ */
+export function getFromEmail(): string {
+  return (
+    process.env.FROM_EMAIL ||
+    "Nilson Brites | Consultoria IRPF <noreply@irpf.qaplay.com.br>"
+  );
+}
+
 // Usa factory function — nunca lanca erro em build time (sem RESEND_API_KEY)
 // Compativel com o padrao resend.emails.send() ja usado no codigo
 export const resend = {

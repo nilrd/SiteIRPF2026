@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { resend } from "@/lib/resend";
+import { resend, getFromEmail } from "@/lib/resend";
+import { buildEbookEmailHtml, buildEbookEmailText } from "@/lib/email-templates";
 
 export const dynamic = "force-dynamic";
 
@@ -22,19 +23,12 @@ export async function POST(request: Request) {
       },
     });
 
-    // Send ebook PDF via email
     await resend.emails.send({
-      from: "Consultoria IRPF NSB <noreply@irpf.qaplay.com.br>",
+      from: getFromEmail(),
       to: data.email,
-      subject: "Seu E-book Gratuito - Guia IRPF",
-      html: `
-        <h2>Ola, ${data.nome}!</h2>
-        <p>Obrigado por baixar nosso Guia Completo do IRPF.</p>
-        <p>Qualquer duvida sobre sua declaracao, estamos a disposicao:</p>
-        <a href="https://wa.me/5511940825120">Falar pelo WhatsApp</a>
-        <br><br>
-        <p>Consultoria IRPF NSB</p>
-      `,
+      subject: "Seu Guia IRPF chegou — acesse o material completo",
+      html: buildEbookEmailHtml(data.nome),
+      text: buildEbookEmailText(data.nome),
     });
 
     return NextResponse.json({ success: true });
@@ -42,13 +36,13 @@ export async function POST(request: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Dados invalidos", details: error.issues },
-        { status: 400 }
+        { status: 400 },
       );
     }
     console.error("Ebook API error:", error);
     return NextResponse.json(
       { error: "Erro interno" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

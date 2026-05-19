@@ -1,7 +1,8 @@
 const BRAND = {
   siteUrl: "https://irpf.qaplay.com.br",
   adminLeadsUrl: "https://irpf.qaplay.com.br/painel-nb-2025/leads",
-  whatsappUrl: "https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson%21%20Quero%20ajuda%20com%20meu%20IRPF%202026.",
+  whatsappUrl:
+    "https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson%21%20Quero%20ajuda%20com%20meu%20IRPF%202026.",
 };
 
 type EmailButton = {
@@ -72,9 +73,12 @@ function renderButtons(buttons: EmailButton[] = []) {
           .map((button) => {
             const tone = button.tone ?? "primary";
             const styles = {
-              primary: "background:#C6FF00;color:#050505;border:1px solid #C6FF00;",
-              secondary: "background:transparent;color:#F5F5F2;border:1px solid #353535;",
-              whatsapp: "background:#25D366;color:#04170B;border:1px solid #25D366;",
+              primary:
+                "background:#C6FF00;color:#050505;border:1px solid #C6FF00;",
+              secondary:
+                "background:transparent;color:#F5F5F2;border:1px solid #353535;",
+              whatsapp:
+                "background:#25D366;color:#04170B;border:1px solid #25D366;",
             } as const;
 
             return `
@@ -158,14 +162,17 @@ function renderInfoTable(rows: Array<{ label: string; value: string }>) {
                 ${row.value}
               </td>
             </tr>
-          `
+          `,
         )
         .join("")}
     </table>
   `;
 }
 
-export function buildLeadWelcomeEmail({ primeiroNome, diasRestantes }: LeadWelcomeParams) {
+export function buildLeadWelcomeEmail({
+  primeiroNome,
+  diasRestantes,
+}: LeadWelcomeParams) {
   const urgencyBlock = `
     <div style="margin:26px 0;padding:18px 20px;background:#171717;border-left:4px solid #C6FF00;">
       <p style="margin:0 0 8px 0;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#C6FF00;font-weight:800;">Prazo IRPF 2026</p>
@@ -193,16 +200,24 @@ export function buildLeadWelcomeEmail({ primeiroNome, diasRestantes }: LeadWelco
     preheader: `${primeiroNome}, seu atendimento IRPF ja pode comecar no WhatsApp.`,
     eyebrow: "Consultoria IRPF NSB",
     title: `${primeiroNome}, recebemos seu contato.`,
-    intro: "Seu atendimento foi registrado com sucesso. Se quiser ganhar tempo, o caminho mais rapido agora e falar comigo pelo WhatsApp para eu analisar seu caso e orientar os documentos necessarios.",
+    intro:
+      "Seu atendimento foi registrado com sucesso. Se quiser ganhar tempo, o caminho mais rapido agora e falar comigo pelo WhatsApp para eu analisar seu caso e orientar os documentos necessarios.",
     bodyHtml,
     buttons: [
-      { label: "Falar agora no WhatsApp", href: BRAND.whatsappUrl, tone: "whatsapp" },
+      {
+        label: "Falar agora no WhatsApp",
+        href: BRAND.whatsappUrl,
+        tone: "whatsapp",
+      },
       { label: "Ver o site", href: BRAND.siteUrl, tone: "secondary" },
     ],
   });
 }
 
-export function buildContactConfirmationEmail({ nome, servico }: ContactConfirmationParams) {
+export function buildContactConfirmationEmail({
+  nome,
+  servico,
+}: ContactConfirmationParams) {
   const primeiroNome = escapeHtml(nome.split(" ")[0] || nome);
   const serviceLabel = escapeHtml(formatServiceLabel(servico));
 
@@ -225,10 +240,15 @@ export function buildContactConfirmationEmail({ nome, servico }: ContactConfirma
     preheader: `${nome}, sua mensagem foi recebida e pode continuar pelo WhatsApp.`,
     eyebrow: "Atendimento Nilson Brites",
     title: "Recebemos sua mensagem.",
-    intro: "Seu contato entrou na fila de atendimento. Se quiser adiantar sua analise, me acione agora no WhatsApp para eu te responder com mais velocidade.",
+    intro:
+      "Seu contato entrou na fila de atendimento. Se quiser adiantar sua analise, me acione agora no WhatsApp para eu te responder com mais velocidade.",
     bodyHtml,
     buttons: [
-      { label: "Continuar no WhatsApp", href: BRAND.whatsappUrl, tone: "whatsapp" },
+      {
+        label: "Continuar no WhatsApp",
+        href: BRAND.whatsappUrl,
+        tone: "whatsapp",
+      },
       { label: "Abrir o site", href: BRAND.siteUrl, tone: "secondary" },
     ],
   });
@@ -247,7 +267,10 @@ export function buildAdminNotificationEmail({
   const kindLabel = kind === "lead" ? "Novo lead" : "Novo contato";
   const rows = [
     { label: "Nome", value: escapeHtml(nome) || "Nao informado" },
-    { label: "Email", value: `<a href="mailto:${escapeHtml(email)}" style="color:#C6FF00;text-decoration:none;">${escapeHtml(email)}</a>` },
+    {
+      label: "Email",
+      value: `<a href="mailto:${escapeHtml(email)}" style="color:#C6FF00;text-decoration:none;">${escapeHtml(email)}</a>`,
+    },
     { label: "Telefone", value: escapeHtml(telefone) || "Nao informado" },
     { label: "Origem", value: escapeHtml(origem) || "site" },
     { label: "Servico", value: escapeHtml(formatServiceLabel(servico)) },
@@ -258,12 +281,173 @@ export function buildAdminNotificationEmail({
     preheader: `${kindLabel}: ${nome}`,
     eyebrow: "Painel Comercial IRPF",
     title: `${kindLabel} recebido no site`,
-    intro: "O painel ja recebeu este registro. Abaixo esta o resumo completo para resposta rapida e contato imediato.",
+    intro:
+      "O painel ja recebeu este registro. Abaixo esta o resumo completo para resposta rapida e contato imediato.",
     bodyHtml: renderInfoTable(rows),
     buttons: [
-      ...(whatsappUrl ? [{ label: "Abrir WhatsApp", href: whatsappUrl, tone: "whatsapp" as const }] : []),
+      ...(whatsappUrl
+        ? [
+            {
+              label: "Abrir WhatsApp",
+              href: whatsappUrl,
+              tone: "whatsapp" as const,
+            },
+          ]
+        : []),
       { label: "Abrir painel", href: BRAND.adminLeadsUrl, tone: "primary" },
     ],
-    footerNote: "Este email foi enviado automaticamente pelo site. O painel do admin concentra o historico consolidado de leads e contatos.",
+    footerNote:
+      "Este email foi enviado automaticamente pelo site. O painel do admin concentra o historico consolidado de leads e contatos.",
   });
+}
+
+// ─── Versões text/plain ───────────────────────────────────────────────────────
+
+export function buildLeadWelcomeEmailText({
+  primeiroNome,
+  diasRestantes,
+}: LeadWelcomeParams): string {
+  return [
+    `Olá, ${primeiroNome}.`,
+    ``,
+    `Seu atendimento foi registrado com sucesso na Consultoria IRPF NSB.`,
+    ``,
+    `Faltam ${diasRestantes} dias para o prazo final do IRPF 2026 (29 de maio de 2026).`,
+    `Quanto antes organizarmos sua declaração, maior a chance de aproveitar deduções e evitar correria.`,
+    ``,
+    `Próximos passos:`,
+    `1. Me envie uma mensagem com sua principal dúvida ou situação.`,
+    `2. Eu retorno com orientação inicial e lista de documentos necessários.`,
+    `3. Seguimos com a declaração e transmissão oficial para a Receita Federal.`,
+    ``,
+    `Falar pelo WhatsApp: https://wa.me/5511940825120`,
+    ``,
+    `—`,
+    `Nilson Brites | Analista Financeiro`,
+    `Consultoria IRPF NSB`,
+    `${BRAND.siteUrl}`,
+    ``,
+    `Você recebe este email por ter solicitado atendimento em irpf.qaplay.com.br.`,
+  ].join("\n");
+}
+
+export function buildContactConfirmationEmailText({
+  nome,
+  servico,
+}: ContactConfirmationParams): string {
+  const primeiroNome = nome.split(" ")[0] || nome;
+  const serviceLabel = formatServiceLabel(servico);
+  return [
+    `Olá, ${primeiroNome}.`,
+    ``,
+    `Recebemos sua mensagem sobre ${serviceLabel}.`,
+    ``,
+    `O que acontece agora:`,
+    `- Eu reviso sua mensagem e identifico o melhor atendimento.`,
+    `- Você recebe o retorno com orientação inicial e próximo passo.`,
+    `- Se preferir, seguimos pelo WhatsApp com atendimento mais rápido.`,
+    ``,
+    `Continuar no WhatsApp: https://wa.me/5511940825120`,
+    ``,
+    `—`,
+    `Nilson Brites | Analista Financeiro`,
+    `Consultoria IRPF NSB`,
+    `${BRAND.siteUrl}`,
+    ``,
+    `Você recebe este email por ter entrado em contato em irpf.qaplay.com.br.`,
+  ].join("\n");
+}
+
+export function buildAdminNotificationEmailText({
+  kind,
+  nome,
+  email,
+  telefone,
+  origem,
+  servico,
+  mensagem,
+  whatsappUrl,
+}: AdminNotificationParams): string {
+  const kindLabel = kind === "lead" ? "Novo lead" : "Novo contato";
+  return [
+    `${kindLabel}: ${nome}`,
+    ``,
+    `Email: ${email}`,
+    `Telefone: ${telefone || "Não informado"}`,
+    `Origem: ${origem || "site"}`,
+    `Serviço: ${formatServiceLabel(servico)}`,
+    `Mensagem: ${mensagem || "Sem mensagem"}`,
+    ``,
+    ...(whatsappUrl ? [`Abrir WhatsApp: ${whatsappUrl}`, ``] : []),
+    `Painel admin: ${BRAND.adminLeadsUrl}`,
+  ].join("\n");
+}
+
+// ─── Template de Ebook ────────────────────────────────────────────────────────
+
+export function buildEbookEmailHtml(nome: string): string {
+  const primeiroNome = escapeHtml(nome.split(" ")[0] || nome);
+
+  const bodyHtml = `
+    <div style="margin:0 0 22px 0;padding:18px 20px;background:#171717;border-left:4px solid #C6FF00;">
+      <p style="margin:0 0 8px 0;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#C6FF00;font-weight:800;">Seu material chegou</p>
+      <p style="margin:0;font-size:14px;line-height:1.75;color:#D5D5D0;">O link de acesso ao Guia Completo do IRPF esta disponivel abaixo. Este material reune as principais regras, prazos e dicas praticas para sua declaracao 2026.</p>
+    </div>
+    <div style="margin:0 0 24px 0;padding:18px 20px;border:1px solid #272727;">
+      <p style="margin:0 0 10px 0;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#C6FF00;font-weight:800;">O que voce encontra no guia</p>
+      <ul style="margin:0;padding-left:18px;color:#E5E5E0;font-size:14px;line-height:1.9;">
+        <li>Quem e obrigado a declarar em 2026</li>
+        <li>Documentos necessarios e prazo de entrega</li>
+        <li>Principais deducoes permitidas por lei</li>
+        <li>Como evitar cair na malha fina</li>
+        <li>O que fazer se voce tiver pendencias</li>
+      </ul>
+    </div>
+    <p style="margin:0 0 14px 0;font-size:14px;line-height:1.75;color:#CFCFCB;">Se tiver duvidas ou quiser ajuda com a declaracao, me chame pelo WhatsApp. Atendimento 100% online para todo o Brasil.</p>
+  `;
+
+  return renderEmailLayout({
+    preheader: `${primeiroNome}, seu Guia IRPF 2026 esta disponivel.`,
+    eyebrow: "Consultoria IRPF NSB",
+    title: `${primeiroNome}, seu guia chegou.`,
+    intro:
+      "Obrigado pelo interesse. Seu Guia Completo do IRPF 2026 esta pronto para acesso. Qualquer duvida sobre sua situacao fiscal, estamos a disposicao.",
+    bodyHtml,
+    buttons: [
+      {
+        label: "Falar com Nilson no WhatsApp",
+        href: BRAND.whatsappUrl,
+        tone: "whatsapp",
+      },
+      { label: "Acessar o site", href: BRAND.siteUrl, tone: "secondary" },
+    ],
+  });
+}
+
+export function buildEbookEmailText(nome: string): string {
+  const primeiroNome = nome.split(" ")[0] || nome;
+  return [
+    `Olá, ${primeiroNome}.`,
+    ``,
+    `Obrigado pelo interesse no Guia Completo do IRPF 2026.`,
+    ``,
+    `O que você encontra no guia:`,
+    `- Quem é obrigado a declarar em 2026`,
+    `- Documentos necessários e prazo de entrega`,
+    `- Principais deduções permitidas por lei`,
+    `- Como evitar cair na malha fina`,
+    `- O que fazer se você tiver pendências`,
+    ``,
+    `Se tiver dúvidas ou quiser ajuda com a declaração, me chame pelo WhatsApp.`,
+    `Atendimento 100% online para todo o Brasil.`,
+    ``,
+    `WhatsApp: https://wa.me/5511940825120`,
+    ``,
+    `—`,
+    `Nilson Brites | Analista Financeiro`,
+    `Consultoria IRPF NSB`,
+    `${BRAND.siteUrl}`,
+    ``,
+    `Você recebe este email por ter solicitado o material em irpf.qaplay.com.br.`,
+  ].join("\n");
 }

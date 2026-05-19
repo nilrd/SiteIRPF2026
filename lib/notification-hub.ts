@@ -10,10 +10,17 @@
 
 import {
   buildAdminNotificationEmail,
+  buildAdminNotificationEmailText,
   buildContactConfirmationEmail,
+  buildContactConfirmationEmailText,
   buildLeadWelcomeEmail,
+  buildLeadWelcomeEmailText,
 } from "@/lib/email-templates";
-import { notifyNewContato, notifyNewLead, notifySystemAlert as _notifySystemAlert } from "@/lib/notify";
+import {
+  notifyNewContato,
+  notifyNewLead,
+  notifySystemAlert as _notifySystemAlert,
+} from "@/lib/notify";
 import { resend } from "@/lib/resend";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -62,7 +69,7 @@ export type ContatoPayload = {
 // ─── Email interno (único safeSendEmail no projeto) ───────────────────────────
 
 async function safeSendEmail(
-  params: Parameters<typeof resend.emails.send>[0]
+  params: Parameters<typeof resend.emails.send>[0],
 ): Promise<EmailResult> {
   try {
     const { data, error } = await resend.emails.send(params);
@@ -80,7 +87,10 @@ async function safeSendEmail(
       success: false,
       skipped: false,
       id: null,
-      error: err instanceof Error ? err.message : "Erro desconhecido ao enviar email",
+      error:
+        err instanceof Error
+          ? err.message
+          : "Erro desconhecido ao enviar email",
     };
   }
 }
@@ -89,13 +99,19 @@ async function safeSendEmail(
 
 function resolveFrom(label: string): string {
   const from = process.env.FROM_EMAIL;
-  if (!from) console.warn(`[notification-hub] FROM_EMAIL não configurado. Usando fallback para "${label}".`);
-  return from || "IRPF NSB <onboarding@resend.dev>";
+  if (!from)
+    console.warn(
+      `[notification-hub] FROM_EMAIL não configurado. Usando fallback para "${label}".`,
+    );
+  return from || "Nilson Brites | Consultoria IRPF <noreply@irpf.qaplay.com.br>";
 }
 
 function resolveAdminEmail(): string {
   const admin = process.env.ADMIN_EMAIL;
-  if (!admin) console.warn("[notification-hub] ADMIN_EMAIL não configurado. Usando fallback nilson.brites@gmail.com.");
+  if (!admin)
+    console.warn(
+      "[notification-hub] ADMIN_EMAIL não configurado. Usando fallback nilson.brites@gmail.com.",
+    );
   return admin || "nilson.brites@gmail.com";
 }
 
@@ -112,27 +128,32 @@ export async function notifyLead(data: LeadPayload): Promise<HubResult> {
   const adminEmail = resolveAdminEmail();
   const primeiroNome = data.nome.split(" ")[0];
 
+  const leadWelcomeParams = { primeiroNome, diasRestantes: data.diasRestantes };
+  const adminLeadParams = {
+    kind: "lead" as const,
+    nome: data.nome,
+    email: data.email,
+    telefone: data.telefone,
+    origem: data.origem || "site",
+    servico: data.servico || "IRPF",
+    mensagem: data.mensagem,
+    whatsappUrl: data.whatsappUrl,
+  };
+
   const [emailToUser, emailToAdmin, webhook] = await Promise.all([
     safeSendEmail({
       from,
       to: data.email,
-      subject: `${primeiroNome}, recebemos seu contato - IRPF 2026 (prazo: 29 de maio)`,
-      html: buildLeadWelcomeEmail({ primeiroNome, diasRestantes: data.diasRestantes }),
+      subject: `Recebemos sua solicitação — Consultoria IRPF NSB`,
+      html: buildLeadWelcomeEmail(leadWelcomeParams),
+      text: buildLeadWelcomeEmailText(leadWelcomeParams),
     }),
     safeSendEmail({
       from,
       to: adminEmail,
-      subject: `Novo lead: ${data.nome}`,
-      html: buildAdminNotificationEmail({
-        kind: "lead",
-        nome: data.nome,
-        email: data.email,
-        telefone: data.telefone,
-        origem: data.origem || "site",
-        servico: data.servico || "IRPF",
-        mensagem: data.mensagem,
-        whatsappUrl: data.whatsappUrl,
-      }),
+      subject: `[Lead] ${data.nome} — ${data.servico || "IRPF"}`,
+      html: buildAdminNotificationEmail(adminLeadParams),
+      text: buildAdminNotificationEmailText(adminLeadParams),
     }),
     notifyNewLead({
       nome: data.nome,
@@ -144,8 +165,13 @@ export async function notifyLead(data: LeadPayload): Promise<HubResult> {
     }),
   ]);
 
-  if (!emailToUser.success) console.error("[notification-hub] Email lead falhou:", emailToUser.error);
-  if (!emailToAdmin.success) console.error("[notification-hub] Email admin (lead) falhou:", emailToAdmin.error);
+  if (!emailToUser.success)
+    console.error("[notification-hub] Email lead falhou:", emailToUser.error);
+  if (!emailToAdmin.success)
+    console.error(
+      "[notification-hub] Email admin (lead) falhou:",
+      emailToAdmin.error,
+    );
 
   return { emailToUser, emailToAdmin, webhook };
 }
@@ -160,27 +186,32 @@ export async function notifyContato(data: ContatoPayload): Promise<HubResult> {
   const from = resolveFrom("contato");
   const adminEmail = resolveAdminEmail();
 
+  const contactConfirmParams = { nome: data.nome, servico: data.servico };
+  const adminContatoParams = {
+    kind: "contato" as const,
+    nome: data.nome,
+    email: data.email,
+    telefone: data.telefone,
+    origem: data.origem || "site",
+    servico: data.servico,
+    mensagem: data.mensagem,
+    whatsappUrl: data.whatsappUrl,
+  };
+
   const [emailToUser, emailToAdmin, webhook] = await Promise.all([
     safeSendEmail({
       from,
       to: data.email,
-      subject: "Recebemos seu contato — IRPF NSB",
-      html: buildContactConfirmationEmail({ nome: data.nome, servico: data.servico }),
+      subject: `Recebemos sua mensagem — Consultoria IRPF NSB`,
+      html: buildContactConfirmationEmail(contactConfirmParams),
+      text: buildContactConfirmationEmailText(contactConfirmParams),
     }),
     safeSendEmail({
       from,
       to: adminEmail,
-      subject: `Novo contato via site — ${data.nome}`,
-      html: buildAdminNotificationEmail({
-        kind: "contato",
-        nome: data.nome,
-        email: data.email,
-        telefone: data.telefone,
-        origem: data.origem || "site",
-        servico: data.servico,
-        mensagem: data.mensagem,
-        whatsappUrl: data.whatsappUrl,
-      }),
+      subject: `[Contato] ${data.nome}`,
+      html: buildAdminNotificationEmail(adminContatoParams),
+      text: buildAdminNotificationEmailText(adminContatoParams),
     }),
     notifyNewContato({
       nome: data.nome,
@@ -192,8 +223,16 @@ export async function notifyContato(data: ContatoPayload): Promise<HubResult> {
     }),
   ]);
 
-  if (!emailToUser.success) console.error("[notification-hub] Email confirmação falhou:", emailToUser.error);
-  if (!emailToAdmin.success) console.error("[notification-hub] Email admin (contato) falhou:", emailToAdmin.error);
+  if (!emailToUser.success)
+    console.error(
+      "[notification-hub] Email confirmação falhou:",
+      emailToUser.error,
+    );
+  if (!emailToAdmin.success)
+    console.error(
+      "[notification-hub] Email admin (contato) falhou:",
+      emailToAdmin.error,
+    );
 
   return { emailToUser, emailToAdmin, webhook };
 }

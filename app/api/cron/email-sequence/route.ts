@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resend } from "@/lib/resend";
+import { resend, getFromEmail } from "@/lib/resend";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const CRON_SECRET = "xP9aKm2wR4nQ7vL3hT8uY6sZ";
 const WA_LINK = "https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson%21%20Quero%20declarar%20meu%20IRPF%202026.";
-const FROM = "Nilson Brites — IRPF <noreply@irpf.qaplay.com.br>";
 const SITE_URL = "https://irpf.qaplay.com.br";
 
 /* ── Email Templates ──────────────────────────────────────── */
@@ -66,6 +65,36 @@ function ctaButton(text: string, href: string): string {
 }
 
 /* Email 2 — day 2 */
+function email2Text(nome: string): string {
+  return [
+    `Olá, ${nome}.`,
+    ``,
+    `Para agilizarmos sua declaração de IRPF 2026, preparei a lista completa de documentos que você precisa ter em mãos.`,
+    ``,
+    `Documentos obrigatórios:`,
+    `- CPF e dados pessoais`,
+    `- Informes de rendimentos do empregador`,
+    `- Extrato de rendimentos bancários`,
+    `- Informes de previdência privada (PGBL/VGBL)`,
+    `- Comprovantes de plano de saúde`,
+    `- Recibos de consultas médicas e tratamentos`,
+    `- Comprovante de escola, faculdade ou pós-graduação`,
+    `- Dados dos dependentes (CPF, nome, data de nascimento)`,
+    `- Escrituras de imóveis, veículos e outros bens`,
+    `- Extrato de operações em bolsa (Nota de Corretagem)`,
+    ``,
+    `O prazo do IRPF 2026 é 29 de maio. Quanto antes você enviar, melhor.`,
+    ``,
+    `Enviar documentos pelo WhatsApp: ${WA_LINK}`,
+    ``,
+    `—`,
+    `Nilson Brites | Analista Financeiro`,
+    `${SITE_URL}`,
+    ``,
+    `Você recebe este email por ter se cadastrado em irpf.qaplay.com.br.`,
+  ].join("\n");
+}
+
 function email2(nome: string): string {
   return emailBase(
     "Documentos para sua declaração IRPF 2026",
@@ -92,6 +121,32 @@ function email2(nome: string): string {
 }
 
 /* Email 3 — day 4 */
+function email3Text(nome: string): string {
+  return [
+    `${nome}, veja esse caso real:`,
+    ``,
+    `Marcos Almeida, engenheiro de 42 anos em São Paulo, havia caído na malha fina por erro na declaração do ano anterior. A restituição estava retida — e ele nem sabia.`,
+    ``,
+    `"Fui entrar em contato com o Nilson achando que o problema seria enorme. Em 48 horas ele identificou o erro, fez a retificação e minha restituição de R$ 1.247 foi liberada."`,
+    `— Marcos A., São Paulo, SP`,
+    ``,
+    `Erros comuns que colocam contribuintes na malha fina:`,
+    `- Divergência entre o declarado e o que o empregador informou`,
+    `- Deduções médicas sem comprovante ou com CPF incorreto do médico`,
+    `- Dependentes declarados por mais de uma pessoa`,
+    `- Rendimentos de aluguéis não declarados corretamente`,
+    `- Omissão de rendimentos autônomos`,
+    ``,
+    `Se você suspeita de algum erro ou está com restituição retida, posso analisar sem custo adicional.`,
+    ``,
+    `Verificar minha situação: ${WA_LINK}`,
+    ``,
+    `—`,
+    `Nilson Brites | Analista Financeiro`,
+    `${SITE_URL}`,
+  ].join("\n");
+}
+
 function email3(nome: string): string {
   return emailBase(
     "Como Marcos economizou R$ 1.247 e saiu da malha fina",
@@ -116,6 +171,28 @@ function email3(nome: string): string {
 }
 
 /* Email 4 — day 7 */
+function email4Text(nome: string, diasRestantes: number): string {
+  return [
+    `${nome}, faltam ${diasRestantes} dias para o prazo IRPF 2026.`,
+    ``,
+    `O prazo é 29 de maio de 2026. Se você ainda não declarou, este é o momento ideal para agir.`,
+    ``,
+    `O que acontece se você não declarar:`,
+    `- Multa mínima de R$ 165,74`,
+    `- Juros de 1% ao mês sobre o imposto devido (máx. 20%)`,
+    `- CPF irregular — sem crédito, financiamentos ou passaporte`,
+    `- Risco de ação de cobrança pela Receita Federal`,
+    ``,
+    `Ainda dá tempo de regularizar. Me chame pelo WhatsApp.`,
+    ``,
+    `WhatsApp: ${WA_LINK}`,
+    ``,
+    `—`,
+    `Nilson Brites | Analista Financeiro`,
+    `${SITE_URL}`,
+  ].join("\n");
+}
+
 function email4(nome: string, diasRestantes: number): string {
   return emailBase(
     `${diasRestantes} dias para o prazo — ${nome}, você já declarou?`,
@@ -147,6 +224,30 @@ function email4(nome: string, diasRestantes: number): string {
 }
 
 /* Email 5 — day 10, final */
+function email5Text(nome: string, diasRestantes: number): string {
+  return [
+    `${nome}, faltam ${diasRestantes} dias para o prazo do IRPF 2026.`,
+    ``,
+    `Com ${diasRestantes} dias restantes, ainda há tempo — mas a janela está se fechando.`,
+    ``,
+    `Os últimos dias antes do prazo costumam ter alta demanda. Para garantir que sua declaração seja transmitida dentro do prazo, me chame agora pelo WhatsApp.`,
+    ``,
+    `O que você recebe:`,
+    `- Declaração completa transmitida à Receita Federal`,
+    `- Recibo oficial de entrega`,
+    `- Suporte por 12 meses`,
+    `- Análise de todas as deduções aplicáveis`,
+    ``,
+    `WhatsApp: ${WA_LINK}`,
+    ``,
+    `—`,
+    `Nilson Brites | Analista Financeiro`,
+    `${SITE_URL}`,
+    ``,
+    `Após 29 de maio, o serviço continua disponível para declarações atrasadas — mas multas e juros aumentam a cada dia.`,
+  ].join("\n");
+}
+
 function email5(nome: string, diasRestantes: number): string {
   return emailBase(
     `ÚLTIMO AVISO: ${diasRestantes} dias para o prazo — ${nome}`,
@@ -215,19 +316,24 @@ export async function GET(req: NextRequest) {
 
       let subject = "";
       let html = "";
+      let text = "";
 
       if (lead.emailSeqStep === 1) {
         subject = "Documentos necessários para declarar seu IRPF 2026";
         html = email2(lead.nome.split(" ")[0]);
+        text = email2Text(lead.nome.split(" ")[0]);
       } else if (lead.emailSeqStep === 2) {
-        subject = "Case real: como Marcos economizou R$ 1.247 com IRPF";
+        subject = "Caso real: como Marcos regularizou e recebeu a restituição retida";
         html = email3(lead.nome.split(" ")[0]);
+        text = email3Text(lead.nome.split(" ")[0]);
       } else if (lead.emailSeqStep === 3) {
         subject = `${diasRestantes} dias para o prazo do IRPF 2026 — você já declarou?`;
         html = email4(lead.nome.split(" ")[0], diasRestantes);
+        text = email4Text(lead.nome.split(" ")[0], diasRestantes);
       } else if (lead.emailSeqStep === 4) {
-        subject = `ÚLTIMO AVISO: faltam ${diasRestantes} dias para o prazo — ${lead.nome.split(" ")[0]}`;
+        subject = `Antes do prazo: ainda dá tempo para o IRPF 2026, ${lead.nome.split(" ")[0]}`;
         html = email5(lead.nome.split(" ")[0], diasRestantes);
+        text = email5Text(lead.nome.split(" ")[0], diasRestantes);
       }
 
       if (!subject) {
@@ -236,7 +342,7 @@ export async function GET(req: NextRequest) {
       }
 
       try {
-        await resend.emails.send({ from: FROM, to: lead.email, subject, html });
+        await resend.emails.send({ from: getFromEmail(), to: lead.email, subject, html, text });
         await prisma.lead.update({
           where: { id: lead.id },
           data: { emailSeqStep: lead.emailSeqStep + 1, emailSeqAt: now },

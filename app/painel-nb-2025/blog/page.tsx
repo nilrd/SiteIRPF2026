@@ -136,6 +136,11 @@ function BlogAdminContent() {
         body: JSON.stringify({ keyword: keyword.trim() }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        setActionMsg(`❌ ${data.error ?? "Erro ao gerar post"}`);
+        setTimeout(() => setActionMsg(null), 8000);
+        return;
+      }
       if (data.success) {
         setGenResult(data.post);
         setKeyword("");
@@ -149,8 +154,9 @@ function BlogAdminContent() {
         setTimeout(() => setActionMsg(null), 6000);
         await fetchPosts();
       }
-    } catch {
-      // silently fail
+    } catch (err) {
+      setActionMsg(`❌ Erro de conexão: ${err instanceof Error ? err.message : "tente novamente"}`);
+      setTimeout(() => setActionMsg(null), 8000);
     } finally {
       setGenerating(false);
     }
@@ -281,7 +287,7 @@ function BlogAdminContent() {
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-              placeholder="Tema opcional (vazio = IA escolhe assunto atual da internet)"
+              placeholder="Tema opcional (vazio = IA escolhe tema sobre IRPF, MEI ou tributação)"
               className="flex-1 bg-transparent border-b border-white/20 py-3 outline-none focus:border-white transition text-white placeholder:text-white/30"
             />
             <button

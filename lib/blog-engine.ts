@@ -1628,7 +1628,14 @@ function isTopicOnScope(topic: string): boolean {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-  // Permitir menção ao INSS apenas no contexto de deduções do IRPF
+
+  // Verificação POSITIVA: a keyword deve ser relacionada a IRPF/MEI/tributação.
+  // Qualquer tema fora deste universo (futebol, política, entretenimento, etc.)
+  // é bloqueado antes de chegar na IA, independente de não estar na lista negra.
+  if (!TrendResearchService.isInIRPFScope(topic)) return false;
+
+  // Verificação NEGATIVA: bloqueia temas previdenciários/trabalhistas que não
+  // têm relação direta com a declaração de IR (INSS como dedução é permitido).
   const isInssDeduction =
     lower.includes("deducao") || lower.includes("contribuicao");
   return !BLOCKED_TOPICS.some((blocked) => {
@@ -1781,13 +1788,26 @@ export async function generateBlogPost(
   }
 
   const trendKeyword = customKeyword ? null : await getTrendTopicFromInternet();
-  const keyword =
-    customKeyword ||
-    (clusterIndex !== undefined ? cluster?.primary : null) ||
-    trendPick?.keyword ||
-    trendKeyword ||
-    cluster?.primary ||
-    "IRPF 2026";
+
+  // Quando não há tema forçado, garante que a keyword seja IRPF/MEI/tributação.
+  // Candidatos fora do escopo (futebol, política, etc.) são ignorados e o
+  // sistema cai em um tema evergreen aleatório — nunca gera post off-topic.
+  function pickScopedKeyword(candidates: (string | null | undefined)[]): string {
+    for (const c of candidates) {
+      if (c && TrendResearchService.isInIRPFScope(c)) return c;
+    }
+    const pool = EVERGREEN_FALLBACK;
+    return pool[Math.floor(Math.random() * pool.length)]?.keyword ?? "IRPF 2026";
+  }
+
+  const keyword = customKeyword
+    ? customKeyword // tema manual: validado abaixo por isTopicOnScope
+    : pickScopedKeyword([
+        clusterIndex !== undefined ? (cluster?.primary ?? null) : null,
+        trendPick?.keyword ?? null,
+        trendKeyword,
+        cluster?.primary ?? null,
+      ]);
   const clusterIntent = cluster?.postIntent ?? "Traffic Post";
   const postIntent = inferClusterIntent(keyword, clusterIntent);
   const secundarias = cluster?.secondary?.join(", ") || "";

@@ -36,9 +36,8 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Blog generate error:", error);
-    return NextResponse.json(
-      { error: "Failed to generate blog post" },
-      { status: 500 }
-    );
+    const msg =
+      error instanceof Error ? error.message : "Falha ao gerar post";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

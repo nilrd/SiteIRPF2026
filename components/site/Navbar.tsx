@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 
 const NAV_LINKS = [
   { href: "/servicos", label: "Serviços" },
@@ -21,15 +20,15 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="fixed w-full top-0 z-40 bg-base/80 backdrop-blur-md editorial-border">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+    <header className="fixed w-full top-0 z-40 bg-base/80 backdrop-blur-md editorial-border overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <span className="font-serif text-xl font-bold tracking-tighter uppercase">
+        <Link href="/" className="flex items-center gap-2 group min-w-0 shrink">
+          <span className="font-serif text-sm sm:text-xl font-bold tracking-tighter uppercase truncate">
             Consultoria IRPF
           </span>
-          <span className="w-2 h-2 rounded-full bg-ouro inline-block animate-blink" />
-          <span className="font-serif text-xl font-bold tracking-tighter uppercase">
+          <span className="w-2 h-2 rounded-full bg-ouro inline-block animate-blink flex-shrink-0" />
+          <span className="font-serif text-sm sm:text-xl font-bold tracking-tighter uppercase">
             NSB
           </span>
         </Link>
@@ -57,7 +56,7 @@ export default function Navbar() {
 
         {/* Mobile Hamburger */}
         <button
-          className="md:hidden text-xs font-bold uppercase tracking-widest"
+          className="md:hidden text-xs font-bold uppercase tracking-widest flex-shrink-0 whitespace-nowrap ml-3"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? "Fechar" : "Menu"}
@@ -65,37 +64,30 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-base border-t border-linha overflow-hidden"
-          >
-            <nav className="flex flex-col px-6 py-6 gap-4">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="text-sm font-semibold uppercase tracking-widest py-2 editorial-border"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <a
-                href={WA_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-preto text-white text-center py-3 text-sm font-semibold uppercase tracking-widest mt-2"
+      {mobileOpen && (
+        <div className="md:hidden bg-base border-t border-linha overflow-hidden">
+          <nav className="flex flex-col px-6 py-6 gap-4">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="text-sm font-semibold uppercase tracking-widest py-2 editorial-border"
               >
-                Declarar Agora
-              </a>
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                {link.label}
+              </Link>
+            ))}
+            <a
+              href={WA_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-preto text-white text-center py-3 text-sm font-semibold uppercase tracking-widest mt-2"
+            >
+              Declarar Agora
+            </a>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

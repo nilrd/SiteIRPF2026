@@ -1,6 +1,7 @@
 import "@/app/globals.css";
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
+import { headers } from "next/headers";
 import Script from "next/script";
 import { JsonLdWebSite } from "@/components/seo/JsonLd";
 import WhatsAppConversionTracker from "@/components/analytics/WhatsAppConversionTracker";
@@ -100,11 +101,14 @@ export default function RootLayout({
   const ga4Id = process.env.NEXT_PUBLIC_GA4_ID || "G-7FYYGX7C12";
   const fbPixelId = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
 
-  // Carrega tags de rastreamento apenas no ambiente de produção Vercel.
-  // VERCEL_ENV === "production" → irpf.qaplay.com.br
-  // VERCEL_ENV === "preview"    → domínios *.vercel.app / deployments de preview
-  // VERCEL_ENV undefined        → localhost / dev local
-  const isProduction = process.env.VERCEL_ENV === "production";
+  // Validação por hostname em runtime — único método confiável.
+  // VERCEL_ENV não distingue o domínio customizado do alias *.vercel.app;
+  // ambos são "production" no Vercel. Usar o header "host" resolve isso:
+  //   irpf.qaplay.com.br  → carrega scripts de ads
+  //   *.vercel.app        → bloqueia
+  //   localhost / 127.0.0.1 → bloqueia
+  const host = headers().get("host") ?? "";
+  const isProduction = host === "irpf.qaplay.com.br";
 
   return (
     <html lang="pt-br" className={`${playfair.variable} ${inter.variable}`}>

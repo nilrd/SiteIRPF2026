@@ -1796,8 +1796,8 @@ export async function generateBlogPost(
     for (const c of candidates) {
       if (c && TrendResearchService.isInIRPFScope(c)) return c;
     }
-    const pool = EVERGREEN_FALLBACK;
-    return pool[Math.floor(Math.random() * pool.length)]?.keyword ?? "IRPF 2026";
+    const pool = ALL_CLUSTERS;
+    return pool[Math.floor(Math.random() * pool.length)]?.primary ?? "IRPF 2026";
   }
 
   const keyword = customKeyword

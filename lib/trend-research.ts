@@ -604,6 +604,18 @@ export class TrendResearchService {
     return response.json();
   }
 
+  /**
+   * Padrão de escopo IRPF/MEI/Tributação.
+   * Qualquer keyword de "trending now" que NÃO bater neste padrão é descartada
+   * antes de entrar no banco, evitando que futebol, política ou entretenimento
+   * sejam selecionados como tema de blog.
+   */
+  static isInIRPFScope(keyword: string): boolean {
+    const IRPF_SCOPE =
+      /imposto|irpf|ir\s|receita federal|mei\b|dasn|simei|parcelamento mei|malha fina|cpf|declaracao|restituicao|tribut|deducao|deduc|isencao|isenco|selic|ipca|renda|salario|contribuicao|previdencia|fgts|reforma tributaria|imposto de renda/i;
+    return IRPF_SCOPE.test(keyword);
+  }
+
   async fetchDailyTrends(): Promise<EditorialTrend[]> {
     if (!this.hasSerpApiKey()) return [];
 
@@ -631,6 +643,11 @@ export class TrendResearchService {
         item.query ?? item.title ?? item.search_term ?? "",
       ).trim();
       if (!keyword) return acc;
+
+      // ── FILTRO DE ESCOPO ─────────────────────────────────────────────────────
+      // "Trending now" retorna qualquer assunto do Brasil (futebol, celebridades,
+      // política, etc.). Só mantemos keywords relacionadas a IRPF/MEI/tributação.
+      if (!TrendResearchService.isInIRPFScope(keyword)) return acc;
 
       const trendBreakdown = asRecord(item.trend_breakdown);
 
@@ -835,6 +852,36 @@ export class TrendResearchService {
       ],
       take,
     });
+  }
+
+  /** Busca todas as trends (ativas e expiradas) para o painel de monitoramento. */
+  async getAllTrendsForAdmin(limit: number = 200) {
+    return prisma.trendKeyword.findMany({
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      select: {
+        id: true,
+        keyword: true,
+        source: true,
+        category: true,
+        intent: true,
+        postType: true,
+        trendScore: true,
+        businessScore: true,
+        urgencyScore: true,
+        seoScore: true,
+        riskScore: true,
+        breakoutStatus: true,
+        geo: true,
+        cachedUntil: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  /** Retorna status de quota SerpAPI público (sem incrementar contador). */
+  async getQuotaStatus(): Promise<QuotaStatus> {
+    return this.checkQuota(API_NAME);
   }
 
   getEvergreenFallback(limit: number = 40): EditorialTrend[] {

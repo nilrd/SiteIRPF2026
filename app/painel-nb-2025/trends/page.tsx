@@ -342,7 +342,7 @@ export default function TrendsAdminPage() {
         <div className="mt-6 border border-white/10 p-4 text-xs text-white/40 space-y-1">
           <p><strong className="text-white/60">↑</strong> = Breakout (crescimento rápido)</p>
           <p><strong className="text-white/60">FORA DO ESCOPO</strong> = Keyword histórica que não passaria pelo filtro atual (futebol, entretenimento, etc). Não é mais inserida.</p>
-          <p><strong className="text-white/60">Fonte SerpAPI Trending</strong> = Busca "trending now" Brasil — agora filtrado por termos IRPF/MEI/Tributação antes de salvar.</p>
+          <p><strong className="text-white/60">Fonte SerpAPI Trending</strong> = Busca &quot;trending now&quot; Brasil — agora filtrado por termos IRPF/MEI/Tributação antes de salvar.</p>
           <p><strong className="text-white/60">lead / traffic</strong> = Tipo de post recomendado (businessScore ≥ 72 = lead).</p>
         </div>
       </main>

@@ -447,7 +447,7 @@ export const DESENROLA_KEYWORD_CLUSTERS: MeiKeywordCluster[] = [
     volume: "media",
     intent: "informacional",
     categoria: "DESENROLA" as const,
-    phases: ["always"],
+    phases: ["before_deadline", "post_deadline"],
     postIntent: "Lead Post",
   },
   // ── Limpar nome + IR (funil para serviço) ────────────────────────────────

@@ -804,7 +804,7 @@ export async function generateMeiBlogPost(
             : 90,
     needsReview: review.aprovado !== true,
     campaignMode: getCurrentCampaignModes().join(","),
-    reviewApproved: true, // publica sempre sem revisão manual
+    reviewApproved: review.aprovado === true,
     reviewJson: JSON.stringify({ ...review, meiPhase, postIntent: resolvedIntent }),
     aiModel,
   };

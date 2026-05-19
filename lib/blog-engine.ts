@@ -767,6 +767,7 @@ export type ClusterIntent =
 export type ClusterPhase =
   | "pre_season"
   | "in_season"
+  | "deadline_14d"
   | "deadline_week"
   | "deadline_day"
   | "post_deadline"
@@ -1097,7 +1098,10 @@ function isClusterAllowedInPhase(
   phase: IrpfEditorialPhase,
 ): boolean {
   const phases = cluster.phases && cluster.phases.length > 0 ? cluster.phases : ["always"];
-  const phaseOk = phases.includes("always") || phases.includes(phase);
+  const phaseOk =
+    phases.includes("always") ||
+    phases.includes(phase as ClusterPhase) ||
+    (phase === "deadline_14d" && phases.includes("in_season"));
   if (!phaseOk) return false;
   if (phase !== "post_deadline" && isCurrentYearOverdueKeyword(cluster.primary)) {
     return false;
@@ -1107,9 +1111,21 @@ function isClusterAllowedInPhase(
 
 export function getAllowedIrpfClusterIndexes(now: Date = new Date()): number[] {
   const phase = getIrpfEditorialPhase(now);
-  return ALL_CLUSTERS.map((cluster, index) => ({ cluster, index }))
-    .filter(({ cluster }) => isClusterAllowedInPhase(cluster, phase))
-    .map(({ index }) => index);
+  const eligible = ALL_CLUSTERS.map((cluster, index) => ({ cluster, index }))
+    .filter(({ cluster }) => isClusterAllowedInPhase(cluster, phase));
+
+  if (phase !== "deadline_14d") {
+    return eligible.map(({ index }) => index);
+  }
+
+  const urgencyPriority = eligible.filter(({ cluster }) => {
+    if (cluster.postIntent === "Urgency Post") return true;
+    const primary = cluster.primary.toLowerCase();
+    return /prazo|declar|obrigado|deducoes|retificacao|malha fina|calendario/.test(primary);
+  });
+
+  const pool = urgencyPriority.length > 0 ? urgencyPriority : eligible;
+  return pool.map(({ index }) => index);
 }
 
 function inferClusterIntent(keyword: string, fallback: ClusterIntent): ClusterIntent {

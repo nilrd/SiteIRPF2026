@@ -5,6 +5,7 @@
 export type IrpfEditorialPhase =
 	| "pre_season"
 	| "in_season"
+	| "deadline_14d"
 	| "deadline_week"
 	| "deadline_day"
 	| "post_deadline";
@@ -82,6 +83,9 @@ export function getIrpfEditorialPhase(
 	const startOfDeadlineWeek = new Date(IRPF_2026_DEADLINE);
 	startOfDeadlineWeek.setUTCDate(startOfDeadlineWeek.getUTCDate() - 6);
 
+	const startOfDeadline14d = new Date(IRPF_2026_DEADLINE);
+	startOfDeadline14d.setUTCDate(startOfDeadline14d.getUTCDate() - 14);
+
 	const sameUtcDay =
 		now.getUTCFullYear() === IRPF_2026_DEADLINE.getUTCFullYear() &&
 		now.getUTCMonth() === IRPF_2026_DEADLINE.getUTCMonth() &&
@@ -89,6 +93,7 @@ export function getIrpfEditorialPhase(
 
 	if (sameUtcDay) return "deadline_day";
 	if (now >= startOfDeadlineWeek) return "deadline_week";
+	if (now >= startOfDeadline14d) return "deadline_14d";
 	return "in_season";
 }
 
@@ -123,6 +128,21 @@ export function getIrpfTemporalRules(now: Date = new Date()): {
 				"IRPF de anos anteriores (2025/2024/2023)",
 			],
 			forbidden: [],
+		};
+	}
+
+	if (phase === "deadline_14d" || phase === "deadline_week" || phase === "deadline_day") {
+		return {
+			phase,
+			daysRemaining,
+			allowed: [
+				"contagem regressiva para o prazo do IRPF 2026",
+				"checklist final de envio, documentos e deduções",
+				"erros críticos de última etapa (malha fina e rejeições)",
+				"regularização de CPF em contexto de envio no prazo",
+				"IRPF anos anteriores atrasado (2025/2024/2023)",
+			],
+			forbidden: forbiddenBeforeDeadline,
 		};
 	}
 

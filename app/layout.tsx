@@ -86,6 +86,9 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
+  other: {
+    "google-adsense-account": "ca-pub-0359891850456155",
+  },
 };
 
 export const viewport: Viewport = {
@@ -97,6 +100,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const adsenseClient = "ca-pub-0359891850456155";
   const googleAdsId = "AW-18158780982";
   const ga4Id = process.env.NEXT_PUBLIC_GA4_ID || "G-7FYYGX7C12";
   const fbPixelId = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
@@ -116,6 +120,12 @@ export default function RootLayout({
         {/* Google Ads + GA4 + Meta Pixel — carregados SOMENTE em produção */}
         {isProduction && (
           <>
+            <Script
+              id="google-adsense"
+              strategy="afterInteractive"
+              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+              crossOrigin="anonymous"
+            />
             <Script
               id="google-ads-load"
               strategy="afterInteractive"

@@ -6,6 +6,7 @@ import BlogPostImage from "@/components/site/BlogPostImage";
 import AuthorBadge from "@/components/site/AuthorBadge";
 import BlogCTA from "@/components/site/BlogCTA";
 import BlogStickyBar from "@/components/site/BlogStickyBar";
+import AdUnit from "@/components/ads/AdUnit";
 import { JsonLdArticle, JsonLdBreadcrumb, JsonLdFAQ, JsonLdSpeakable } from "@/components/seo/JsonLd";
 
 export const dynamic = "force-dynamic";
@@ -181,11 +182,15 @@ export default async function BlogPostPage({ params }: Props) {
               </div>
             )}
 
+            <AdUnit />
+
             {/* Conteudo do artigo */}
             <div
               className="prose-irpf"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
+
+            <AdUnit label="Publicidade" />
 
             {/* CTA Box mid-content */}
             <BlogCTA variant="inline" topic={topicFromCategoria(post.categoria)} />

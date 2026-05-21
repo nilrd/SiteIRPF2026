@@ -100,7 +100,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const adsenseClient = "ca-pub-0359891850456155";
   const googleAdsId = "AW-18158780982";
   const ga4Id = process.env.NEXT_PUBLIC_GA4_ID || "G-7FYYGX7C12";
   const fbPixelId = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
@@ -116,16 +115,26 @@ export default function RootLayout({
 
   return (
     <html lang="pt-br" className={`${playfair.variable} ${inter.variable}`}>
+      {/*
+        Meta de verificação AdSense — deve estar no HTML inicial (não via
+        metadata.other, pois o layout filho sobrescreve metadata e pode
+        excluir campos herdados). Colocar diretamente no <head> garante que
+        o rastreador do AdSense encontre a tag independente de JS.
+      */}
+      <head>
+        <meta name="google-adsense-account" content="ca-pub-0359891850456155" />
+      </head>
       <body className="font-sans antialiased bg-base text-preto">
+        {/* Script AdSense — carregado em todos os ambientes para permitir verificação */}
+        <Script
+          id="google-adsense"
+          strategy="afterInteractive"
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0359891850456155"
+          crossOrigin="anonymous"
+        />
         {/* Google Ads + GA4 + Meta Pixel — carregados SOMENTE em produção */}
         {isProduction && (
           <>
-            <Script
-              id="google-adsense"
-              strategy="afterInteractive"
-              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
-              crossOrigin="anonymous"
-            />
             <Script
               id="google-ads-load"
               strategy="afterInteractive"

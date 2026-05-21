@@ -45,6 +45,9 @@ export const metadata: Metadata = {
     },
   },
   alternates: { canonical: "https://irpf.qaplay.com.br" },
+  other: {
+    "google-adsense-account": "ca-pub-0359891850456155",
+  },
 };
 
 export default function SiteLayout({

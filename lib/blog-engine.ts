@@ -34,13 +34,6 @@ type ExistingPostSnapshot = {
   title: string;
   slug: string;
   tags: string[];
-  {
-    title:
-      "Receita Federal — consulta ao maior lote de restituição da história (22/05/2026)",
-    url: "https://www.gov.br/receitafederal/pt-br/assuntos/noticias/2026/maio/receita-federal-abre-consulta-ao-maior-lote-de-restituicao-da-historia-nesta-sexta-feira-22",
-    snippet:
-      "A Receita Federal abriu em 22/05/2026, às 10h, a consulta ao primeiro lote de restituição do IRPF 2026, com R$ 16 bilhões para 8.749.992 contribuintes. O pagamento ocorre em 29/05/2026 e a consulta pode ser feita no site, app da Receita ou e-CAC.",
-  },
   keywords: string[];
 };
 
@@ -117,6 +110,13 @@ const STATIC_SOURCES: ResearchItem[] = [
     url: "https://www.gov.br/cvm/pt-br",
     snippet:
       "Operações em bolsa: IR de 15% (swing trade) ou 20% (day trade) sobre lucros. Isenção para vendas de ações até R$ 20.000/mês no mercado à vista. FIIs: rendimentos isentos para PF; ganho de capital tributado a 20%.",
+  },
+  {
+    title:
+      "Receita Federal — consulta ao maior lote de restituição da história (22/05/2026)",
+    url: "https://www.gov.br/receitafederal/pt-br/assuntos/noticias/2026/maio/receita-federal-abre-consulta-ao-maior-lote-de-restituicao-da-historia-nesta-sexta-feira-22",
+    snippet:
+      "A Receita Federal abriu em 22/05/2026, às 10h, a consulta ao primeiro lote de restituição do IRPF 2026, com R$ 16 bilhões para 8.749.992 contribuintes. O pagamento ocorre em 29/05/2026 e a consulta pode ser feita no site, app da Receita ou e-CAC.",
   },
 ];
 

@@ -21,7 +21,14 @@ export default function BlogPostImage({ src, alt, attribution }: BlogPostImagePr
   if (broken) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-verde/5">
-        <span className="font-serif text-5xl text-verde/10">IR</span>
+        <Image
+          src="/og-image.svg"
+          alt={alt}
+          fill
+          quality={95}
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 33vw"
+        />
       </div>
     );
   }

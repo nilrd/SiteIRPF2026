@@ -172,15 +172,13 @@ export default async function BlogPostPage({ params }: Props) {
               publishedAt={post.createdAt}
             />
 
-            {post.coverImage && (
-              <div className="relative aspect-[16/9] mb-12 bg-gray-200 overflow-hidden">
-                <BlogPostImage
-                  src={post.coverImage}
-                  alt={post.imageAlt || post.title}
-                  attribution={imageAttribution}
-                />
-              </div>
-            )}
+            <div className="relative aspect-[16/9] mb-12 bg-gray-200 overflow-hidden">
+              <BlogPostImage
+                src={post.coverImage || "/og-image.svg"}
+                alt={post.imageAlt || post.title}
+                attribution={imageAttribution}
+              />
+            </div>
 
             <AdUnit />
 

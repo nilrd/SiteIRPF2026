@@ -13,6 +13,12 @@ import { prisma } from "./prisma";
 
 // ─── TIPOS ───────────────────────────────────────────────────────────────────
 
+  {
+    url: "https://www.gov.br/receitafederal/pt-br/assuntos/noticias/2026/maio/receita-federal-abre-consulta-ao-maior-lote-de-restituicao-da-historia-nesta-sexta-feira-22",
+    category: "noticia",
+    ttlDays: 7,
+    title: "Receita Federal — maior lote de restituição da história",
+  },
 export type KnowledgeCategory =
   | "legislacao"
   | "tabela"

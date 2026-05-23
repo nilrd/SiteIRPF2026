@@ -832,7 +832,7 @@ export async function saveMeiBlogPost(
       tags: post.tags,
       keywords: post.keywords,
       faqsJson: JSON.stringify(post.faqs),
-      coverImage: post.coverImage ?? null,
+      coverImage: post.coverImage ?? "/og-image.svg",
       imageAlt: post.imageAlt ?? post.title,
       imageAttribution: post.imageAttribution ?? null,
       published: post.reviewApproved,

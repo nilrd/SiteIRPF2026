@@ -34,6 +34,13 @@ type ExistingPostSnapshot = {
   title: string;
   slug: string;
   tags: string[];
+  {
+    title:
+      "Receita Federal — consulta ao maior lote de restituição da história (22/05/2026)",
+    url: "https://www.gov.br/receitafederal/pt-br/assuntos/noticias/2026/maio/receita-federal-abre-consulta-ao-maior-lote-de-restituicao-da-historia-nesta-sexta-feira-22",
+    snippet:
+      "A Receita Federal abriu em 22/05/2026, às 10h, a consulta ao primeiro lote de restituição do IRPF 2026, com R$ 16 bilhões para 8.749.992 contribuintes. O pagamento ocorre em 29/05/2026 e a consulta pode ser feita no site, app da Receita ou e-CAC.",
+  },
   keywords: string[];
 };
 
@@ -890,6 +897,18 @@ export const KEYWORD_CLUSTERS: ClusterDefinition[] = [
     postIntent: "Urgency Post",
   },
   {
+    primary: "consulta primeiro lote restituicao IRPF 2026 maior lote da historia",
+    secondary: [
+      "como consultar restituicao IRPF 2026",
+      "maior lote de restituição da história",
+      "consulta restituição Receita Federal",
+    ],
+    volume: "alta",
+    intent: "informacional",
+    phases: ["deadline_14d", "deadline_week", "deadline_day"],
+    postIntent: "Urgency Post",
+  },
+  {
     primary: "CPF irregular imposto de renda como regularizar",
     secondary: ["CPF bloqueado Receita Federal", "regularizar CPF pendente"],
     volume: "alta",
@@ -1121,7 +1140,7 @@ export function getAllowedIrpfClusterIndexes(now: Date = new Date()): number[] {
   const urgencyPriority = eligible.filter(({ cluster }) => {
     if (cluster.postIntent === "Urgency Post") return true;
     const primary = cluster.primary.toLowerCase();
-    return /prazo|declar|obrigado|deducoes|retificacao|malha fina|calendario/.test(primary);
+    return /prazo|declar|obrigado|deducoes|retificacao|malha fina|calendario|restituicao/.test(primary);
   });
 
   const pool = urgencyPriority.length > 0 ? urgencyPriority : eligible;
@@ -2063,7 +2082,7 @@ export async function saveBlogPost(
       tags: post.tags,
       keywords: post.keywords,
       faqsJson: JSON.stringify(post.faqs),
-      coverImage: post.coverImage,
+      coverImage: post.coverImage ?? "/og-image.svg",
       imageAttribution: post.imageAttribution ?? null,
       imageAlt: post.imageAlt ?? post.title,
       published: post.reviewApproved,

@@ -196,13 +196,10 @@ export default function BlogListingClient({ posts }: Props) {
                     {post.title}
                   </h3>
                   <div className="mt-3 overflow-hidden aspect-[16/10] bg-gray-200 relative">
-                    {post.coverImage ? (
-                      <BlogPostImage src={post.coverImage} alt={post.title} />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-verde/5">
-                        <span className="font-serif text-5xl text-verde/10">IR</span>
-                      </div>
-                    )}
+                    <BlogPostImage
+                      src={post.coverImage || "/og-image.svg"}
+                      alt={post.title}
+                    />
                   </div>
                 </Link>
               </article>
@@ -239,13 +236,10 @@ export default function BlogListingClient({ posts }: Props) {
                   </div>
 
                   <div className="overflow-hidden mb-3 aspect-[16/10] bg-gray-200 relative">
-                    {post.coverImage ? (
-                      <BlogPostImage src={post.coverImage} alt={post.title} />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-verde/5">
-                        <span className="font-serif text-5xl text-verde/10">IR</span>
-                      </div>
-                    )}
+                    <BlogPostImage
+                      src={post.coverImage || "/og-image.svg"}
+                      alt={post.title}
+                    />
                   </div>
 
                   {post.summary && (

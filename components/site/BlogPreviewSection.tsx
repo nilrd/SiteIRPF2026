@@ -49,19 +49,13 @@ export default async function BlogPreviewSection() {
           <article key={post.slug} className="group cursor-pointer">
             <Link href={`/blog/${post.slug}`}>
               <div className="overflow-hidden mb-6 aspect-[4/5] relative bg-gray-100">
-                {post.coverImage ? (
-                  <Image
-                    src={post.coverImage}
-                    alt={post.title}
-                    fill
-                    className="object-cover transition duration-700 group-hover:scale-105"
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-verde/5">
-                    <span className="font-serif text-5xl text-verde/20">IR</span>
-                  </div>
-                )}
+                <Image
+                  src={post.coverImage || "/og-image.svg"}
+                  alt={post.title}
+                  fill
+                  className="object-cover transition duration-700 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
               </div>
               <span className="text-[10px] uppercase tracking-widest text-ouro">
                 {post.tags?.[0] || "IRPF"}

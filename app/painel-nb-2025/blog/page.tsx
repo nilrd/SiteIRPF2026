@@ -180,6 +180,29 @@ function BlogAdminContent() {
     }
   }
 
+  async function toggleListingVisibility(id: string, currentHidden: boolean) {
+    try {
+      await fetch(`/api/admin/blog/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hiddenFromBlogList: !currentHidden }),
+      });
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === id ? { ...p, hiddenFromBlogList: !currentHidden } : p,
+        ),
+      );
+      setActionMsg(
+        currentHidden
+          ? "Post voltou para a listagem pública do blog."
+          : "Post ocultado da listagem pública do blog.",
+      );
+      setTimeout(() => setActionMsg(null), 3000);
+    } catch {
+      setActionMsg("Erro ao atualizar visibilidade da listagem.");
+    }
+  }
+
   async function handleDelete(id: string, title: string) {
     if (!confirm(`Deletar "${title}"? Essa acao nao pode ser desfeita.`))
       return;
@@ -501,6 +524,14 @@ function BlogAdminContent() {
                           className="text-xs text-blue-300 hover:text-blue-100 transition"
                         >
                           {post.published ? "Despublicar" : "Publicar"}
+                        </button>
+                        <button
+                          onClick={() =>
+                            toggleListingVisibility(post.id, post.hiddenFromBlogList)
+                          }
+                          className="text-xs text-purple-300 hover:text-purple-100 transition"
+                        >
+                          {post.hiddenFromBlogList ? "Listar" : "Ocultar lista"}
                         </button>
                         {post.published && (
                           <a

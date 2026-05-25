@@ -29,6 +29,8 @@ const PRODUCTS: Record<Product, {
   href: string;
   ideal: string;
   cta: string;
+  image: string;
+  imageAlt: string;
 }> = {
   "point-pro-3": {
     name: "Point Pro 3",
@@ -37,6 +39,9 @@ const PRODUCTS: Record<Product, {
     href: "https://mpago.li/31QNkWU",
     ideal: "Comércios, prestadores com ponto fixo, entregadores, feirantes.",
     cta: "Conhecer a Point Pro 3",
+    image:
+      "https://images.unsplash.com/photo-1556740738-b6a63e27c4df?auto=format&fit=crop&w=1400&q=80",
+    imageAlt: "MEI usando maquininha de cartao para receber vendas no balcão",
   },
   "point-smart-2": {
     name: "Point Smart 2",
@@ -45,6 +50,9 @@ const PRODUCTS: Record<Product, {
     href: "https://mpago.li/1UXbbb9",
     ideal: "Prestadores de serviço, consultores, salões, clínicas e MEIs que valorizam relatórios.",
     cta: "Conhecer a Point Smart 2",
+    image:
+      "https://images.unsplash.com/photo-1579621970795-87facc2f976d?auto=format&fit=crop&w=1400&q=80",
+    imageAlt: "Profissional MEI analisando vendas na maquininha com tela",
   },
   "app-mercado-pago": {
     name: "App Mercado Pago",
@@ -53,6 +61,9 @@ const PRODUCTS: Record<Product, {
     href: "https://mpago.li/18rGCG2",
     ideal: "MEI iniciante, prestadores online, quem quer separar conta PJ de conta PF.",
     cta: "Conhecer o App Mercado Pago",
+    image:
+      "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=1400&q=80",
+    imageAlt: "Celular com app de pagamentos para MEI receber por link e Pix",
   },
 };
 
@@ -106,6 +117,16 @@ export default function MaquininhaAfiliado({
       {context && (
         <p className="text-sm text-[#0A0A0A]/60 mb-3 italic">{context}</p>
       )}
+
+      <div className="mb-4 overflow-hidden border border-[#0A0A0A]/10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={p.image}
+          alt={p.imageAlt}
+          loading="lazy"
+          className="w-full h-48 md:h-56 object-cover"
+        />
+      </div>
 
       {/* Descrição */}
       <p className="text-sm text-[#0A0A0A]/70 leading-relaxed mb-3">{p.desc}</p>

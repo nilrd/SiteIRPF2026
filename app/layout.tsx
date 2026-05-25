@@ -123,15 +123,14 @@ export default function RootLayout({
       */}
       <head>
         <meta name="google-adsense-account" content="ca-pub-0359891850456155" />
-      </head>
-      <body className="font-sans antialiased bg-base text-preto">
-        {/* Script AdSense — carregado em todos os ambientes para permitir verificação */}
-        <Script
-          id="google-adsense"
-          strategy="afterInteractive"
+        {/* Script AdSense como <script> nativo — evita data-nscript que o AdSense rejeita */}
+        <script
+          async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0359891850456155"
           crossOrigin="anonymous"
         />
+      </head>
+      <body className="font-sans antialiased bg-base text-preto">
         {/* Google Ads + GA4 + Meta Pixel — carregados SOMENTE em produção */}
         {isProduction && (
           <>

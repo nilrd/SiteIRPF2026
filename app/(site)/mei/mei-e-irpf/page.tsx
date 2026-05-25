@@ -118,7 +118,10 @@ export default function MeiEIrpfPage() {
             </ol>
             <p className="text-sm opacity-60 mb-8">
               Esse cálculo tem nuances e pode variar. Nilson Brites faz corretamente para que você
-              não pague imposto além do necessário.
+              não pague imposto além do necessário. Se você recebe por maquininha, veja também:{" "}
+              <Link href="/mei/mei-recebe-maquininha-precisa-declarar" className="underline hover:opacity-100 transition">
+                MEI que recebe por maquininha precisa declarar?
+              </Link>
             </p>
 
             {/* CTA inline */}

@@ -162,6 +162,10 @@ export default function DividasParcelamentoPage() {
               <Link href="/mei/mei-e-irpf" className="underline underline-offset-4 hover:opacity-100 transition">
                 IRPF da pessoa física como MEI
               </Link>
+              . Para reorganizar o negócio, confira também como{" "}
+              <Link href="/mei/receber-pagamentos" className="underline underline-offset-4 hover:opacity-100 transition">
+                MEI pode receber pagamentos com Pix, cartão e maquininha
+              </Link>
               .
             </p>
 

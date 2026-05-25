@@ -454,6 +454,36 @@ async function collectMeiResearchContext(
   return Array.from(dedup.values()).slice(0, 16);
 }
 
+// ─── Regras de CTA afiliado (Mercado Pago) no blog automático ─────────────────
+//
+// ALLOW: inserir CTA Mercado Pago apenas em posts com todas estas condições:
+//   - Categoria: MEI, FINANCAS ou DASN
+//   - E pelo menos uma keyword de recebimento presente:
+//     faturamento, vendas, recebimento, pix, cartao, maquininha, pagamento
+//
+// BLOCK (nunca inserir CTA Mercado Pago em posts sobre):
+//   - cpf bloqueado / cpf irregular
+//   - malha fina / retido em malha
+//   - pendências IRPF / notificação Receita
+//   - restituição / lote restituição
+//   - dívida ativa / cobrança / execução fiscal
+//   - cancelamento MEI / baixa MEI
+//
+// DEDUPLICAÇÃO: Nunca incluir dois CTAs Mercado Pago no mesmo post.
+//   Se o post já contiver um CTA inline de maquininha, omitir o CTA final afiliado.
+//
+// DISCLAIMER obrigatório sempre que mencionar taxas Mercado Pago:
+//   Incluir: "Condições vigentes na data de acesso. Verifique taxas e disponibilidade
+//   atualizadas no site oficial do Mercado Pago."
+//
+// LINKS afiliados permitidos:
+//   Point Pro 3  → https://mpago.li/31QNkWU  (rel="sponsored noopener noreferrer")
+//   Point Smart 2 → https://mpago.li/1UXbbb9 (rel="sponsored noopener noreferrer")
+//   App MP (conta) → https://mpago.li/18rGCG2 (rel="sponsored noopener noreferrer")
+//
+// Proibido: prometer taxa específica, aprovação garantida ou benefício permanente.
+// ─────────────────────────────────────────────────────────────────────────────
+
 // WA link para CTAs
 const WA_MEI_LINK = `https://wa.me/5511940825120?text=${encodeURIComponent("Olá Nilson! Li o artigo do blog sobre MEI e preciso de ajuda.")}`;
 const WA_IRPF_LINK = `https://wa.me/5511940825120?text=${encodeURIComponent("Olá! Vi o artigo sobre MEI e quero declarar meu IRPF 2026.")}`;

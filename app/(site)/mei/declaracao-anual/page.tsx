@@ -87,7 +87,12 @@ export default function DeclaracaoAnualPage() {
             <p className="text-lg opacity-70 mb-8 leading-relaxed">
               A DASN-SIMEI é a declaração anual que todo Microempreendedor Individual deve entregar à
               Receita Federal até o dia 31 de maio, informando o faturamento bruto do ano anterior.
-              Não confunda com o Imposto de Renda — são obrigações completamente distintas.
+              Não confunda com o Imposto de Renda — são obrigações completamente distintas. Se você
+              recebe por maquininha, veja como{" "}
+              <Link href="/mei/organizar-faturamento-maquininha" className="underline hover:opacity-100 transition">
+                organizar o faturamento mensal para a DASN-SIMEI
+              </Link>
+              .
             </p>
 
             <h2 className="font-serif text-3xl mb-4">Quem deve entregar a DASN-SIMEI?</h2>

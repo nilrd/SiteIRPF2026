@@ -73,6 +73,78 @@ const TODOS_GUIAS: Guia[] = [
     desc: "Recebimentos, controle financeiro, declaração e organização fiscal.",
     tag: "Ferramentas",
   },
+  {
+    href: "/mei/vender-e-receber",
+    title: "Guia do MEI para vender e receber melhor",
+    desc: "Hub completo: Pix, cartão, app e maquininha.",
+    tag: "Hub",
+  },
+  {
+    href: "/mei/maquininha-para-mei",
+    title: "Maquininha para MEI",
+    desc: "Como escolher e começar a receber no cartão.",
+    tag: "Guia",
+  },
+  {
+    href: "/mei/point-smart-2-para-mei",
+    title: "Point Smart 2 para MEI",
+    desc: "Vale a pena? Análise completa.",
+    tag: "Point Smart 2",
+  },
+  {
+    href: "/mei/point-pro-3-para-mei",
+    title: "Point Pro 3 para MEI",
+    desc: "Para quem vende muito. Análise completa.",
+    tag: "Point Pro 3",
+  },
+  {
+    href: "/mei/app-mercado-pago-para-mei",
+    title: "App Mercado Pago para MEI",
+    desc: "Receba sem maquininha: Pix, cartão e link.",
+    tag: "App MP",
+  },
+  {
+    href: "/mei/link-de-pagamento-para-mei",
+    title: "Link de pagamento para MEI",
+    desc: "Como criar e receber pelo celular.",
+    tag: "Link de pagamento",
+  },
+  {
+    href: "/mei/maquininha-para-autonomo",
+    title: "Maquininha para autônomo MEI",
+    desc: "Guia para autônomos receberem no cartão.",
+    tag: "Autônomo",
+  },
+  {
+    href: "/mei/maquininha-para-salao-de-beleza",
+    title: "Maquininha para salão de beleza",
+    desc: "Guia para cabeleireiras, manicures e estéticas MEI.",
+    tag: "Salão",
+  },
+  {
+    href: "/mei/maquininha-para-barbeiro",
+    title: "Maquininha para barbeiro MEI",
+    desc: "Qual maquininha faz mais sentido para barbearia.",
+    tag: "Barbeiro",
+  },
+  {
+    href: "/mei/maquininha-para-delivery",
+    title: "Maquininha para delivery MEI",
+    desc: "Maquininha com bateria e 4G para entregadores.",
+    tag: "Delivery",
+  },
+  {
+    href: "/mei/maquininha-para-prestador-de-servico",
+    title: "Maquininha para prestador de serviço MEI",
+    desc: "Receba no cartão prestando serviços.",
+    tag: "Prestador",
+  },
+  {
+    href: "/mei/maquininha-para-vendedor-ambulante",
+    title: "Maquininha para vendedor ambulante MEI",
+    desc: "Opções para feirantes e vendedores na rua.",
+    tag: "Ambulante",
+  },
 ];
 
 // Guias existentes da área MEI principal

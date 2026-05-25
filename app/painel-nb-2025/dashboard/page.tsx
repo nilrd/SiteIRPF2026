@@ -78,6 +78,12 @@ export default async function DashboardPage() {
             >
               Criar Campanha
             </Link>
+            <Link
+              href="/painel-nb-2025/afiliados"
+              className="border border-white/20 px-6 py-3 uppercase text-xs tracking-widest font-bold hover:bg-white/10 transition"
+            >
+              Painel Afiliados
+            </Link>
           </div>
         </div>
       </main>

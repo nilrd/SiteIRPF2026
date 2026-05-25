@@ -14,6 +14,7 @@ const NAV = [
   { href: "/painel-nb-2025/chat-ia", label: "Chat IA" },
   { href: "/painel-nb-2025/campanhas", label: "Campanhas" },
   { href: "/painel-nb-2025/analisador", label: "Analisador" },
+  { href: "/painel-nb-2025/afiliados", label: "Afiliados" },
 ];
 
 export default function AdminSidebar() {

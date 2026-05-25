@@ -253,3 +253,82 @@ model AutomationRun {
   @@index([status, startedAt])
   @@map("automation_runs")
 }
+
+// ─── MÓDULO AFILIADOS MERCADO PAGO ────────────────────────────────────────────
+
+model AffiliatePage {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  path          String    @unique
+  title         String
+  pageType      String    @default("artigo") @map("page_type")
+  status        String    @default("publicado")
+  indexable     Boolean   @default(true)
+  inSitemap     Boolean   @default(true) @map("in_sitemap")
+  allowRelated  Boolean   @default(true) @map("allow_related")
+  metaTitle     String?   @map("meta_title")
+  metaDesc      String?   @map("meta_desc")
+  targetKeyword String?   @map("target_keyword")
+  mainProduct   String?   @map("main_product")
+  mainCta       String?   @map("main_cta")
+  notes         String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([pageType])
+  @@map("affiliate_pages")
+}
+
+model AffiliateLink {
+  id          String    @id @default(cuid())
+  product     String    @unique
+  label       String
+  url         String
+  buttonText  String    @default("Ver condições") @map("button_text")
+  description String?
+  active      Boolean   @default(true)
+  priority    Int       @default(0)
+  clickCount  Int       @default(0) @map("click_count")
+  lastClickAt DateTime? @map("last_click_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("affiliate_links")
+}
+
+model AffiliateCta {
+  id             String   @id @default(cuid())
+  internalName   String   @map("internal_name")
+  buttonText     String   @map("button_text")
+  description    String?
+  product        String?
+  destinationUrl String   @map("destination_url")
+  active         Boolean  @default(true)
+  variant        String   @default("inline")
+  position       String   @default("meio")
+  impressions    Int      @default(0)
+  clicks         Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("affiliate_ctas")
+}
+
+model AffiliateSearchConsole {
+  id            String   @id @default(cuid())
+  pagePath      String   @map("page_path")
+  targetKeyword String?  @map("target_keyword")
+  impressions   Int      @default(0)
+  clicks        Int      @default(0)
+  ctr           Float    @default(0)
+  avgPosition   Float    @default(0) @map("avg_position")
+  lastUpdated   DateTime @default(now()) @map("last_updated")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([pagePath, targetKeyword])
+  @@index([pagePath])
+  @@map("affiliate_search_console")
+}

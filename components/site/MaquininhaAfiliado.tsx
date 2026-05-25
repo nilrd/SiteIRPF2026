@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * MaquininhaAfiliado.tsx
  * Bloco de CTA para maquininhas/conta Mercado Pago com aviso obrigatório de afiliação.
@@ -54,6 +56,34 @@ const PRODUCTS: Record<Product, {
   },
 };
 
+const PRODUCT_EVENT_TYPE: Record<Product, string> = {
+  "point-smart-2": "mp_point_smart_click",
+  "point-pro-3": "mp_point_pro_click",
+  "app-mercado-pago": "mp_app_click",
+};
+
+function trackAffiliateClick(product: Product, cta: string, href: string) {
+  const page = typeof window !== "undefined" ? window.location.pathname : "/";
+  const eventType = PRODUCT_EVENT_TYPE[product];
+
+  // GA4
+  if (typeof window !== "undefined" && typeof (window as Window & { gtag?: (...args: unknown[]) => void }).gtag === "function") {
+    (window as Window & { gtag: (...args: unknown[]) => void }).gtag("event", "affiliate_cta_click", {
+      product_type: product,
+      cta_label: cta,
+      destination_url: href,
+      page_path: page,
+    });
+  }
+
+  // Analytics interno + AffiliateLink.clickCount
+  fetch("/api/afiliados/click", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ product, page, element: eventType }),
+  }).catch(() => {});
+}
+
 export default function MaquininhaAfiliado({
   product,
   context,
@@ -90,6 +120,7 @@ export default function MaquininhaAfiliado({
         href={p.href}
         target="_blank"
         rel="sponsored noopener noreferrer"
+        onClick={() => trackAffiliateClick(product, p.cta, p.href)}
         className="inline-block bg-[#0A0A0A] text-[#C6FF00] px-6 py-3 uppercase text-[11px] tracking-[0.14em] font-bold hover:bg-[#1a1a1a] transition"
       >
         {p.cta} →

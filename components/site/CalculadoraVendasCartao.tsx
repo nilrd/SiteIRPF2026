@@ -7,7 +7,7 @@
  * Ferramenta educativa — não substitui contabilidade profissional.
  */
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const MEI_LIMIT = 81_000;
 
@@ -17,8 +17,26 @@ function formatBRL(v: number): string {
 
 export default function CalculadoraVendasCartao() {
   const [monthly, setMonthly] = useState<string>("");
+  const trackedRef = useRef(false);
 
   const num = Math.max(0, parseFloat(monthly) || 0);
+
+  // Track once per session when user has typed a meaningful value
+  useEffect(() => {
+    if (num > 0 && !trackedRef.current) {
+      trackedRef.current = true;
+      const page = typeof window !== "undefined" ? window.location.pathname : "/";
+      if (typeof window !== "undefined" && typeof (window as Window & { gtag?: (...args: unknown[]) => void }).gtag === "function") {
+        (window as Window & { gtag: (...args: unknown[]) => void }).gtag("event", "cartao_calculator_use", { page_path: page });
+      }
+      fetch("/api/analytics/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify([{ type: "cartao_calculator_use", page }]),
+      }).catch(() => {});
+    }
+  }, [num]);
+
   const annual = num * 12;
   const pct = annual > 0 ? (annual / MEI_LIMIT) * 100 : 0;
   const overLimit = annual >= MEI_LIMIT;

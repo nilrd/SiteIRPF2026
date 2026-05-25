@@ -17,17 +17,23 @@ No pending migrations to apply.
  ✓ Compiled successfully
    Linting and checking validity of types ...
    Collecting page data ...
-   Generating static pages (0/54) ...
-   Generating static pages (13/54) 
-   Generating static pages (26/54) 
-   Generating static pages (40/54) 
- ✓ Generating static pages (54/54)
+   Generating static pages (0/71) ...
+   Generating static pages (17/71) 
+   Generating static pages (35/71) 
+   Generating static pages (53/71) 
+ ✓ Generating static pages (71/71)
    Finalizing page optimization ...
    Collecting build traces ...
 
 Route (app)                                      Size     First Load JS
 ┌ ƒ /                                            6.46 kB         159 kB
 ├ ƒ /_not-found                                  147 B          87.5 kB
+├ ƒ /api/admin/afiliados/ctas                    0 B                0 B
+├ ƒ /api/admin/afiliados/init                    0 B                0 B
+├ ƒ /api/admin/afiliados/links                   0 B                0 B
+├ ƒ /api/admin/afiliados/metricas                0 B                0 B
+├ ƒ /api/admin/afiliados/paginas                 0 B                0 B
+├ ƒ /api/admin/afiliados/search-console          0 B                0 B
 ├ ƒ /api/admin/analytics                         0 B                0 B
 ├ ƒ /api/admin/blog                              0 B                0 B
 ├ ƒ /api/admin/blog/[id]                         0 B                0 B
@@ -48,6 +54,7 @@ Route (app)                                      Size     First Load JS
 ├ ƒ /api/admin/site-analyzer/history             0 B                0 B
 ├ ƒ /api/admin/site-analyzer/history/[id]        0 B                0 B
 ├ ƒ /api/admin/trends                            0 B                0 B
+├ ƒ /api/afiliados/click                         0 B                0 B
 ├ ƒ /api/analytics/event                         0 B                0 B
 ├ ƒ /api/auth/[...nextauth]                      0 B                0 B
 ├ ƒ /api/blog/generate                           0 B                0 B
@@ -79,32 +86,49 @@ Route (app)                                      Size     First Load JS
 ├ ƒ /ferramentas/simulador-multa                 1.85 kB         137 kB
 ├ ƒ /mei                                         1.71 kB        97.7 kB
 ├ ƒ /mei/abertura-mei                            1.71 kB        97.7 kB
+├ ƒ /mei/app-mercado-pago-para-mei               3.77 kB        99.8 kB
 ├ ƒ /mei/cancelamento-mei                        1.71 kB        97.7 kB
 ├ ƒ /mei/declaracao-anual                        1.71 kB        97.7 kB
 ├ ƒ /mei/dividas-parcelamento                    1.71 kB        97.7 kB
-├ ƒ /mei/ferramentas-para-mei                    2.6 kB         98.6 kB
-├ ƒ /mei/maquininha-mercado-pago-para-mei        2.6 kB         98.6 kB
+├ ƒ /mei/ferramentas-para-mei                    3.77 kB        99.8 kB
+├ ƒ /mei/link-de-pagamento-para-mei              3.77 kB        99.8 kB
+├ ƒ /mei/maquininha-mercado-pago-para-mei        3.77 kB        99.8 kB
+├ ƒ /mei/maquininha-para-autonomo                3.73 kB        91.1 kB
+├ ƒ /mei/maquininha-para-barbeiro                3.73 kB        91.1 kB
+├ ƒ /mei/maquininha-para-delivery                3.73 kB        91.1 kB
+├ ƒ /mei/maquininha-para-mei                     2.59 kB         102 kB
+├ ƒ /mei/maquininha-para-prestador-de-servico    4.85 kB        92.2 kB
+├ ƒ /mei/maquininha-para-salao-de-beleza         3.73 kB        91.1 kB
+├ ƒ /mei/maquininha-para-vendedor-ambulante      3.73 kB        91.1 kB
 ├ ƒ /mei/mei-e-irpf                              1.71 kB        97.7 kB
-├ ƒ /mei/mei-pode-ter-maquininha-no-cpf          2.6 kB         98.6 kB
-├ ƒ /mei/mei-recebe-maquininha-precisa-declarar  2.6 kB         98.6 kB
-├ ƒ /mei/mei-vender-no-cartao                    2.6 kB         98.6 kB
-├ ƒ /mei/melhor-maquininha-para-mei              2.6 kB         98.6 kB
-├ ƒ /mei/organizar-faturamento-maquininha        2.6 kB         98.6 kB
-├ ƒ /mei/pix-ou-maquininha-para-mei              2.6 kB         98.6 kB
-├ ƒ /mei/point-mercado-pago-para-mei             2.6 kB         98.6 kB
-├ ƒ /mei/receber-pagamentos                      2.6 kB         98.6 kB
+├ ƒ /mei/mei-pode-ter-maquininha-no-cpf          2.58 kB        98.6 kB
+├ ƒ /mei/mei-recebe-maquininha-precisa-declarar  2.58 kB        98.6 kB
+├ ƒ /mei/mei-vender-no-cartao                    2.58 kB        98.6 kB
+├ ƒ /mei/melhor-maquininha-para-mei              3.77 kB        99.8 kB
+├ ƒ /mei/organizar-faturamento-maquininha        3.77 kB        99.8 kB
+├ ƒ /mei/pix-ou-maquininha-para-mei              3.77 kB        99.8 kB
+├ ƒ /mei/point-mercado-pago-para-mei             3.77 kB        99.8 kB
+├ ƒ /mei/point-pro-3-para-mei                    3.77 kB        99.8 kB
+├ ƒ /mei/point-smart-2-para-mei                  3.77 kB        99.8 kB
+├ ƒ /mei/receber-pagamentos                      3.77 kB        99.8 kB
+├ ƒ /mei/vender-e-receber                        201 B           100 kB
 ├ ○ /news-sitemap.xml                            0 B                0 B
 ├ ƒ /painel-nb-2025                              1.34 kB        98.3 kB
-├ ƒ /painel-nb-2025/analisador                   6.83 kB         113 kB
-├ ƒ /painel-nb-2025/blog                         4.61 kB         110 kB
-├ ƒ /painel-nb-2025/blog/[id]                    4.66 kB         110 kB
-├ ƒ /painel-nb-2025/blog/monitoramento           2.99 kB         109 kB
-├ ƒ /painel-nb-2025/campanhas                    7.04 kB         113 kB
-├ ƒ /painel-nb-2025/chat-ia                      2.24 kB         108 kB
-├ ƒ /painel-nb-2025/dashboard                    1.21 kB         107 kB
-├ ƒ /painel-nb-2025/imagens                      4.26 kB         110 kB
-├ ƒ /painel-nb-2025/leads                        8.09 kB         114 kB
-├ ƒ /painel-nb-2025/trends                       3.81 kB         110 kB
+├ ƒ /painel-nb-2025/afiliados                    3.3 kB          109 kB
+├ ƒ /painel-nb-2025/afiliados/ctas               3.31 kB         109 kB
+├ ƒ /painel-nb-2025/afiliados/links              3.09 kB         109 kB
+├ ƒ /painel-nb-2025/afiliados/paginas            3.64 kB         109 kB
+├ ƒ /painel-nb-2025/afiliados/search-console     3.17 kB         109 kB
+├ ƒ /painel-nb-2025/analisador                   6.84 kB         113 kB
+├ ƒ /painel-nb-2025/blog                         4.62 kB         110 kB
+├ ƒ /painel-nb-2025/blog/[id]                    4.67 kB         110 kB
+├ ƒ /painel-nb-2025/blog/monitoramento           3 kB            109 kB
+├ ƒ /painel-nb-2025/campanhas                    7.05 kB         113 kB
+├ ƒ /painel-nb-2025/chat-ia                      2.25 kB         108 kB
+├ ƒ /painel-nb-2025/dashboard                    1.22 kB         107 kB
+├ ƒ /painel-nb-2025/imagens                      4.27 kB         110 kB
+├ ƒ /painel-nb-2025/leads                        8.37 kB         114 kB
+├ ƒ /painel-nb-2025/trends                       3.82 kB         110 kB
 ├ ƒ /quem-deve-declarar-irpf-2026                4.3 kB          148 kB
 ├ ƒ /servicos                                    305 B           136 kB
 ├ ○ /sitemap.xml                                 0 B                0 B

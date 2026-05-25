@@ -12,6 +12,21 @@ import { useState } from "react";
 type Rec = "app" | "smart" | "pro";
 type Phase = "q1" | "q2" | "result";
 
+function trackEvent(type: string, extra?: Record<string, string>) {
+  if (typeof window === "undefined") return;
+  const page = window.location.pathname;
+  // GA4
+  if (typeof (window as Window & { gtag?: (...args: unknown[]) => void }).gtag === "function") {
+    (window as Window & { gtag: (...args: unknown[]) => void }).gtag("event", type, { page_path: page, ...extra });
+  }
+  // Analytics interno
+  fetch("/api/analytics/event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify([{ type, page, element: extra?.result ?? null }]),
+  }).catch(() => {});
+}
+
 const RESULTS: Record<Rec, { name: string; desc: string; why: string; href: string; cta: string }> = {
   app: {
     name: "App Mercado Pago",
@@ -42,15 +57,30 @@ const BTN =
 export default function QuizMaquininha() {
   const [phase, setPhase] = useState<Phase>("q1");
   const [rec, setRec] = useState<Rec | null>(null);
+  const [started, setStarted] = useState(false);
+
+  function ensureStartTracked() {
+    if (!started) {
+      setStarted(true);
+      trackEvent("maquininha_quiz_start");
+    }
+  }
 
   function recommend(r: Rec) {
     setRec(r);
     setPhase("result");
+    trackEvent("maquininha_quiz_complete", { result: r });
+  }
+
+  function goQ2() {
+    setPhase("q2");
+    ensureStartTracked();
   }
 
   function restart() {
     setPhase("q1");
     setRec(null);
+    setStarted(false);
   }
 
   const result = rec ? RESULTS[rec] : null;
@@ -65,10 +95,10 @@ export default function QuizMaquininha() {
         <div>
           <p className="font-semibold mb-4">O que você prefere para começar a receber no cartão?</p>
           <div className="flex flex-col sm:flex-row gap-3">
-            <button onClick={() => recommend("app")} className={BTN}>
+            <button onClick={() => { ensureStartTracked(); recommend("app"); }} className={BTN}>
               Quero começar pelo app, sem comprar equipamento
             </button>
-            <button onClick={() => setPhase("q2")} className={BTN}>
+            <button onClick={goQ2} className={BTN}>
               Quero uma maquininha física
             </button>
           </div>

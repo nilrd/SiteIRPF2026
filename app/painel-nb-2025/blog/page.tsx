@@ -11,6 +11,7 @@ type Post = {
   slug: string;
   summary: string | null;
   published: boolean;
+  hiddenFromBlogList: boolean;
   views: number;
   readTime: number;
   tags: string[];
@@ -447,22 +448,36 @@ function BlogAdminContent() {
                           !post.published &&
                           post.reviewJson &&
                           post.reviewJson.length > 2;
+                        const visibilityLabel = post.hiddenFromBlogList
+                          ? "Oculto da lista"
+                          : "Listagem ativa";
                         return (
-                          <span
-                            className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
-                              post.published
-                                ? "bg-green-500/20 text-green-300"
+                          <div className="flex flex-col gap-1">
+                            <span
+                              className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
+                                post.published
+                                  ? "bg-green-500/20 text-green-300"
+                                  : isPending
+                                    ? "bg-yellow-500/20 text-yellow-300"
+                                    : "bg-white/10 text-white/60"
+                              }`}
+                            >
+                              {post.published
+                                ? "Publicado"
                                 : isPending
-                                  ? "bg-yellow-500/20 text-yellow-300"
-                                  : "bg-white/10 text-white/60"
-                            }`}
-                          >
-                            {post.published
-                              ? "Publicado"
-                              : isPending
-                                ? "Aguard. Revisão"
-                                : "Rascunho"}
-                          </span>
+                                  ? "Aguard. Revisão"
+                                  : "Rascunho"}
+                            </span>
+                            <span
+                              className={`text-[10px] uppercase tracking-widest px-2 py-1 ${
+                                post.hiddenFromBlogList
+                                  ? "bg-purple-500/20 text-purple-300"
+                                  : "bg-white/10 text-white/50"
+                              }`}
+                            >
+                              {visibilityLabel}
+                            </span>
+                          </div>
                         );
                       })()}
                     </td>

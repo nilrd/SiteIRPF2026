@@ -18,6 +18,7 @@ type PostForm = {
   metaDesc: string;
   readTime: number;
   published: boolean;
+  hiddenFromBlogList: boolean;
 };
 
 const EMPTY: PostForm = {
@@ -33,6 +34,7 @@ const EMPTY: PostForm = {
   metaDesc: "",
   readTime: 5,
   published: false,
+  hiddenFromBlogList: false,
 };
 
 export default function EditPostPage() {
@@ -65,6 +67,7 @@ export default function EditPostPage() {
           metaDesc: post.metaDesc ?? "",
           readTime: post.readTime ?? 5,
           published: post.published ?? false,
+          hiddenFromBlogList: post.hiddenFromBlogList ?? false,
         });
       } catch {
         setMsg({ text: "Erro ao carregar post.", ok: false });
@@ -93,6 +96,7 @@ export default function EditPostPage() {
       metaDesc: source.metaDesc.trim() || null,
       readTime: Number(source.readTime),
       published: typeof forcePublished === "boolean" ? forcePublished : source.published,
+      hiddenFromBlogList: source.hiddenFromBlogList,
     };
   }
 
@@ -450,6 +454,30 @@ export default function EditPostPage() {
                       min={1}
                       max={60}
                     />
+                  </div>
+                  <div className="pt-2">
+                    <label className="flex items-center justify-between border border-white/10 bg-white/[0.02] px-3 py-3 text-xs">
+                      <div>
+                        <p className="uppercase tracking-widest opacity-70">Ocultar da listagem do blog</p>
+                        <p className="text-[10px] opacity-50 mt-1">
+                          Mantem URL publica e indexavel, mas remove da pagina /blog.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => set("hiddenFromBlogList", !form.hiddenFromBlogList)}
+                        className={`w-10 h-5 rounded-full transition-colors relative ${
+                          form.hiddenFromBlogList ? "bg-purple-500" : "bg-white/20"
+                        }`}
+                        aria-label="Alternar ocultacao da listagem"
+                      >
+                        <span
+                          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
+                            form.hiddenFromBlogList ? "translate-x-5" : "translate-x-0.5"
+                          }`}
+                        />
+                      </button>
+                    </label>
                   </div>
                 </div>
               )}

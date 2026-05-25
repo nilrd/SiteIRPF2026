@@ -45,6 +45,7 @@ model BlogPost {
   imageAlt         String         @default("") @map("image_alt")
   imageAttribution String?  @map("image_attribution")
   published        Boolean        @default(false)
+  hiddenFromBlogList Boolean      @default(false) @map("hidden_from_blog_list")
   metaTitle        String?
   metaDesc         String?
   keywords         String[]

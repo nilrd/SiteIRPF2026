@@ -97,6 +97,7 @@ export async function GET(request: NextRequest) {
           slug: true,
           summary: true,
           published: true,
+          hiddenFromBlogList: true,
           views: true,
           readTime: true,
           tags: true,

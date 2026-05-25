@@ -14,6 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/ferramentas/simulador-multa`,       lastModified: now, changeFrequency: "monthly" as const, priority: 0.8 },
     { url: `${baseUrl}/ferramentas/consulta-situacao`,     lastModified: now, changeFrequency: "monthly" as const, priority: 0.7 },
     { url: `${baseUrl}/blog`,                              lastModified: now, changeFrequency: "weekly"  as const, priority: 0.8 },
+    { url: `${baseUrl}/blog/move-brasil`,                  lastModified: now, changeFrequency: "daily"   as const, priority: 0.85 },
     { url: `${baseUrl}/ebook`,                             lastModified: now, changeFrequency: "monthly" as const, priority: 0.7 },
     { url: `${baseUrl}/sobre`,                             lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 },
     { url: `${baseUrl}/contato`,                           lastModified: now, changeFrequency: "monthly" as const, priority: 0.8 },

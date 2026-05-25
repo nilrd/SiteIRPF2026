@@ -87,7 +87,9 @@ export const metadata: Metadata = {
     },
   },
   other: {
-    "google-adsense-account": "ca-pub-0359891850456155",
+    "google-adsense-account":
+      process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT ||
+      "ca-pub-0359891850456155",
   },
 };
 
@@ -100,6 +102,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const adsenseClient =
+    process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT ||
+    "ca-pub-0359891850456155";
   const googleAdsId = "AW-18158780982";
   const ga4Id = process.env.NEXT_PUBLIC_GA4_ID || "G-7FYYGX7C12";
   const fbPixelId = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
@@ -122,13 +127,15 @@ export default function RootLayout({
         o rastreador do AdSense encontre a tag independente de JS.
       */}
       <head>
-        <meta name="google-adsense-account" content="ca-pub-0359891850456155" />
+        <meta name="google-adsense-account" content={adsenseClient} />
         {/* Script AdSense como <script> nativo — evita data-nscript que o AdSense rejeita */}
-        <script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0359891850456155"
-          crossOrigin="anonymous"
-        />
+        {isProduction && (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+            crossOrigin="anonymous"
+          />
+        )}
       </head>
       <body className="font-sans antialiased bg-base text-preto">
         {/* Google Ads + GA4 + Meta Pixel — carregados SOMENTE em produção */}

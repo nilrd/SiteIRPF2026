@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import BlogListingClient from "@/components/site/BlogListingClient";
 
@@ -55,6 +56,25 @@ export default async function BlogPage() {
               Guias simples para declarar seu Imposto de Renda, regularizar CPF, resolver pendências fiscais e cuidar do seu MEI.
             </p>
           </div>
+        </div>
+
+        <div className="mb-8 border border-[#0A0A0A]/20 bg-[#F5F5F2] p-5">
+          <p className="text-[10px] uppercase tracking-[0.2em] opacity-60 mb-2">
+            Especial Motoristas
+          </p>
+          <h2 className="font-serif text-2xl mb-2">
+            Move Brasil para Motoristas
+          </h2>
+          <p className="text-sm text-[#0A0A0A]/70 mb-4">
+            Guias práticos sobre cadastro, documentação, renda e cuidados para
+            análise de crédito.
+          </p>
+          <Link
+            href="/blog/move-brasil"
+            className="inline-block bg-[#0A0A0A] text-[#C6FF00] px-5 py-2 uppercase text-[11px] tracking-[0.14em] font-bold"
+          >
+            Acessar hub Move Brasil
+          </Link>
         </div>
 
         {posts.length === 0 ? (

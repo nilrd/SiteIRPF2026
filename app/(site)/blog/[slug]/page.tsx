@@ -180,7 +180,7 @@ export default async function BlogPostPage({ params }: Props) {
               />
             </div>
 
-            <AdUnit />
+            <AdUnit label="Publicidade" minHeight={180} />
 
             {/* Conteudo do artigo */}
             <div
@@ -188,7 +188,11 @@ export default async function BlogPostPage({ params }: Props) {
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
-            <AdUnit label="Publicidade" />
+            <AdUnit
+              label="Publicidade"
+              slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_MID_ARTICLE}
+              minHeight={220}
+            />
 
             {/* CTA Box mid-content */}
             <BlogCTA variant="inline" topic={topicFromCategoria(post.categoria)} />
@@ -238,6 +242,13 @@ export default async function BlogPostPage({ params }: Props) {
               {/* Lead form */}
               <BlogCTA variant="sidebar" topic={topicFromCategoria(post.categoria)} />
 
+              <AdUnit
+                label="Publicidade"
+                slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_SIDEBAR}
+                className="my-0"
+                minHeight={250}
+              />
+
               {/* Related posts */}
               {related.length > 0 && (
                 <div>
@@ -262,6 +273,13 @@ export default async function BlogPostPage({ params }: Props) {
                   </div>
                 </div>
               )}
+
+              <AdUnit
+                label="Publicidade"
+                slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_BELOW_RELATED}
+                className="my-0"
+                minHeight={180}
+              />
             </div>
           </aside>
         </div>

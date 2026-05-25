@@ -63,6 +63,30 @@ function formatServiceLabel(value?: string | null) {
     .join(" ");
 }
 
+const ORIGEM_LABELS: Record<string, string> = {
+  "exit-intent":           "Modal de saída",
+  "declarar-agora":        "Declarar Agora",
+  "blog-sticky-bar":       "Blog",
+  "mei-hub":               "MEI — Hub",
+  "mei-irpf":              "MEI + IRPF",
+  "mei-declaracao-anual":  "MEI — DASN-SIMEI",
+  "mei-cancelamento":      "MEI — Cancelamento",
+  "mei-abertura":          "MEI — Abertura",
+  "mei-dividas":           "MEI — Dívidas",
+  "organico":              "Orgânico",
+  "google":                "Google",
+  "facebook":              "Facebook",
+  "instagram":             "Instagram",
+  "tiktok":                "TikTok",
+  "ebook":                 "E-book",
+  "site":                  "Site",
+};
+
+export function formatOrigemLabel(origem?: string | null): string {
+  if (!origem) return "Site";
+  return ORIGEM_LABELS[origem] ?? origem;
+}
+
 function renderButtons(buttons: EmailButton[] = []) {
   if (buttons.length === 0) return "";
 
@@ -278,7 +302,7 @@ export function buildAdminNotificationEmail({
       value: `<a href="mailto:${escapeHtml(email)}" style="color:#C6FF00;text-decoration:none;">${escapeHtml(email)}</a>`,
     },
     { label: "Telefone", value: escapeHtml(telefone) || "Nao informado" },
-    { label: "Origem", value: escapeHtml(origem) || "site" },
+    { label: "Origem", value: escapeHtml(formatOrigemLabel(origem)) },
     { label: "Servico", value: escapeHtml(formatServiceLabel(servico)) },
     { label: "Mensagem", value: escapeHtml(mensagem) || "Sem mensagem" },
   ];

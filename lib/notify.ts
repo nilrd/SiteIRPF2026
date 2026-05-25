@@ -1,3 +1,5 @@
+import { formatOrigemLabel } from "@/lib/email-templates";
+
 type NotifyEntity = {
   nome: string;
   email: string;
@@ -107,7 +109,7 @@ function formatLeadMessage(
     `Nome: ${entity.nome}`,
     `Email: ${entity.email}`,
     `Telefone: ${entity.telefone || "Nao informado"}`,
-    `Origem: ${entity.origem || "site"}`,
+    `Origem: ${formatOrigemLabel(entity.origem)}`,
     `Servico: ${entity.servico || "IRPF"}`,
     entity.mensagem ? `Mensagem: ${entity.mensagem}` : null,
   ]

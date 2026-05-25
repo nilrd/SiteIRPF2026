@@ -7,6 +7,7 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import LeadsActions from "./LeadsActions";
 import LeadsFilters, { FiltersState } from "@/components/admin/LeadsFilters";
 import LeadsTableRow from "@/components/admin/LeadsTableRow";
+import { formatOrigemLabel } from "@/lib/email-templates";
 import KanbanView from "@/components/admin/KanbanView";
 import type {
   AdminPipelineItem,
@@ -417,7 +418,7 @@ export default function LeadsPage() {
                         )}
                         <p className="truncate">{servico}</p>
                         <p className="opacity-70">
-                          {item.origens.join(" • ") || item.origem} ·{" "}
+                          {item.origens.map(formatOrigemLabel).join(" • ") || formatOrigemLabel(item.origem)} ·{" "}
                           {new Date(item.createdAt).toLocaleDateString("pt-BR")}
                         </p>
                       </div>

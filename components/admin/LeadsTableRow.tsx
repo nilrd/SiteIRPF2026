@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ModalDetalheMensagem from "@/components/admin/ModalDetalheMensagem";
+import { formatOrigemLabel } from "@/lib/email-templates";
 import type { AdminPipelineItem } from "@/lib/admin-pipeline-types";
 
 export interface LeadsTableRowProps {
@@ -100,7 +101,7 @@ export default function LeadsTableRow({
               : item.assunto || "—")}
         </td>
         <td className="py-3 pr-4 opacity-60">
-          {item.origens.join(" • ") || item.origem}
+          {item.origens.map(formatOrigemLabel).join(" • ") || formatOrigemLabel(item.origem)}
         </td>
         <td className="py-3 pr-4">
           <div className="relative">

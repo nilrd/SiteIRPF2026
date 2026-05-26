@@ -412,7 +412,7 @@ const POSTS = [
     keyword: "vale a pena financiar carro move brasil",
     summary: "Decisão estratégica para motorista de app: quando financiar pode fazer sentido e quando aluguel ainda vence.",
     image:
-      "https://images.unsplash.com/photo-1549921296-3a6b0f4f2f56?auto=format&fit=crop&w=1600&q=80",
+      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1600&q=80",
     imageAlt: "Motorista avaliando custo entre aluguel e financiamento",
     prompt:
       "Imagem editorial de decisão financeira para mobilidade, motorista comparando opções de custo de carro, sem logos, horizontal 16:9.",

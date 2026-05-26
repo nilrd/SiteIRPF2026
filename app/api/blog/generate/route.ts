@@ -10,7 +10,6 @@ export const maxDuration = 300; // Vercel Pro: até 300s (geração Gemini + pes
 type GenerateBlogBody = {
   keyword?: unknown;
   theme?: unknown;
-  mode?: unknown;
 };
 
 type BlogCategoria = "IRPF" | "MEI" | "DESENROLA" | "GERAL";
@@ -46,10 +45,6 @@ function normalizeThemeInput(body: GenerateBlogBody): string {
         : "";
 
   return rawValue.trim();
-}
-
-function normalizeModeInput(body: GenerateBlogBody): string {
-  return typeof body.mode === "string" ? body.mode.trim().toLowerCase() : "";
 }
 
 async function resolveRequestToken(request: NextRequest) {
@@ -285,20 +280,8 @@ export async function POST(request: NextRequest) {
       | null;
     const normalizedBody =
       body && typeof body === "object" ? body : ({} as GenerateBlogBody);
-    const requestMode = normalizeModeInput(normalizedBody);
     const requestedTheme = normalizeThemeInput(normalizedBody);
     const resolvedTheme = requestedTheme || pickDefaultTheme();
-
-    if (requestMode === "smoke") {
-      return NextResponse.json({
-        success: true,
-        mode: "smoke",
-        requestedTheme: requestedTheme || null,
-        themeUsed: resolvedTheme,
-        categoria: resolveCategoriaFromTheme(resolvedTheme),
-        auth: "ok",
-      });
-    }
 
     if (!Object.values(providerStatus).some(Boolean)) {
       return NextResponse.json(

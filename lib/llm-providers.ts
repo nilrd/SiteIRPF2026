@@ -1,20 +1,30 @@
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
+const MISSING_GROQ_API_KEY = "missing-groq-api-key";
+
+function createGroqClient(apiKey?: string): OpenAI {
+  return new OpenAI({
+    baseURL: GROQ_BASE_URL,
+    apiKey: apiKey ?? MISSING_GROQ_API_KEY,
+  });
+}
+
 // Clientes Groq — key1 principal + key2 fallback + keyMei dedicada para conteúdo MEI
 const groqClients: Array<{ client: OpenAI; label: string }> = [
   ...(process.env.GROQ_API_KEY
-    ? [{ client: new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY }), label: "key1" }]
+    ? [{ client: createGroqClient(process.env.GROQ_API_KEY), label: "key1" }]
     : []),
   ...(process.env.GROQ_API_KEY_2
-    ? [{ client: new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY_2 }), label: "key2" }]
+    ? [{ client: createGroqClient(process.env.GROQ_API_KEY_2), label: "key2" }]
     : []),
 ];
 
 // Cliente Groq dedicado para geração de conteúdo MEI — rate limit independente
 export const groqMei: OpenAI = process.env.GROQ_API_KEY_MEI
-  ? new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY_MEI })
-  : (groqClients[0]?.client ?? new OpenAI({ baseURL: "https://api.groq.com/openai/v1", apiKey: process.env.GROQ_API_KEY }));
+  ? createGroqClient(process.env.GROQ_API_KEY_MEI)
+  : (groqClients[0]?.client ?? createGroqClient(process.env.GROQ_API_KEY));
 
 // Cliente Gemini dedicado para geração de conteúdo MEI — chave/cota independente
 export const geminiMei: GoogleGenerativeAI | null = process.env.GEMINI_API_KEY_MEI
@@ -22,10 +32,7 @@ export const geminiMei: GoogleGenerativeAI | null = process.env.GEMINI_API_KEY_M
   : null;
 
 // Compatibilidade com código legado que usa groqLlama diretamente (chatbot, verifier)
-export const groqLlama = groqClients[0]?.client ?? new OpenAI({
-  baseURL: "https://api.groq.com/openai/v1",
-  apiKey: process.env.GROQ_API_KEY,
-});
+export const groqLlama = groqClients[0]?.client ?? createGroqClient(process.env.GROQ_API_KEY);
 
 // Clientes Gemini — key2 PRIMEIRO (projeto diferente = cota independente).
 // key2 tem prioridade pois é menos provável de ter atingido o RPM.
@@ -65,6 +72,20 @@ const githubModelsClient = process.env.GITHUB_MODELS_TOKEN
 const openaiDirectClient = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
+
+export function getBlogLlmProviderStatus() {
+  return {
+    gemini: geminiClients.length > 0,
+    mistral: Boolean(mistralClient),
+    githubModels: Boolean(githubModelsClient),
+    groq: groqClients.length > 0,
+    openai: Boolean(openaiDirectClient),
+  };
+}
+
+export function hasAnyBlogLlmProviderConfigured(): boolean {
+  return Object.values(getBlogLlmProviderStatus()).some(Boolean);
+}
 
 export const MODELS = {
   chatbot: "llama-3.3-70b-versatile",
@@ -258,6 +279,13 @@ export async function callWithFallback(
   }
 ): Promise<FallbackResult> {
   const requireJson = extraOptions?.response_format?.type === "json_object";
+
+  if (!hasAnyBlogLlmProviderConfigured()) {
+    throw new Error(
+      "Nenhum provedor LLM configurado. Configure GEMINI_API_KEY, GROQ_API_KEY, OPENAI_API_KEY, MISTRAL_API_KEY ou GITHUB_MODELS_TOKEN.",
+    );
+  }
+
   // ── 1. GEMINI CASCADE (itera por modelo × chave) ───────────────────────────
   // Ordem: modelo1/chave1 → modelo1/chave2 → modelo2/chave1 → modelo2/chave2 → ...
   if (geminiClients.length > 0) {

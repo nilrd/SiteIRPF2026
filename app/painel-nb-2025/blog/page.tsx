@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import AdminSidebar from "@/components/admin/AdminSidebar";
@@ -57,6 +57,22 @@ const CATEGORIA_COLORS: Record<string, string> = {
   GERAL: "bg-white/10 text-white/40",
 };
 
+const GENERATE_POST_TIMEOUT_MS = 95_000;
+
+type GeneratePostResponse = {
+  success?: boolean;
+  error?: string;
+  message?: string;
+  code?: string;
+  provider?: string;
+  pending?: boolean;
+  themeUsed?: string;
+  post?: {
+    title: string;
+    slug: string;
+  };
+};
+
 function formatDateTime(value: string | null) {
   if (!value) return "—";
   return new Date(value).toLocaleString("pt-BR", {
@@ -65,6 +81,42 @@ function formatDateTime(value: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+async function parseGenerateResponse(
+  response: Response,
+): Promise<GeneratePostResponse | null> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    return (await response.json().catch(() => null)) as GeneratePostResponse | null;
+  }
+
+  const text = await response.text().catch(() => "");
+  return text ? { error: text } : null;
+}
+
+function getGenerateErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const normalized = error.message.toLowerCase();
+
+    if (error.name === "AbortError") {
+      return "Não foi possível gerar o post agora. A requisição demorou demais. Tente novamente em alguns instantes.";
+    }
+
+    if (
+      normalized.includes("failed to fetch") ||
+      normalized.includes("network")
+    ) {
+      return "Não foi possível gerar o post agora. Houve uma falha de conexão com o servidor.";
+    }
+
+    if (error.message.trim()) {
+      return error.message;
+    }
+  }
+
+  return "Não foi possível gerar o post agora. Verifique sua chave de API ou tente novamente em alguns instantes.";
 }
 
 function BlogAdminContent() {
@@ -102,12 +154,34 @@ function BlogAdminContent() {
     postId: string;
     model: string;
   } | null>(null);
+  const actionMsgTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(
+    null,
+  );
+  const showActionMessage = useCallback((message: string, timeoutMs = 8000) => {
+    if (actionMsgTimeoutRef.current) {
+      window.clearTimeout(actionMsgTimeoutRef.current);
+    }
+
+    setActionMsg(message);
+    actionMsgTimeoutRef.current = window.setTimeout(() => {
+      setActionMsg(null);
+      actionMsgTimeoutRef.current = null;
+    }, timeoutMs);
+  }, []);
 
   // Ler keyword/titulo da URL (link vindo do analisador)
   useEffect(() => {
     const kw = searchParams.get("keyword") || searchParams.get("titulo") || "";
     if (kw) setKeyword(kw);
   }, [searchParams]);
+
+  useEffect(() => {
+    return () => {
+      if (actionMsgTimeoutRef.current) {
+        window.clearTimeout(actionMsgTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -128,37 +202,66 @@ function BlogAdminContent() {
   }, [fetchPosts]);
 
   async function handleGenerate() {
+    if (generating) return;
+
+    const trimmedKeyword = keyword.trim();
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(
+      () => controller.abort(),
+      GENERATE_POST_TIMEOUT_MS,
+    );
+
     setGenerating(true);
     setGenResult(null);
+    setActionMsg(null);
+
     try {
       const res = await fetch("/api/blog/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keyword: keyword.trim() }),
+        body: JSON.stringify({
+          keyword: trimmedKeyword,
+          theme: trimmedKeyword || null,
+        }),
+        signal: controller.signal,
       });
-      const data = await res.json();
+      const data = await parseGenerateResponse(res);
+
       if (!res.ok) {
-        setActionMsg(`❌ ${data.error ?? "Erro ao gerar post"}`);
-        setTimeout(() => setActionMsg(null), 8000);
-        return;
+        throw new Error(
+          data?.error ||
+            data?.message ||
+            "Não foi possível gerar o post agora. Verifique sua chave de API ou tente novamente em alguns instantes.",
+        );
       }
+
+      if (!data?.success || !data.post) {
+        throw new Error(
+          "A API retornou uma resposta inválida ao gerar o post.",
+        );
+      }
+
       if (data.success) {
         setGenResult(data.post);
         setKeyword("");
         if (data.pending) {
-          setActionMsg(
-            "Post gerado mas RETIDO para revisão — acesse o rascunho abaixo para verificar e publicar.",
+          showActionMessage(
+            `Post gerado com o tema "${data.themeUsed ?? trimmedKeyword || "sugerido automaticamente"}", mas RETIDO para revisão — acesse o rascunho abaixo para verificar e publicar.`,
+            8000,
           );
         } else {
-          setActionMsg("Post gerado e publicado automaticamente no site.");
+          showActionMessage(
+            `Post gerado com o tema "${data.themeUsed ?? trimmedKeyword || "sugerido automaticamente"}" e publicado automaticamente no site.`,
+            6000,
+          );
         }
-        setTimeout(() => setActionMsg(null), 6000);
         await fetchPosts();
       }
     } catch (err) {
-      setActionMsg(`❌ Erro de conexão: ${err instanceof Error ? err.message : "tente novamente"}`);
-      setTimeout(() => setActionMsg(null), 8000);
+      console.error("Erro ao gerar post:", err);
+      showActionMessage(`❌ ${getGenerateErrorMessage(err)}`, 8000);
     } finally {
+      window.clearTimeout(timeoutId);
       setGenerating(false);
     }
   }
@@ -304,7 +407,7 @@ function BlogAdminContent() {
 
         {/* Generate section */}
         <div className="border border-white/10 p-6 mb-10">
-          <h2 className="font-serif text-xl mb-4">Gerar Post com IA (Groq)</h2>
+          <h2 className="font-serif text-xl mb-4">Gerar Post com IA</h2>
           <div className="flex gap-4">
             <input
               type="text"

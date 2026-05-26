@@ -244,14 +244,16 @@ function BlogAdminContent() {
       if (data.success) {
         setGenResult(data.post);
         setKeyword("");
+        const themeLabel =
+          (data.themeUsed ?? trimmedKeyword) || "sugerido automaticamente";
         if (data.pending) {
           showActionMessage(
-            `Post gerado com o tema "${data.themeUsed ?? trimmedKeyword || "sugerido automaticamente"}", mas RETIDO para revisão — acesse o rascunho abaixo para verificar e publicar.`,
+            `Post gerado com o tema "${themeLabel}", mas RETIDO para revisão — acesse o rascunho abaixo para verificar e publicar.`,
             8000,
           );
         } else {
           showActionMessage(
-            `Post gerado com o tema "${data.themeUsed ?? trimmedKeyword || "sugerido automaticamente"}" e publicado automaticamente no site.`,
+            `Post gerado com o tema "${themeLabel}" e publicado automaticamente no site.`,
             6000,
           );
         }

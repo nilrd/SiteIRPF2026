@@ -154,9 +154,7 @@ function BlogAdminContent() {
     postId: string;
     model: string;
   } | null>(null);
-  const actionMsgTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(
-    null,
-  );
+  const actionMsgTimeoutRef = useRef<number | null>(null);
   const showActionMessage = useCallback((message: string, timeoutMs = 8000) => {
     if (actionMsgTimeoutRef.current) {
       window.clearTimeout(actionMsgTimeoutRef.current);
@@ -206,7 +204,7 @@ function BlogAdminContent() {
 
     const trimmedKeyword = keyword.trim();
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(
+    const timeoutId: number = window.setTimeout(
       () => controller.abort(),
       GENERATE_POST_TIMEOUT_MS,
     );

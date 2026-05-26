@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { decode, getToken } from "next-auth/jwt";
 import { generateBlogPost, saveBlogPost } from "@/lib/blog-engine";
 import { revalidatePath } from "next/cache";
 import { getBlogLlmProviderStatus } from "@/lib/llm-providers";
@@ -10,6 +10,7 @@ export const maxDuration = 300; // Vercel Pro: até 300s (geração Gemini + pes
 type GenerateBlogBody = {
   keyword?: unknown;
   theme?: unknown;
+  mode?: unknown;
 };
 
 type BlogCategoria = "IRPF" | "MEI" | "DESENROLA" | "GERAL";
@@ -45,6 +46,37 @@ function normalizeThemeInput(body: GenerateBlogBody): string {
         : "";
 
   return rawValue.trim();
+}
+
+function normalizeModeInput(body: GenerateBlogBody): string {
+  return typeof body.mode === "string" ? body.mode.trim().toLowerCase() : "";
+}
+
+async function resolveRequestToken(request: NextRequest) {
+  const secret = process.env.NEXTAUTH_SECRET;
+
+  const primary = await getToken({ req: request, secret });
+  if (primary) return primary;
+  if (!secret) return null;
+
+  const authHeader = request.headers.get("authorization") || "";
+  const rawAuthToken = authHeader.replace(/^bearer\s+/i, "").trim();
+  const rawHeaderToken = (request.headers.get("x-nextauth-token") || "").trim();
+  const rawCookieSecure = (request.cookies.get("__Secure-next-auth.session-token")?.value || "").trim();
+  const rawCookiePlain = (request.cookies.get("next-auth.session-token")?.value || "").trim();
+
+  const candidates = [rawAuthToken, rawHeaderToken, rawCookieSecure, rawCookiePlain].filter(Boolean);
+
+  for (const candidate of candidates) {
+    try {
+      const decoded = await decode({ token: candidate, secret });
+      if (decoded) return decoded;
+    } catch {
+      // Ignore candidate parse errors and continue to the next source.
+    }
+  }
+
+  return null;
 }
 
 function resolveCategoriaFromTheme(theme: string): BlogCategoria {
@@ -240,10 +272,7 @@ export async function POST(request: NextRequest) {
   const providerStatus = getBlogLlmProviderStatus();
 
   try {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const token = await resolveRequestToken(request);
     if (!token) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
@@ -256,8 +285,20 @@ export async function POST(request: NextRequest) {
       | null;
     const normalizedBody =
       body && typeof body === "object" ? body : ({} as GenerateBlogBody);
+    const requestMode = normalizeModeInput(normalizedBody);
     const requestedTheme = normalizeThemeInput(normalizedBody);
     const resolvedTheme = requestedTheme || pickDefaultTheme();
+
+    if (requestMode === "smoke") {
+      return NextResponse.json({
+        success: true,
+        mode: "smoke",
+        requestedTheme: requestedTheme || null,
+        themeUsed: resolvedTheme,
+        categoria: resolveCategoriaFromTheme(resolvedTheme),
+        auth: "ok",
+      });
+    }
 
     if (!Object.values(providerStatus).some(Boolean)) {
       return NextResponse.json(

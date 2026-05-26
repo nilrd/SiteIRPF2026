@@ -2,19 +2,29 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import {
+  REFERRAL_LINK,
+  UBER_BONUS_TABLE,
+  getAllMotoristaPostSlugs,
+} from "@/lib/motorista-content-map";
 
 const DEADLINE = new Date("2026-05-29T23:59:59");
 /** Cooldown de 48 horas entre exibições */
 const COOLDOWN_MS = 48 * 60 * 60 * 1000;
+const MOTORISTA_PATHS = new Set(
+  getAllMotoristaPostSlugs().map((slug) => `/blog/${slug}`),
+);
+
+type ModalMode = "default" | "motorista";
 
 function getDaysLeft() {
   const diff = DEADLINE.getTime() - Date.now();
   return Math.max(0, Math.ceil(diff / 86400000));
 }
 
-function canShow(): boolean {
+function canShow(storageKey: string): boolean {
   try {
-    const last = localStorage.getItem("exit_shown_at");
+    const last = localStorage.getItem(storageKey);
     if (!last) return true;
     return Date.now() - parseInt(last, 10) > COOLDOWN_MS;
   } catch {
@@ -22,12 +32,16 @@ function canShow(): boolean {
   }
 }
 
-function markShown() {
+function markShown(storageKey: string) {
   try {
-    localStorage.setItem("exit_shown_at", String(Date.now()));
+    localStorage.setItem(storageKey, String(Date.now()));
   } catch {
     /* sem acesso ao localStorage */
   }
+}
+
+function getStorageKey(mode: ModalMode) {
+  return mode === "motorista" ? "exit_shown_at_motorista" : "exit_shown_at";
 }
 
 export default function ExitIntentModal() {
@@ -40,17 +54,25 @@ export default function ExitIntentModal() {
   const pathname = usePathname();
   const triggeredRef = useRef(false);
   const daysLeft = getDaysLeft();
+  const modalMode: ModalMode = pathname && MOTORISTA_PATHS.has(pathname)
+    ? "motorista"
+    : "default";
+  const isMotoristaPage = modalMode === "motorista";
 
   useEffect(() => {
     // Reinicia a cada mudança de página
     triggeredRef.current = false;
+    setVisible(false);
+    setSent(false);
 
-    if (!canShow()) return;
+    const storageKey = getStorageKey(modalMode);
+
+    if (!canShow(storageKey)) return;
 
     function trigger() {
       if (triggeredRef.current) return;
       triggeredRef.current = true;
-      markShown();
+      markShown(storageKey);
       setVisible(true);
     }
 
@@ -80,7 +102,7 @@ export default function ExitIntentModal() {
       document.removeEventListener("mouseleave", handleMouseLeave);
       document.removeEventListener("touchmove", handleTouchMove);
     };
-  }, [pathname]); // re-executa a cada navegação
+  }, [modalMode, pathname]); // re-executa a cada navegação
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -142,6 +164,51 @@ export default function ExitIntentModal() {
               Fechar
             </button>
           </div>
+        ) : isMotoristaPage ? (
+          <>
+            <span className="block text-xs uppercase tracking-[0.3em] text-[#C6FF00] mb-4">
+              Antes de sair
+            </span>
+            <h2
+              id="exit-modal-title"
+              className="font-serif text-3xl text-white mb-3"
+            >
+              Entre na Uber com bônus de indicação
+            </h2>
+            <p className="text-white/70 text-sm leading-relaxed mb-6">
+              Se você pretende começar como motorista ou entregador, faça o
+              cadastro pelo link de indicação para ativar sua elegibilidade ao
+              bônus de boas-vindas.
+            </p>
+
+            <div className="border border-[#C6FF00]/30 bg-white/5 p-4 mb-5">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-[#C6FF00] mb-2">
+                Oferta para novos cadastros
+              </p>
+              <p className="text-white font-semibold leading-snug">
+                Ate R$ {UBER_BONUS_TABLE.geral.valor} pelas primeiras {UBER_BONUS_TABLE.geral.viagens} viagens em {UBER_BONUS_TABLE.geral.dias} dias.
+              </p>
+              <p className="text-white/55 text-xs mt-2 leading-relaxed">
+                O valor final pode variar conforme a campanha ativa da sua
+                categoria e da sua regiao, mas o cadastro precisa ser iniciado
+                pelo link de indicacao.
+              </p>
+            </div>
+
+            <a
+              href={REFERRAL_LINK}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              className="block w-full bg-[#C6FF00] text-[#0A0A0A] py-4 px-5 text-center uppercase text-xs tracking-[0.2em] font-bold hover:bg-[#d4ff33] transition"
+            >
+              Quero me cadastrar com bonus →
+            </a>
+
+            <p className="mt-4 text-center text-xs text-white/35 leading-relaxed">
+              Abra o link, conclua o cadastro por ele e so depois feche esta
+              pagina para nao perder a indicacao.
+            </p>
+          </>
         ) : (
           <>
             <span className="block text-xs uppercase tracking-[0.3em] text-[#C6FF00] mb-4">

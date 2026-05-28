@@ -17,6 +17,8 @@ interface BlogPostImageProps {
 
 export default function BlogPostImage({ src, alt, attribution }: BlogPostImageProps) {
   const [broken, setBroken] = useState(false);
+  const isAmazonImage =
+    src.includes("m.media-amazon.com") || src.includes("images-na.ssl-images-amazon.com");
 
   if (broken) {
     return (
@@ -30,6 +32,18 @@ export default function BlogPostImage({ src, alt, attribution }: BlogPostImagePr
           sizes="(max-width: 768px) 100vw, 33vw"
         />
       </div>
+    );
+  }
+
+  if (isAmazonImage) {
+    return (
+      <img
+        src={src}
+        alt={alt}
+        className="w-full h-full object-cover"
+        loading="eager"
+        onError={() => setBroken(true)}
+      />
     );
   }
 

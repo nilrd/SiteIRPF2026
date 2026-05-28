@@ -118,6 +118,23 @@ body {
   opacity: 0.85;
 }
 
+.prose-irpf figure {
+  margin: 1.5rem 0;
+}
+
+.prose-irpf img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--linha);
+}
+
+.prose-irpf figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.65;
+}
+
 /* Button premium */
 .btn-premium {
   background-color: #ffffff;

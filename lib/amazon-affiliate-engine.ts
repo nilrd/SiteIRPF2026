@@ -5,8 +5,11 @@ import {
   type AmazonAffiliatePostDef,
 } from "@/lib/amazon-affiliate-content-map";
 
-const AMAZON_IMAGE_URL_REGEX =
+const AMAZON_IMAGE_URL_SCAN_REGEX =
   /https:\/\/(?:m\.media-amazon\.com|images-na\.ssl-images-amazon\.com)\/images\/I\/[^"'\s)<>]+/gi;
+
+const VALID_AMAZON_IMAGE_URL_REGEX =
+  /https:\/\/(?:m\.media-amazon\.com|images-na\.ssl-images-amazon\.com)\/images\/I\/[^"'\s|?<>]+\.(?:jpe?g|png|webp)(?:\?[^"'\s<>]*)?/i;
 
 function escapeHtml(value: string): string {
   return value
@@ -22,14 +25,43 @@ function stripAmazonTitle(rawTitle: string): string {
 }
 
 function sanitizeAmazonImageUrl(rawUrl: string): string {
-  return rawUrl
-    .replace(/&quot;.*/i, "")
-    .replace(/\".*/i, "")
-    .replace(/\s+.*/i, "")
+  const cleaned = rawUrl
+    .replace(/&quot;/gi, '"')
+    .replace(/&amp;/gi, "&")
+    .replace(/\s+/g, " ")
     .trim();
+
+  const match = cleaned.match(VALID_AMAZON_IMAGE_URL_REGEX);
+  return match?.[0]?.trim() ?? "";
 }
 
-async function fetchAmazonSnapshot(url: string): Promise<{ title?: string; image?: string }> {
+function extractMetaContent(html: string, key: string): string | undefined {
+  const reProperty = new RegExp(
+    `<meta[^>]+property=["']${key}["'][^>]+content=["']([^"']+)["'][^>]*>`,
+    "i",
+  );
+  const reName = new RegExp(
+    `<meta[^>]+name=["']${key}["'][^>]+content=["']([^"']+)["'][^>]*>`,
+    "i",
+  );
+
+  return reProperty.exec(html)?.[1] ?? reName.exec(html)?.[1] ?? undefined;
+}
+
+async function fetchAmazonSnapshot(url: string): Promise<{
+  title?: string;
+  image?: string;
+  description?: string;
+  details?: {
+    pages?: number;
+    publisher?: string;
+    publicationDate?: string;
+  };
+  rating?: {
+    score?: number;
+    count?: number;
+  };
+}> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
 
@@ -49,20 +81,56 @@ async function fetchAmazonSnapshot(url: string): Promise<{ title?: string; image
     const titleMatch = html.match(/<title>(.*?)<\/title>/i);
     const title = titleMatch?.[1] ? stripAmazonTitle(titleMatch[1]) : undefined;
 
-    const imageCandidates = Array.from(
-      new Set((html.match(AMAZON_IMAGE_URL_REGEX) ?? []).map((img) => img.trim())),
+    const ogImage = extractMetaContent(html, "og:image");
+    const twitterImage = extractMetaContent(html, "twitter:image");
+    const scannedCandidates = Array.from(
+      new Set((html.match(AMAZON_IMAGE_URL_SCAN_REGEX) ?? []).map((img) => img.trim())),
     );
-    const image = (
-      imageCandidates.find((img) => !img.toLowerCase().includes("thumb")) ??
-      imageCandidates[0]
-    )
-      ? sanitizeAmazonImageUrl(
-          imageCandidates.find((img) => !img.toLowerCase().includes("thumb")) ??
-            imageCandidates[0],
-        )
+    const imageCandidates = [ogImage, twitterImage, ...scannedCandidates].filter(
+      (candidate): candidate is string => Boolean(candidate),
+    );
+    const pickedImageCandidate =
+      imageCandidates.find((img) => !img.toLowerCase().includes("thumb")) ?? imageCandidates[0];
+    const sanitizedImage = pickedImageCandidate
+      ? sanitizeAmazonImageUrl(pickedImageCandidate)
+      : "";
+    const image = sanitizedImage || undefined;
+
+    // Extrair descrição
+    const descMatch = html.match(
+      /<div id="bookDescription_feature_div" class="a-section a-spacing-small a-padding-small">(.*?)<\/div>/is,
+    );
+    const description = descMatch?.[1]
+      ? descMatch[1]
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
       : undefined;
 
-    return { title, image };
+    // Extrair detalhes
+    const details: { pages?: number; publisher?: string; publicationDate?: string } = {};
+    const pagesMatch = html.match(/<span>Número de páginas<\/span>[\s\S]*?<span>(\d+) páginas<\/span>/i);
+    if (pagesMatch?.[1]) details.pages = parseInt(pagesMatch[1], 10);
+
+    const publisherMatch = html.match(
+      /<span>Editora<\/span>[\s\S]*?<span>(.*?)<\/span>/i,
+    );
+    if (publisherMatch?.[1]) details.publisher = publisherMatch[1].split(";")[0].trim();
+
+    const pubDateMatch = html.match(
+      /<span>Data da publicação<\/span>[\s\S]*?<span>(.*?)<\/span>/i,
+    );
+    if (pubDateMatch?.[1]) details.publicationDate = pubDateMatch[1].trim();
+
+    // Extrair avaliação
+    const rating: { score?: number; count?: number } = {};
+    const scoreMatch = html.match(/data-hook="rating-out-of-text".*?>([\d,.]+) de 5</i);
+    if (scoreMatch?.[1]) rating.score = parseFloat(scoreMatch[1].replace(",", "."));
+
+    const countMatch = html.match(/data-hook="total-review-count".*?>([\d.,]+)/i);
+    if (countMatch?.[1]) rating.count = parseInt(countMatch[1].replace(/\D/g, ""), 10);
+
+    return { title, image, description, details: Object.keys(details).length > 0 ? details : undefined, rating: Object.keys(rating).length > 0 ? rating : undefined };
   } catch {
     return {};
   } finally {
@@ -73,6 +141,16 @@ async function fetchAmazonSnapshot(url: string): Promise<{ title?: string; image
 async function resolveAmazonProductContext(post: AmazonAffiliatePostDef): Promise<{
   resolvedTitle: string;
   coverImage: string;
+  description?: string;
+  details?: {
+    pages?: number;
+    publisher?: string;
+    publicationDate?: string;
+  };
+  rating?: {
+    score?: number;
+    count?: number;
+  };
 }> {
   const shortSnapshot = await fetchAmazonSnapshot(post.amazonShortUrl);
   const finalSnapshot = await fetchAmazonSnapshot(post.amazonFinalUrl);
@@ -83,14 +161,31 @@ async function resolveAmazonProductContext(post: AmazonAffiliatePostDef): Promis
   const coverImage =
     finalSnapshot.image || shortSnapshot.image || post.productImageUrl || "";
 
-  return { resolvedTitle, coverImage };
+  const description = finalSnapshot.description || shortSnapshot.description;
+  const details = finalSnapshot.details || shortSnapshot.details;
+  const rating = finalSnapshot.rating || shortSnapshot.rating;
+
+  return { resolvedTitle, coverImage, description, details, rating };
 }
 
 function buildAmazonEditorialContent(
   post: AmazonAffiliatePostDef,
-  resolvedTitle: string,
-  coverImage: string,
+  context: {
+    resolvedTitle: string;
+    coverImage: string;
+    description?: string;
+    details?: {
+      pages?: number;
+      publisher?: string;
+      publicationDate?: string;
+    };
+    rating?: {
+      score?: number;
+      count?: number;
+    };
+  },
 ): string {
+  const { resolvedTitle, coverImage, description, details, rating } = context;
   const safeCoverImage = sanitizeAmazonImageUrl(coverImage);
   const imageBlock = safeCoverImage
     ? `<figure>
@@ -100,6 +195,24 @@ function buildAmazonEditorialContent(
     : "";
 
   const labelFormato = post.format === "ebook" ? "eBook Kindle" : "Livro físico";
+
+  const ratingBlock = rating?.score && rating.count
+    ? `<p><strong>Avaliação:</strong> ${"★".repeat(Math.round(rating.score))}${"☆".repeat(5 - Math.round(rating.score))} ${rating.score.toFixed(1)} de 5 estrelas (baseado em ${rating.count.toLocaleString("pt-BR")} avaliações).</p>`
+    : "";
+
+  const detailsBlock = details
+    ? `<h3>Detalhes do Produto</h3>
+      <ul>
+        ${details.publisher ? `<li><strong>Editora:</strong> ${escapeHtml(details.publisher)}</li>` : ""}
+        ${details.pages ? `<li><strong>Número de páginas:</strong> ${details.pages}</li>` : ""}
+        ${details.publicationDate ? `<li><strong>Data de publicação:</strong> ${details.publicationDate}</li>` : ""}
+      </ul>`
+    : "";
+  
+  const descriptionBlock = description
+    ? `<h2>Descrição Oficial do Produto</h2>
+      <p>${escapeHtml(description)}</p>`
+    : "";
 
   return `<section>
 <p><strong>Resenha aplicada para a vida real.</strong> Este conteúdo foi construído para ajudar você a decidir com clareza se o livro faz sentido para o seu momento financeiro.</p>
@@ -112,8 +225,12 @@ ${imageBlock}
 <div style="border:2px solid #0A0A0A;padding:16px;margin:18px 0 26px;background:#F5F5F2;">
   <p><strong>Produto analisado:</strong> ${escapeHtml(post.productTitle)} · ${escapeHtml(post.author)}</p>
   <p><strong>Formato:</strong> ${labelFormato}. Conteúdo alinhado com a página real do produto na Amazon.</p>
+  ${ratingBlock}
   <p><a href="${post.amazonShortUrl}" target="_blank" rel="sponsored noopener noreferrer"><strong>Ver produto na Amazon</strong></a></p>
 </div>
+
+${descriptionBlock}
+${detailsBlock}
 
 <h2>O que este livro entrega de valor prático</h2>
 <p>Sem promessas mágicas, o conteúdo trabalha mentalidade financeira aplicada ao cotidiano. O foco está em transformar decisões pequenas e repetidas em construção de patrimônio.</p>
@@ -191,15 +308,25 @@ export interface AmazonAffiliatePostResult {
     amazonFinalUrl: string;
     asin: string;
     resolvedTitle: string;
+    description?: string;
+    details?: {
+      pages?: number;
+      publisher?: string;
+      publicationDate?: string;
+    };
+    rating?: {
+      score?: number;
+      count?: number;
+    };
   };
 }
 
 export async function generateAmazonAffiliatePost(
   post: AmazonAffiliatePostDef,
 ): Promise<AmazonAffiliatePostResult> {
-  const { resolvedTitle, coverImage } = await resolveAmazonProductContext(post);
+  const context = await resolveAmazonProductContext(post);
 
-  const content = buildAmazonEditorialContent(post, resolvedTitle, coverImage);
+  const content = buildAmazonEditorialContent(post, context);
 
   const faqs = [
     {
@@ -226,16 +353,19 @@ export async function generateAmazonAffiliatePost(
     tags: post.tags,
     keywords: post.keywords,
     faqsJson: JSON.stringify(faqs),
-    coverImage,
+    coverImage: context.coverImage,
     imageAlt: `Imagem original do produto ${post.productTitle} na Amazon`,
     metaTitle: post.titleHint.slice(0, 60),
     metaDesc: post.metaDescHint,
-    aiModel: "amazon-editorial-template-v1",
+    aiModel: "amazon-editorial-template-v2", // Version bump
     source: {
       amazonShortUrl: post.amazonShortUrl,
       amazonFinalUrl: post.amazonFinalUrl,
       asin: post.asin,
-      resolvedTitle,
+      resolvedTitle: context.resolvedTitle,
+      description: context.description,
+      details: context.details,
+      rating: context.rating,
     },
   };
 }

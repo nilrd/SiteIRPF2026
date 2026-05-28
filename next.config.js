@@ -6,6 +6,8 @@ const nextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "picsum.photos" },
       { protocol: "https", hostname: "*.supabase.co" },
+      { protocol: "https", hostname: "m.media-amazon.com" },
+      { protocol: "https", hostname: "images-na.ssl-images-amazon.com" },
     ],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,

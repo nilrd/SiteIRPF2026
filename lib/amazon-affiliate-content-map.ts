@@ -9,6 +9,7 @@ export interface AmazonAffiliatePostDef {
   amazonShortUrl: string;
   amazonFinalUrl: string;
   asin: string;
+  productImageUrl: string;
   audience: string;
   tags: string[];
   keywords: string[];
@@ -30,6 +31,7 @@ export const AMAZON_AFFILIATE_POSTS: AmazonAffiliatePostDef[] = [
     amazonFinalUrl:
       "https://www.amazon.com.br/dp/8543104122",
     asin: "8543104122",
+    productImageUrl: "https://m.media-amazon.com/images/I/61MfCOqUKLL._SL1006_.jpg",
     audience: "autonomos-mei-profissionais-liberais",
     tags: [
       "livro de finanças",
@@ -62,6 +64,7 @@ export const AMAZON_AFFILIATE_POSTS: AmazonAffiliatePostDef[] = [
     amazonFinalUrl:
       "https://www.amazon.com.br/dp/B01ACFIY2I",
     asin: "B01ACFIY2I",
+    productImageUrl: "https://m.media-amazon.com/images/I/71rVyBGZ16L._SL1500_.jpg",
     audience: "familias-profissionais-clt-autonomos",
     tags: [
       "livro de finanças pessoais",

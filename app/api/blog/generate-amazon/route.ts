@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const mode = typeof body.mode === "string" ? body.mode : "single";
+    const overwrite = body.overwrite === true;
 
     if (mode === "status") {
       const missing = await getMissingAmazonAffiliateSlugs();
@@ -79,7 +80,9 @@ export async function POST(request: NextRequest) {
       }
 
       const result = await generateAmazonAffiliatePost(postDef);
-      const saved = await saveAmazonAffiliatePost(result);
+      const saved = await saveAmazonAffiliatePost(result, {
+        overwriteExisting: overwrite,
+      });
       revalidatePath(`/blog/${saved.slug}`);
 
       return NextResponse.json({
@@ -121,7 +124,9 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await generateAmazonAffiliatePost(postDef);
-    const saved = await saveAmazonAffiliatePost(result);
+    const saved = await saveAmazonAffiliatePost(result, {
+      overwriteExisting: overwrite,
+    });
     revalidatePath(`/blog/${saved.slug}`);
 
     return NextResponse.json({

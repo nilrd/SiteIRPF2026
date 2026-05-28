@@ -24,7 +24,9 @@ const DEFAULT_BLOG_THEMES = [
   "Parcelamento de dívida MEI",
 ] as const;
 
-const GENERATE_TIMEOUT_MS = 90_000;
+// Timeout total da função: 240s (margem de 60s antes de maxDuration=300s).
+// O Gemini usa 22s por tentativa → até 6 tentativas = 132s + margem para verifier/Groq.
+const GENERATE_TIMEOUT_MS = 240_000;
 const GENERATE_TIMEOUT_MESSAGE =
   "A geração do post demorou além do esperado. Tente novamente em alguns instantes.";
 

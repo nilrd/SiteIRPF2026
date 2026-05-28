@@ -98,7 +98,7 @@ async function fetchAmazonSnapshot(url: string): Promise<{
 
     // Extrair descrição
     const descMatch = html.match(
-      /<div id="bookDescription_feature_div" class="a-section a-spacing-small a-padding-small">(.*?)<\/div>/is,
+      /<div id="bookDescription_feature_div" class="a-section a-spacing-small a-padding-small">([\s\S]*?)<\/div>/i,
     );
     const description = descMatch?.[1]
       ? descMatch[1]

@@ -1,3 +1,18 @@
+import { buildWhatsAppWaMeUrl, normalizeBrPhone } from "@/lib/phone-validation";
+
+const ORIGEM_LABELS: Record<string, string> = {
+  "exit-intent": "modal de saída do site",
+  "declarar-agora": "página Declarar Agora",
+  "blog-sticky-bar": "barra do blog",
+  mei: "página MEI",
+  site: "site",
+};
+
+function toOrigemMensagem(origem: string): string {
+  const normalized = (origem || "site").trim().toLowerCase();
+  return ORIGEM_LABELS[normalized] ?? normalized.replace(/[-_]/g, " ");
+}
+
 /**
  * Constrói link WhatsApp com mensagem pré-filled contextualizada
  * @param telefone - Número do telefone (com ou sem caracteres especiais)
@@ -12,24 +27,27 @@ export function buildWhatsAppLink(
   servico: string = "Consultoria IRPF",
   origem: string = "site"
 ): string {
-  const phone = telefone.replace(/\D/g, "");
-  if (!phone) return "";
+  const waBaseUrl = buildWhatsAppWaMeUrl(telefone);
+  if (!waBaseUrl) return "";
 
   const primeiroNome = nome.split(" ")[0] || "amigo";
   const servicoLabel = servico || "Consultoria IRPF";
+  const origemLabel = toOrigemMensagem(origem);
   
   // Mensagem formatada com quebras de linha
   const message = `Olá ${primeiroNome}!
 
-Vi que você entrou em contato sobre ${servicoLabel} via ${origem}.
+Vi que você entrou em contato sobre ${servicoLabel} pelo canal ${origemLabel}.
 
-Como posso ajudar você com sua IRPF 2026?
+Sou o Nilson Brites e posso te ajudar com sua IRPF 2026 de ponta a ponta.
 
-Consultoria IRPF NSB
+Se você quiser, já te explico agora os próximos passos e os documentos ideais para o seu caso.
+
+Nilson Brites | Consultoria IRPF
 `;
 
   const encoded = encodeURIComponent(message);
-  return `https://wa.me/55${phone}?text=${encoded}`;
+  return `${waBaseUrl}?text=${encoded}`;
 }
 
 /**
@@ -38,8 +56,7 @@ Consultoria IRPF NSB
  * @returns URL para abrir WhatsApp
  */
 export function buildWhatsAppDirectLink(telefone: string): string {
-  const phone = telefone.replace(/\D/g, "");
-  return phone ? `https://wa.me/55${phone}` : "";
+  return buildWhatsAppWaMeUrl(telefone);
 }
 
 /**
@@ -56,14 +73,20 @@ export function formatWhatsAppMessage(
   servico: string = "Consultoria IRPF",
   origem: string = "site"
 ): string {
+  const phone = normalizeBrPhone(telefone);
+  if (!phone) return "";
+
   const primeiroNome = nome.split(" ")[0] || "amigo";
   const servicoLabel = servico || "Consultoria IRPF";
+  const origemLabel = toOrigemMensagem(origem);
 
   return `Olá ${primeiroNome}!
 
-Vi que você entrou em contato sobre ${servicoLabel} via ${origem}.
+Vi que você entrou em contato sobre ${servicoLabel} pelo canal ${origemLabel}.
 
-Como posso ajudar você com sua IRPF 2026?
+Sou o Nilson Brites e posso te ajudar com sua IRPF 2026 de ponta a ponta.
 
-Consultoria IRPF NSB`;
+Se você quiser, já te explico agora os próximos passos e os documentos ideais para o seu caso.
+
+Nilson Brites | Consultoria IRPF`;
 }

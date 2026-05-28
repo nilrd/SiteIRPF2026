@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ModalDetalheMensagem from "@/components/admin/ModalDetalheMensagem";
 import { formatOrigemLabel } from "@/lib/email-templates";
+import { buildWhatsAppWaMeUrl, normalizeBrPhone } from "@/lib/phone-validation";
 import type { AdminPipelineItem } from "@/lib/admin-pipeline-types";
 
 export interface LeadsTableRowProps {
@@ -61,6 +62,8 @@ export default function LeadsTableRow({
 
   const isLead = item.itemType === "lead";
   const createdDate = new Date(item.createdAt).toLocaleDateString("pt-BR");
+  const phoneDigits = item.telefone ? normalizeBrPhone(item.telefone) : "";
+  const whatsappUrl = item.telefone ? buildWhatsAppWaMeUrl(item.telefone) : "";
 
   return (
     <>
@@ -85,7 +88,7 @@ export default function LeadsTableRow({
         <td className="py-3 pr-4 opacity-60">
           {item.telefone ? (
             <a
-              href={`tel:${item.telefone.replace(/\D/g, "")}`}
+              href={phoneDigits ? `tel:${phoneDigits}` : "#"}
               className="hover:text-[#C6FF00] transition-colors"
             >
               {item.telefone}
@@ -144,9 +147,9 @@ export default function LeadsTableRow({
         <td className="py-3 pr-4 opacity-40">{createdDate}</td>
         <td className="py-3">
           <div className="flex flex-col gap-1">
-            {item.telefone && (
+            {whatsappUrl && (
               <a
-                href={`https://wa.me/55${item.telefone.replace(/\D/g, "")}`}
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-green-400 text-xs hover:underline"

@@ -27,6 +27,7 @@ import {
   selectDailyPauta,
 } from "./keyword-scoring";
 import { isKeywordRecent } from "./knowledge-brain";
+import { validateAmazonAffiliateImageCompliance } from "./affiliate-image-compliance";
 
 export const ALL_MEI_CLUSTERS: MeiKeywordCluster[] = [
   ...MEI_KEYWORD_CLUSTERS,
@@ -853,6 +854,28 @@ export async function saveMeiBlogPost(
     slug = `${slug}-${Date.now().toString(36)}`;
   }
 
+  const affiliateCompliance = await validateAmazonAffiliateImageCompliance({
+    content: post.content,
+    coverImage: post.coverImage,
+  });
+  const published = post.reviewApproved && !affiliateCompliance.needsReview;
+  const needsReview =
+    (post.needsReview ?? !post.reviewApproved) || affiliateCompliance.needsReview;
+
+  let reviewJson = post.reviewJson ?? "";
+  try {
+    const baseReview = reviewJson ? JSON.parse(reviewJson) : {};
+    reviewJson = JSON.stringify({
+      ...baseReview,
+      affiliateCompliance,
+    });
+  } catch {
+    reviewJson = JSON.stringify({
+      fallbackReviewJson: reviewJson,
+      affiliateCompliance,
+    });
+  }
+
   return prisma.blogPost.create({
     data: {
       title: post.title,
@@ -865,15 +888,15 @@ export async function saveMeiBlogPost(
       coverImage: post.coverImage ?? "/og-image.svg",
       imageAlt: post.imageAlt ?? post.title,
       imageAttribution: post.imageAttribution ?? null,
-      published: post.reviewApproved,
+      published,
       postType: post.postType ?? null,
       audience: post.audience ?? null,
       searchIntent: post.searchIntent ?? null,
       factScore: post.factScore ?? null,
       riskScore: post.riskScore ?? null,
-      needsReview: post.needsReview ?? !post.reviewApproved,
+      needsReview,
       campaignMode: post.campaignMode ?? null,
-      reviewJson: post.reviewJson ?? "",
+      reviewJson,
       aiModel: post.aiModel ?? "",
       categoria: post.categoria,
     },

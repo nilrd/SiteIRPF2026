@@ -8,6 +8,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { callWithFallback } from "@/lib/llm-providers";
+import { validateAmazonAffiliateImageCompliance } from "@/lib/affiliate-image-compliance";
 import {
   MOTORISTA_POSTS,
   REFERRAL_LINK,
@@ -341,6 +342,11 @@ export async function saveMotoristPost(
     };
   }
 
+  const affiliateCompliance = await validateAmazonAffiliateImageCompliance({
+    content: result.content,
+    coverImage: result.coverImage,
+  });
+
   const saved = await prisma.blogPost.create({
     data: {
       title: result.title,
@@ -354,17 +360,18 @@ export async function saveMotoristPost(
       imageAlt: result.imageAlt,
       metaTitle: result.metaTitle,
       metaDesc: result.metaDesc,
-      published: true,
+      published: !affiliateCompliance.needsReview,
       hiddenFromBlogList: true,
       categoria: "RENDA_EXTRA",
       postType: "traffic",
       audience: "motoristas-entregadores-app",
       searchIntent: "informacional",
-      needsReview: false,
+      needsReview: affiliateCompliance.needsReview,
       aiModel: result.aiModel,
       reviewJson: JSON.stringify({
         source: "motorista-engine",
         referralLink: REFERRAL_LINK,
+        affiliateCompliance,
         generatedAt: new Date().toISOString(),
       }),
       campaignMode: "motorista-indicacao",

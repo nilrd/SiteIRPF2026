@@ -69,7 +69,8 @@ const githubModelsClient = process.env.GITHUB_MODELS_TOKEN
   : null;
 
 // ─── TIER 5: OPENAI (pago — último recurso antes de lançar erro) ─────────────
-const openaiDirectClient = process.env.OPENAI_API_KEY
+const OPENAI_FALLBACK_ENABLED = process.env.ENABLE_OPENAI_FALLBACK === "true";
+const openaiDirectClient = OPENAI_FALLBACK_ENABLED && process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 

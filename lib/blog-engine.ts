@@ -22,6 +22,13 @@ import {
   selectDailyPauta,
 } from "./keyword-scoring";
 import { verifyIRPFPost } from "./fact-check";
+import {
+  detectAmazonAffiliateLinks,
+  validateAmazonAffiliateImageCompliance,
+} from "./affiliate-image-compliance";
+
+const REQUIRE_AMAZON_LINK_IN_GENERATED_CONTENT =
+  process.env.REQUIRE_AMAZON_LINK_IN_GENERATED_CONTENT !== "false";
 
 type ResearchItem = {
   title: string;
@@ -2073,6 +2080,38 @@ export async function saveBlogPost(
     slug = `${slug}-${Date.now().toString(36)}`;
   }
 
+  const amazonLinks = detectAmazonAffiliateLinks(post.content);
+  if (
+    REQUIRE_AMAZON_LINK_IN_GENERATED_CONTENT &&
+    !amazonLinks.hasAmazonAffiliateLinks
+  ) {
+    throw new Error(
+      "CONTEUDO_SEM_LINK_AMAZON: a geração foi bloqueada porque o conteúdo não possui link Amazon afiliado.",
+    );
+  }
+
+  const affiliateCompliance = await validateAmazonAffiliateImageCompliance({
+    content: post.content,
+    coverImage: post.coverImage,
+  });
+  const published = post.reviewApproved && !affiliateCompliance.needsReview;
+  const needsReview =
+    (post.needsReview ?? !post.reviewApproved) || affiliateCompliance.needsReview;
+
+  let reviewJson = post.reviewJson ?? "";
+  try {
+    const baseReview = reviewJson ? JSON.parse(reviewJson) : {};
+    reviewJson = JSON.stringify({
+      ...baseReview,
+      affiliateCompliance,
+    });
+  } catch {
+    reviewJson = JSON.stringify({
+      fallbackReviewJson: reviewJson,
+      affiliateCompliance,
+    });
+  }
+
   return prisma.blogPost.create({
     data: {
       title: post.title,
@@ -2085,15 +2124,15 @@ export async function saveBlogPost(
       coverImage: post.coverImage ?? "/og-image.svg",
       imageAttribution: post.imageAttribution ?? null,
       imageAlt: post.imageAlt ?? post.title,
-      published: post.reviewApproved,
+      published,
       postType: post.postType ?? null,
       audience: post.audience ?? null,
       searchIntent: post.searchIntent ?? null,
       factScore: post.factScore ?? null,
       riskScore: post.riskScore ?? null,
-      needsReview: post.needsReview ?? !post.reviewApproved,
+      needsReview,
       campaignMode: post.campaignMode ?? null,
-      reviewJson: post.reviewJson ?? "",
+      reviewJson,
       aiModel: post.aiModel ?? "",
       categoria,
     },

@@ -7,6 +7,7 @@ import {
   UBER_BONUS_TABLE,
   getAllMotoristaPostSlugs,
 } from "@/lib/motorista-content-map";
+import { formatBrWhatsApp, isValidBrWhatsApp, normalizeBrPhone } from "@/lib/phone-validation";
 
 const DEADLINE = new Date("2026-05-29T23:59:59");
 /** Cooldown de 48 horas entre exibições */
@@ -49,6 +50,7 @@ export default function ExitIntentModal() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [telefoneError, setTelefoneError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const pathname = usePathname();
@@ -107,6 +109,15 @@ export default function ExitIntentModal() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim() || !email.trim() || !telefone.trim()) return;
+
+    const validation = isValidBrWhatsApp(telefone);
+    if (!validation.valid) {
+      setTelefoneError(validation.reason || "WhatsApp inválido.");
+      return;
+    }
+
+    setTelefoneError("");
+    const telefoneNormalizado = validation.normalized;
     setLoading(true);
     try {
       await fetch("/api/contato", {
@@ -115,7 +126,7 @@ export default function ExitIntentModal() {
         body: JSON.stringify({
           nome,
           email,
-          telefone,
+          telefone: telefoneNormalizado,
           servico: "Declaracao IRPF",
           mensagem: "Contato via modal de saída",
           origem: "exit-intent",
@@ -263,14 +274,22 @@ export default function ExitIntentModal() {
                 <input
                   type="tel"
                   value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
+                  onChange={(e) => {
+                    const onlyDigits = normalizeBrPhone(e.target.value).slice(0, 11);
+                    setTelefone(formatBrWhatsApp(onlyDigits));
+                    setTelefoneError("");
+                  }}
                   required
-                  minLength={10}
-                  maxLength={20}
+                  minLength={15}
+                  maxLength={16}
+                  pattern="\(\d{2}\)\s9\d{4}-\d{4}"
                   autoComplete="tel"
                   className="w-full bg-transparent border border-white/20 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#C6FF00] transition"
                   placeholder="(11) 99999-9999"
                 />
+                {telefoneError && (
+                  <p className="mt-1 text-[11px] text-red-400">{telefoneError}</p>
+                )}
               </div>
               <button
                 type="submit"

@@ -11,13 +11,17 @@ function createGroqClient(apiKey?: string): OpenAI {
   });
 }
 
-// Clientes Groq — key1 principal + key2 fallback + keyMei dedicada para conteúdo MEI
+// Clientes Groq — key1 + key2 + keyMei (3 cotas independentes no cascade geral)
 const groqClients: Array<{ client: OpenAI; label: string }> = [
   ...(process.env.GROQ_API_KEY
     ? [{ client: createGroqClient(process.env.GROQ_API_KEY), label: "key1" }]
     : []),
   ...(process.env.GROQ_API_KEY_2
     ? [{ client: createGroqClient(process.env.GROQ_API_KEY_2), label: "key2" }]
+    : []),
+  // keyMei entra no cascade geral quando disponível — cota completamente independente
+  ...(process.env.GROQ_API_KEY_MEI
+    ? [{ client: createGroqClient(process.env.GROQ_API_KEY_MEI), label: "keyMei" }]
     : []),
 ];
 
@@ -36,13 +40,21 @@ export const groqLlama = groqClients[0]?.client ?? createGroqClient(process.env.
 
 // Clientes Gemini — key2 PRIMEIRO (projeto diferente = cota independente).
 // key2 tem prioridade pois é menos provável de ter atingido o RPM.
-// Se a doc diz: limites são por PROJETO, não por chave — key2 = projeto alternativo.
+// keyMei entra como 3ª entrada: cota adicional independente do projeto MEI.
 const geminiClients: Array<{ client: GoogleGenerativeAI; label: string }> = [
   ...(process.env.GEMINI_API_KEY_2
     ? [{ client: new GoogleGenerativeAI(process.env.GEMINI_API_KEY_2), label: "key2" }]
     : []),
   ...(process.env.GEMINI_API_KEY
     ? [{ client: new GoogleGenerativeAI(process.env.GEMINI_API_KEY), label: "key1" }]
+    : []),
+  // keyMei entra no cascade geral quando disponível — 3ª cota Gemini independente
+  ...(process.env.GEMINI_API_KEY_MEI
+    ? [{ client: new GoogleGenerativeAI(process.env.GEMINI_API_KEY_MEI), label: "keyMei" }]
+    : []),
+  // keyCS (ContentStory) — 4ª cota Gemini de projeto GCP independente
+  ...(process.env.GEMINI_API_KEY_CONTENTSTORY
+    ? [{ client: new GoogleGenerativeAI(process.env.GEMINI_API_KEY_CONTENTSTORY), label: "keyCS" }]
     : []),
 ];
 
@@ -58,15 +70,7 @@ const mistralClient = process.env.MISTRAL_API_KEY
     })
   : null;
 
-// ─── TIER 3: GITHUB MODELS (grátis via Azure inference — conta adm.lestebarbearia) ──
-// Nota: limites de tokens por request — usa compact prompt.
-// Endpoint OpenAI-compatível: https://models.inference.ai.azure.com
-const githubModelsClient = process.env.GITHUB_MODELS_TOKEN
-  ? new OpenAI({
-      baseURL: "https://models.inference.ai.azure.com",
-      apiKey: process.env.GITHUB_MODELS_TOKEN,
-    })
-  : null;
+
 
 // ─── TIER 5: OPENAI (pago — último recurso antes de lançar erro) ─────────────
 const OPENAI_FALLBACK_ENABLED = process.env.ENABLE_OPENAI_FALLBACK === "true";
@@ -77,9 +81,8 @@ const openaiDirectClient = OPENAI_FALLBACK_ENABLED && process.env.OPENAI_API_KEY
 export function getBlogLlmProviderStatus() {
   return {
     gemini: geminiClients.length > 0,
-    mistral: Boolean(mistralClient),
-    githubModels: Boolean(githubModelsClient),
     groq: groqClients.length > 0,
+    mistral: Boolean(mistralClient),
     openai: Boolean(openaiDirectClient),
   };
 }
@@ -92,7 +95,7 @@ export const MODELS = {
   chatbot: "llama-3.3-70b-versatile",
   adminIA: "llama-3.3-70b-versatile",
   blogGeneration: "gemini-2.5-flash",
-  blogVerifier: "llama-3.3-70b-versatile",
+  blogVerifier: "moonshotai/kimi-k2-instruct", // Kimi K2 supera Llama em qualidade editorial PT-BR
 } as const;
 
 // ─── DEAD MODEL CACHE ─────────────────────────────────────────────────────────
@@ -146,10 +149,10 @@ const GEMINI_MODELS = [
   "gemini-2.0-flash",      // GA estável — último backup Gemini
 ] as const;
 
-// Timeout por request: 22s — equilibra margem de segurança e velocidade de fallback.
-// flash-lite gerou em 19-21s; 22s dá 1-3s de margem sem desperdiçar tempo na cadeia.
-// Com 6 combos Gemini × 22s = 132s máximo → sobra ~108s para Mistral/Groq dentro dos 240s totais.
-const GEMINI_TIMEOUT_MS = 22_000;
+// Timeout por request: 28s — margem adequada para flash-lite (gera em 19-21s normalmente).
+// Rate-limits (HTTP 429) são detectados em <1s e nunca consomem o timeout.
+// Quando instável e trava, dispara e o cascade cai no Groq (~4s) rapidamente.
+const GEMINI_TIMEOUT_MS = 28_000;
 
 // ─── TIER 2: MISTRAL CASCADE ──────────────────────────────────────────────────
 // 128k contexto, prompt completo (sem truncamento necessário).
@@ -157,21 +160,12 @@ const MISTRAL_MODELS = [
   "mistral-large-latest",  // 128k ctx — melhor qualidade Mistral
 ] as const;
 
-// ─── TIER 3: GITHUB MODELS CASCADE ───────────────────────────────────────────
-// Modelos 70B+ com 128k contexto. Limites por request → usa compact prompt.
-const GITHUB_MODELS_LIST = [
-  "Meta-Llama-3.1-405B-Instruct", // 128k ctx — modelo mais poderoso grátis
-  "Llama-3.3-70B-Instruct",       // 128k ctx — rápido e capaz
-] as const;
-
-// ─── TIER 4: GROQ CASCADE ─────────────────────────────────────────────────────
-// Todos os modelos com 128k+ contexto. Compact prompt obrigatório (limite TPM).
-// REMOVIDOS: llama3-70b-8192 (8k ctx) e llama-3.1-8b-instant (modelo pequeno).
+// ─── GROQ CASCADE (tier 2 no cascade — fallback rápido após Gemini) ──────────
+// Llama removido: qualidade insuficiente para posts editoriais de IRPF/SEO em PT-BR.
+// Kimi K2 (Moonshot AI) e Qwen3-32B (Alibaba) superam Llama em escrita editorial.
 const GROQ_FALLBACK_MODELS = [
-  "llama-3.3-70b-versatile",                       // 128k ctx — 12k tokens/min
-  "moonshotai/kimi-k2-instruct",                   // 1M ctx — Kimi K2, 10k tokens/min
-  "meta-llama/llama-4-maverick-17b-128e-instruct", // 128k ctx — Llama 4 MoE
-  "qwen/qwen3-32b",                                // 128k ctx — Qwen3 32B
+  "moonshotai/kimi-k2-instruct", // 1M ctx — melhor qualidade Groq para escrita PT-BR
+  "qwen/qwen3-32b",              // 128k ctx — forte em raciocínio e PT-BR
 ] as const;
 
 // Limites de chars para prompts Groq/GitHub/OpenAI (evita 413 TPM) — RN6
@@ -361,14 +355,69 @@ export async function callWithFallback(
     console.warn("[LLM] Nenhuma GEMINI_API_KEY configurada — usando Groq diretamente...");
   }
 
-  // Prompt compacto reutilizado pelos tiers 3/4/5 (GitHub Models, Groq, OpenAI)
+  // Prompt compacto reutilizado pelos tiers 2/3/4 (Groq, Mistral, OpenAI)
   const compactSystem = safeTrim(
     extraOptions?.compactSystemPrompt ?? systemPrompt,
     GROQ_SYSTEM_MAX_CHARS
   );
   const compactUser = safeTrim(userPrompt, GROQ_USER_MAX_CHARS);
 
-  // ── 2. MISTRAL CASCADE (128k ctx, prompt completo, freemium) ─────────────
+  // ── 2. GROQ CASCADE (tier 2 — rápido 3-5s, 3 chaves, fallback principal após Gemini) ──
+  // Groq antes de Mistral/GitHub pois é 5-10× mais rápido e mais estável.
+  // Rate limit por chave é independente — keyMei assume quando key1/key2 atingem TPM.
+  const groqMaxTokens = Math.min(maxTokens, 4000);
+
+  if (groqClients.length > 0) {
+    for (const model of GROQ_FALLBACK_MODELS) {
+      const modelKey = `groq:${model}`;
+      if (deadModels.has(modelKey)) {
+        console.log(`[LLM] Pulando Groq ${model} (marcado morto em todas as chaves)`);
+        continue;
+      }
+      for (const { client, label } of groqClients) {
+        const clientKey = `groq:${model}:${label}`;
+        if (deadModels.has(clientKey)) continue;
+        try {
+          console.log(`[LLM] Tentando Groq: ${model} [${label}]`);
+          const response = await client.chat.completions.create({
+            model,
+            messages: [
+              { role: "system", content: compactSystem },
+              { role: "user", content: compactUser },
+            ],
+            max_tokens: groqMaxTokens,
+            temperature: extraOptions?.temperature ?? 0.35,
+            ...(extraOptions?.response_format
+              ? { response_format: extraOptions.response_format }
+              : {}),
+          });
+          const raw = response.choices[0]?.message?.content;
+          const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+          if (validated) {
+            console.log(`[LLM] Sucesso: ${model} [${label}] (Groq)`);
+            return { text: validated, model };
+          } else if (raw) {
+            console.warn(`[LLM] Groq ${model} [${label}] JSON inválido — próxima chave`);
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          const errType = classifyError(err);
+          if (errType === "dead") {
+            deadModels.add(clientKey);
+            console.warn(`[LLM] Groq ${model} [${label}] MORTO: ${msg.slice(0, 100)}`);
+          } else if (errType === "size_limit") {
+            console.warn(`[LLM] Groq ${model} [${label}] rate limit: ${msg.slice(0, 100)}`);
+          } else {
+            console.warn(`[LLM] Groq ${model} [${label}] falhou [${errType}]: ${msg.slice(0, 120)}`);
+          }
+        }
+      }
+      const allDead = groqClients.every(({ label }) => deadModels.has(`groq:${model}:${label}`));
+      if (allDead) deadModels.add(modelKey);
+    }
+  }
+
+  // ── 3. MISTRAL CASCADE (128k ctx, prompt completo, freemium) ─────────────
   if (mistralClient) {
     for (const model of MISTRAL_MODELS) {
       if (deadModels.has(model)) {
@@ -410,109 +459,7 @@ export async function callWithFallback(
     }
   }
 
-  // ── 3. GITHUB MODELS CASCADE (128k ctx, compact prompt, grátis) ──────────
-  if (githubModelsClient) {
-    for (const model of GITHUB_MODELS_LIST) {
-      if (deadModels.has(model)) {
-        console.log(`[LLM] Pulando GitHub ${model} (marcado morto)`);
-        continue;
-      }
-      try {
-        console.log(`[LLM] Tentando GitHub Models: ${model}`);
-        const response = await githubModelsClient.chat.completions.create({
-          model,
-          messages: [
-            { role: "system", content: compactSystem },
-            { role: "user", content: compactUser },
-          ],
-          max_tokens: Math.min(maxTokens, 4096),
-          temperature: extraOptions?.temperature ?? 0.35,
-          ...(extraOptions?.response_format
-            ? { response_format: extraOptions.response_format }
-            : {}),
-        });
-        const raw = response.choices[0]?.message?.content;
-        const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
-        if (validated) {
-          console.log(`[LLM] Sucesso: ${model} (GitHub Models)`);
-          return { text: validated, model };
-        } else if (raw) {
-          console.warn(`[LLM] GitHub ${model} retornou JSON inválido — continuando cascade`);
-        }
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        const errType = classifyError(err);
-        if (errType === "dead") {
-          deadModels.add(model);
-          console.warn(`[LLM] GitHub ${model} MORTO: ${msg.slice(0, 100)}`);
-        } else {
-          console.warn(`[LLM] GitHub ${model} falhou [${errType}]: ${msg.slice(0, 120)}`);
-        }
-      }
-    }
-  }
-
-  // ── 4. GROQ CASCADE (modelo × chave1 → chave2, 128k+ ctx, compact prompt) ──
-  // Rate limit por chave é independente — key2 assume quando key1 atinge 429/TPM.
-  const groqMaxTokens = Math.min(maxTokens, 4000);
-
-  if (groqClients.length > 0) {
-    for (const model of GROQ_FALLBACK_MODELS) {
-      const modelKey = `groq:${model}`;
-      if (deadModels.has(modelKey)) {
-        console.log(`[LLM] Pulando Groq ${model} (marcado morto em todas as chaves)`);
-        continue;
-      }
-      let allKeysFailed = true;
-      for (const { client, label } of groqClients) {
-        const clientKey = `groq:${model}:${label}`;
-        if (deadModels.has(clientKey)) continue;
-        try {
-          console.log(`[LLM] Tentando Groq: ${model} [${label}]`);
-          const response = await client.chat.completions.create({
-            model,
-            messages: [
-              { role: "system", content: compactSystem },
-              { role: "user", content: compactUser },
-            ],
-            max_tokens: groqMaxTokens,
-            temperature: extraOptions?.temperature ?? 0.35,
-            ...(extraOptions?.response_format
-              ? { response_format: extraOptions.response_format }
-              : {}),
-          });
-          const raw = response.choices[0]?.message?.content;
-          const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
-          if (validated) {
-            console.log(`[LLM] Sucesso: ${model} [${label}] (Groq)`);
-            return { text: validated, model };
-          } else if (raw) {
-            console.warn(`[LLM] Groq ${model} [${label}] retornou JSON inválido — tentando próxima chave`);
-          }
-          allKeysFailed = false; // respondeu, mesmo que inválido
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          const errType = classifyError(err);
-          if (errType === "dead") {
-            // Modelo morto nesta chave — se ambas derem dead, marca o modelo inteiro
-            deadModels.add(clientKey);
-            console.warn(`[LLM] Groq ${model} [${label}] MORTO: ${msg.slice(0, 100)}`);
-          } else if (errType === "size_limit") {
-            // Rate limit nesta chave — tenta a próxima
-            console.warn(`[LLM] Groq ${model} [${label}] rate limit [${label}]: ${msg.slice(0, 100)}`);
-          } else {
-            console.warn(`[LLM] Groq ${model} [${label}] falhou [${errType}]: ${msg.slice(0, 120)}`);
-          }
-        }
-      }
-      // Se todas as chaves deram dead para este modelo, marca o modelo como morto
-      const allDead = groqClients.every(({ label }) => deadModels.has(`groq:${model}:${label}`));
-      if (allDead) deadModels.add(modelKey);
-      void allKeysFailed; // suprime lint
-    }
-  }
-
-  // ── 5. OPENAI (pago — backup final antes de lançar erro) ──────────────────
+  // ── 4. OPENAI (pago — backup final antes de lançar erro) ──────────────────
   if (openaiDirectClient) {
     const oaiModels = ["gpt-4o-mini"] as const;
     for (const model of oaiModels) {

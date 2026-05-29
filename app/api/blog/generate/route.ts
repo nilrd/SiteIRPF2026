@@ -126,8 +126,7 @@ function formatProviderName(provider: string): string {
       return "Gemini";
     case "mistral":
       return "Mistral";
-    case "githubModels":
-      return "GitHub Models";
+
     case "groq":
       return "Groq";
     case "openai":

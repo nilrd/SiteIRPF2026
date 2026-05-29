@@ -27,8 +27,10 @@ import {
   validateAmazonAffiliateImageCompliance,
 } from "./affiliate-image-compliance";
 
+// Por padrão, posts editoriais normais NÃO exigem link Amazon.
+// Ative explicitamente via env quando quiser forçar apenas conteúdos afiliados.
 const REQUIRE_AMAZON_LINK_IN_GENERATED_CONTENT =
-  process.env.REQUIRE_AMAZON_LINK_IN_GENERATED_CONTENT !== "false";
+  process.env.REQUIRE_AMAZON_LINK_IN_GENERATED_CONTENT === "true";
 
 type ResearchItem = {
   title: string;

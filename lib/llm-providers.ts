@@ -123,9 +123,16 @@ function markRateLimited(key: string, retryAfterMs: number = 65_000): void {
 
 function parseRetryAfterMs(err: unknown): number {
   const msg = err instanceof Error ? err.message : String(err);
-  // Extrai "retry after N seconds" / "retryDelay: Ns" do corpo do erro
-  const match = msg.match(/retry.{1,15}?(\d+)\s*s/i);
-  if (match) return parseInt(match[1], 10) * 1_000 + 2_000; // +2s buffer
+  // Extrai "retry after N seconds" / "retryDelay: Ns" do corpo do erro.
+  // Protege contra parses incorretos que resultem em cooldowns absurdos.
+  const match = msg.match(/retry.{1,25}?(\d{1,6})\s*s/i);
+  if (match) {
+    const seconds = parseInt(match[1], 10);
+    if (Number.isFinite(seconds) && seconds > 0) {
+      const clampedSeconds = Math.min(Math.max(seconds, 5), 120);
+      return clampedSeconds * 1_000 + 2_000; // +2s buffer
+    }
+  }
   return 65_000; // default: 65s — garante reinício da janela RPM de 1 minuto
 }
 

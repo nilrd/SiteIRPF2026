@@ -188,17 +188,6 @@ function mapGenerationError(
     };
   }
 
-  if (normalized.includes("conteudo_sem_link_amazon")) {
-    return {
-      status: 400,
-      code: "MISSING_AMAZON_LINK",
-      provider,
-      publicMessage:
-        "Geração bloqueada: o conteúdo precisa conter link Amazon afiliado para ser criado.",
-      details,
-    };
-  }
-
   if (
     normalized.includes(GENERATE_TIMEOUT_MESSAGE.toLowerCase()) ||
     normalized.includes("timeout")

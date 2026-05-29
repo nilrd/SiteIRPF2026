@@ -22,15 +22,6 @@ import {
   selectDailyPauta,
 } from "./keyword-scoring";
 import { verifyIRPFPost } from "./fact-check";
-import {
-  detectAmazonAffiliateLinks,
-  validateAmazonAffiliateImageCompliance,
-} from "./affiliate-image-compliance";
-
-// Por padrão, posts editoriais normais NÃO exigem link Amazon.
-// Ative explicitamente via env quando quiser forçar apenas conteúdos afiliados.
-const REQUIRE_AMAZON_LINK_IN_GENERATED_CONTENT =
-  process.env.REQUIRE_AMAZON_LINK_IN_GENERATED_CONTENT === "true";
 
 type ResearchItem = {
   title: string;
@@ -2082,37 +2073,9 @@ export async function saveBlogPost(
     slug = `${slug}-${Date.now().toString(36)}`;
   }
 
-  const amazonLinks = detectAmazonAffiliateLinks(post.content);
-  if (
-    REQUIRE_AMAZON_LINK_IN_GENERATED_CONTENT &&
-    !amazonLinks.hasAmazonAffiliateLinks
-  ) {
-    throw new Error(
-      "CONTEUDO_SEM_LINK_AMAZON: a geração foi bloqueada porque o conteúdo não possui link Amazon afiliado.",
-    );
-  }
-
-  const affiliateCompliance = await validateAmazonAffiliateImageCompliance({
-    content: post.content,
-    coverImage: post.coverImage,
-  });
-  const published = post.reviewApproved && !affiliateCompliance.needsReview;
-  const needsReview =
-    (post.needsReview ?? !post.reviewApproved) || affiliateCompliance.needsReview;
-
-  let reviewJson = post.reviewJson ?? "";
-  try {
-    const baseReview = reviewJson ? JSON.parse(reviewJson) : {};
-    reviewJson = JSON.stringify({
-      ...baseReview,
-      affiliateCompliance,
-    });
-  } catch {
-    reviewJson = JSON.stringify({
-      fallbackReviewJson: reviewJson,
-      affiliateCompliance,
-    });
-  }
+  const published = post.reviewApproved;
+  const needsReview = post.needsReview ?? !post.reviewApproved;
+  const reviewJson = post.reviewJson ?? "";
 
   return prisma.blogPost.create({
     data: {

@@ -37,7 +37,7 @@ export default function TermosDeUsoPage() {
           <section>
             <h2 className="font-serif text-2xl mb-4">1. Aceitação dos Termos</h2>
             <p>
-              Ao acessar e utilizar o site <strong>irpf.qaplay.com.br</strong> ("Site") ou
+              Ao acessar e utilizar o site <strong>irpf.qaplay.com.br</strong> (&ldquo;Site&rdquo;) ou
               contratar os serviços da <strong>Consultoria IRPF NSB</strong>, operada por
               Nilson Brites, você concorda com os presentes Termos de Uso. Caso não concorde,
               não utilize o Site nem nossos serviços.

@@ -4,6 +4,7 @@ import Navbar from "@/components/site/Navbar";
 import Footer from "@/components/site/Footer";
 import WhatsAppFloat from "@/components/site/WhatsAppFloat";
 import { JsonLdWebsite } from "@/components/seo/JsonLd";
+import CookieConsent from "@/components/site/CookieConsent";
 
 const ChatbotWidget = dynamic(
   () => import("@/components/site/ChatbotWidget"),
@@ -65,6 +66,7 @@ export default function SiteLayout({
       <WhatsAppFloat />
       <ChatbotWidget />
       <ExitIntentModal />
+      <CookieConsent />
     </>
   );
 }

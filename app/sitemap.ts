@@ -18,6 +18,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/ebook`,                             lastModified: now, changeFrequency: "monthly" as const, priority: 0.7 },
     { url: `${baseUrl}/sobre`,                             lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 },
     { url: `${baseUrl}/contato`,                           lastModified: now, changeFrequency: "monthly" as const, priority: 0.8 },
+    { url: `${baseUrl}/politica-de-privacidade`,           lastModified: now, changeFrequency: "yearly"  as const, priority: 0.3 },
+    { url: `${baseUrl}/termos-de-uso`,                     lastModified: now, changeFrequency: "yearly"  as const, priority: 0.3 },
   ];
 
   let blogPages: MetadataRoute.Sitemap = [];

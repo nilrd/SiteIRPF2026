@@ -178,9 +178,23 @@ export default function Footer() {
           <p className="text-[10px] uppercase tracking-widest text-white/30">
             Consultoria IRPF NSB -- {new Date().getFullYear()} -- Todos os direitos reservados
           </p>
-          <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-white/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-blink" />
-            Atendimento ativo
+          <div className="flex items-center gap-4">
+            <Link
+              href="/politica-de-privacidade"
+              className="text-[10px] uppercase tracking-widest text-white/30 hover:text-white/60 transition"
+            >
+              Privacidade
+            </Link>
+            <Link
+              href="/termos-de-uso"
+              className="text-[10px] uppercase tracking-widest text-white/30 hover:text-white/60 transition"
+            >
+              Termos de Uso
+            </Link>
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-white/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-blink" />
+              Atendimento ativo
+            </div>
           </div>
         </div>
       </div>

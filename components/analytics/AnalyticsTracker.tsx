@@ -47,6 +47,16 @@ function AnalyticsTrackerInner() {
   const startTimeRef = useRef<number>(0);
   const scrollDepthRef = useRef<Set<number>>(new Set());
   const sentLeaveRef = useRef<boolean>(false);
+  const sentAffiliateViewRef = useRef<boolean>(false);
+
+  function getSessionId(): string {
+    let sessionId = sessionStorage.getItem("_sid");
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      sessionStorage.setItem("_sid", sessionId);
+    }
+    return sessionId;
+  }
 
   useEffect(() => {
     // Não registrar eventos em ambiente local para não poluir métricas de produção
@@ -57,11 +67,7 @@ function AnalyticsTrackerInner() {
     sentLeaveRef.current = false;
 
     // Session ID — persists across pages in same tab
-    let sessionId = sessionStorage.getItem("_sid");
-    if (!sessionId) {
-      sessionId = crypto.randomUUID();
-      sessionStorage.setItem("_sid", sessionId);
-    }
+    const sessionId = getSessionId();
 
     const page = pathname;
     const referrer = document.referrer || undefined;
@@ -104,6 +110,26 @@ function AnalyticsTrackerInner() {
       screenW: window.screen.width,
       screenH: window.screen.height,
     });
+
+    if (/^\/mei\//.test(page) && !sentAffiliateViewRef.current) {
+      sentAffiliateViewRef.current = true;
+      sendEvent({
+        sessionId,
+        type: "affiliate_page_view",
+        page,
+        referrer,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+        utmContent,
+        utmTerm,
+        device: getDevice(),
+        browser: getBrowser(),
+        os: getOS(),
+        screenW: window.screen.width,
+        screenH: window.screen.height,
+      });
+    }
 
     // Scroll depth
     const handleScroll = () => {

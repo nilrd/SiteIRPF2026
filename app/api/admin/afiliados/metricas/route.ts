@@ -100,6 +100,9 @@ export async function GET(req: NextRequest) {
     const avgCtr = totalViews30d > 0
       ? Math.round((totalAffiliateClicks30d / totalViews30d) * 1000) / 10
       : 0;
+    const trackingCoverage = totalViews30d > 0
+      ? Math.round((totalViews30d / Math.max(1, publishedPages)) * 1000) / 10
+      : 0;
 
     return NextResponse.json({
       summary: {
@@ -111,6 +114,7 @@ export async function GET(req: NextRequest) {
         pagesWithCta,
         pagesWithoutCta: totalPages - pagesWithCta,
         pagesWithAlerts,
+        trackingCoverage,
       },
       metrics30d: {
         pageViews: totalViews30d,

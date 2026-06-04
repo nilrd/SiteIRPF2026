@@ -259,6 +259,16 @@ export default function ReceberPagamentosPage() {
               ))}
             </ul>
 
+            <div className="border border-[#0A0A0A]/10 p-5 mb-8">
+              <p className="text-[10px] uppercase tracking-widest opacity-50 mb-2">Leituras úteis</p>
+              <p className="text-sm opacity-70 mb-3">
+                Se sua prioridade é organizar dinheiro antes de vender mais, veja as leituras indicadas para MEI.
+              </p>
+              <Link href="/mei/leitura-financeira-para-mei" className="text-sm font-semibold underline hover:opacity-70 transition">
+                → Leituras para MEI
+              </Link>
+            </div>
+
             {/* FAQ */}
             <h2 className="font-serif text-3xl mb-6 mt-12">Dúvidas frequentes</h2>
             <div className="space-y-6">

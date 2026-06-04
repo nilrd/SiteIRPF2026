@@ -73,9 +73,22 @@ const PRODUCT_EVENT_TYPE: Record<Product, string> = {
   "app-mercado-pago": "mp_app_click",
 };
 
+function getSessionId(): string {
+  if (typeof window === "undefined") return "";
+
+  let sessionId = sessionStorage.getItem("_sid");
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    sessionStorage.setItem("_sid", sessionId);
+  }
+
+  return sessionId;
+}
+
 function trackAffiliateClick(product: Product, cta: string, href: string) {
   const page = typeof window !== "undefined" ? window.location.pathname : "/";
   const eventType = PRODUCT_EVENT_TYPE[product];
+  const sessionId = getSessionId();
 
   // GA4
   if (typeof window !== "undefined" && typeof (window as Window & { gtag?: (...args: unknown[]) => void }).gtag === "function") {
@@ -91,7 +104,7 @@ function trackAffiliateClick(product: Product, cta: string, href: string) {
   fetch("/api/afiliados/click", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ product, page, element: eventType }),
+    body: JSON.stringify({ product, page, element: eventType, sessionId }),
   }).catch(() => {});
 }
 

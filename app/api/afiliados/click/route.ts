@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
       product: string;
       page?: string;
       element?: string;
+      sessionId?: string;
     };
 
     const product = body.product as ValidProduct;
@@ -34,6 +35,9 @@ export async function POST(req: NextRequest) {
     const page = body.page ?? "/";
     const element = body.element ?? product;
     const eventType = PRODUCT_EVENT_TYPE[product];
+    const sessionId = typeof body.sessionId === "string" && body.sessionId.trim().length > 0
+      ? body.sessionId.trim().slice(0, 64)
+      : `click-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     // Executar em paralelo — não bloquear
     await Promise.allSettled([
@@ -46,7 +50,7 @@ export async function POST(req: NextRequest) {
       }),
       prisma.analyticsEvent.create({
         data: {
-          sessionId: `click-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          sessionId,
           type: eventType,
           page,
           element,

@@ -162,6 +162,16 @@ export default function MaquininhaParaMei() {
               Como organizar o faturamento da maquininha para a DASN-SIMEI →
             </Link>
 
+            <div className="mt-8 border border-[#0A0A0A]/10 p-5">
+              <p className="text-[10px] uppercase tracking-widest opacity-50 mb-2">Leituras úteis</p>
+              <p className="text-sm opacity-70 mb-3">
+                Se você quer organizar melhor o caixa antes de comprar mais ferramenta, veja o hub de leituras para MEI.
+              </p>
+              <Link href="/mei/leitura-financeira-para-mei" className="text-sm font-semibold underline hover:opacity-70 transition">
+                → Leituras para MEI
+              </Link>
+            </div>
+
             {/* Calculadora */}
             <div className="mt-10">
               <CalculadoraVendasCartao />

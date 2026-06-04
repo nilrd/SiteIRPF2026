@@ -14,6 +14,7 @@ interface MetricasData {
     pagesWithCta: number;
     pagesWithoutCta: number;
     pagesWithAlerts: number;
+    trackingCoverage: number;
   };
   metrics30d: {
     pageViews: number;
@@ -106,6 +107,29 @@ export default function AfiliadadosDashboardPage() {
           )}
         </div>
 
+        <section className="mb-8 border border-[#C6FF00]/25 bg-[#C6FF00]/5 px-4 py-4">
+          <p className="text-[10px] uppercase tracking-widest text-[#C6FF00] mb-2">
+            Fonte da verdade do painel
+          </p>
+          <div className="grid gap-3 md:grid-cols-3 text-sm">
+            <div className="border border-[#F5F5F2]/10 px-3 py-3">
+              <p className="text-[#F5F5F2]/50 text-xs uppercase tracking-widest mb-1">Automático</p>
+              <p className="font-bold">Eventos internos do site</p>
+              <p className="text-[#F5F5F2]/65 text-xs mt-1">Pageview, clique afiliado, WhatsApp, scroll e tempo na página.</p>
+            </div>
+            <div className="border border-[#F5F5F2]/10 px-3 py-3">
+              <p className="text-[#F5F5F2]/50 text-xs uppercase tracking-widest mb-1">Manual</p>
+              <p className="font-bold">Search Console</p>
+              <p className="text-[#F5F5F2]/65 text-xs mt-1">Dados inseridos à mão no painel. Usar como referência, não como evento.</p>
+            </div>
+            <div className="border border-[#F5F5F2]/10 px-3 py-3">
+              <p className="text-[#F5F5F2]/50 text-xs uppercase tracking-widest mb-1">Reconciliação</p>
+              <p className="font-bold">GA4 x painel</p>
+              <p className="text-[#F5F5F2]/65 text-xs mt-1">Comparar tendências, não números absolutos. Adblock e JS podem causar diferença.</p>
+            </div>
+          </div>
+        </section>
+
         {loading ? (
           <p className="text-[#F5F5F2]/50 text-sm">Carregando métricas...</p>
         ) : (
@@ -113,7 +137,7 @@ export default function AfiliadadosDashboardPage() {
             {/* Métricas 30d */}
             <section className="mb-8">
               <h2 className="text-xs font-bold uppercase tracking-widest text-[#F5F5F2]/50 mb-4">
-                Últimos 30 dias
+                Últimos 30 dias - dados automáticos
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatCard label="Cliques afiliados" value={m30?.totalAffiliateClicks ?? 0} accent />
@@ -130,7 +154,7 @@ export default function AfiliadadosDashboardPage() {
             {/* Métricas 7d */}
             <section className="mb-8">
               <h2 className="text-xs font-bold uppercase tracking-widest text-[#F5F5F2]/50 mb-4">
-                Últimos 7 dias
+                Últimos 7 dias - funil curto
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatCard label="Smart 2 clicks" value={m7?.smartClicks ?? 0} />
@@ -147,7 +171,7 @@ export default function AfiliadadosDashboardPage() {
             {/* Resumo de páginas */}
             <section className="mb-8">
               <h2 className="text-xs font-bold uppercase tracking-widest text-[#F5F5F2]/50 mb-4">
-                Resumo do inventário de páginas
+                Resumo do inventário de páginas - SEO e cobertura
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatCard label="Total páginas" value={s?.totalPages ?? 0} />
@@ -164,12 +188,29 @@ export default function AfiliadadosDashboardPage() {
                   value={s?.pagesWithoutCta ?? 0}
                   warn={(s?.pagesWithoutCta ?? 0) > 0}
                 />
+                <StatCard label="Cobertura tracking" value={`${s?.trackingCoverage ?? 0}%`} accent />
                 <StatCard label="No sitemap" value={s?.sitemapPages ?? 0} />
                 <StatCard
                   label="Fora do sitemap"
                   value={s?.pagesOutOfSitemap ?? 0}
                   warn={(s?.pagesOutOfSitemap ?? 0) > 0}
                 />
+              </div>
+            </section>
+
+            <section className="mb-8 border border-[#F5F5F2]/10 px-4 py-4">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-[#F5F5F2]/50 mb-4">
+                O que este painel mede de verdade
+              </h2>
+              <div className="grid gap-3 md:grid-cols-2 text-sm text-[#F5F5F2]/70">
+                <div className="border border-[#F5F5F2]/10 px-3 py-3">
+                  <p className="text-[#C6FF00] font-bold mb-1">Métricas confiáveis</p>
+                  <p>Pageviews internos, cliques em CTA, cliques nos afiliados Mercado Pago e tempo na página. Esses dados saem do tracker do site e da tabela de eventos.</p>
+                </div>
+                <div className="border border-[#F5F5F2]/10 px-3 py-3">
+                  <p className="text-[#C6FF00] font-bold mb-1">Métricas de referência</p>
+                  <p>Search Console no painel é manual. Use para contexto de SEO, não para fechar conversão. Se o painel e o Google divergem, considere adblock, sessão ou atraso de coleta.</p>
+                </div>
               </div>
             </section>
 

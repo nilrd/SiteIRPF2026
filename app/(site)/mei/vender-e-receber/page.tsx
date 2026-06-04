@@ -155,6 +155,32 @@ export default function VenderEReceberHub() {
           </div>
         </section>
 
+        {/* Leitura e organização */}
+        <section className="mb-16">
+          <h2 className="font-serif text-3xl mb-2">Leituras para organizar o financeiro</h2>
+          <p className="text-sm opacity-60 mb-6">
+            Se o problema principal é bagunça financeira, aqui estão leituras que ajudam a dar
+            estrutura antes de vender mais.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <GuiaCard
+              href="/mei/leitura-financeira-para-mei"
+              title="Leituras para MEI"
+              desc="Hub com análises de livros para organizar dinheiro e vendas."
+            />
+            <GuiaCard
+              href="/blog/livro-financas-para-mei-organizar-caixa-e-irpf"
+              title="Livro de finanças para MEI"
+              desc="Foco em caixa organizado e disciplina para o IRPF."
+            />
+            <GuiaCard
+              href="/blog/dinheiro-cerbasi-para-autonomos-e-mei-resumo-aplicado"
+              title="Dinheiro para autônomos e MEI"
+              desc="Leitura voltada para renda variável e previsibilidade."
+            />
+          </div>
+        </section>
+
         {/* CTA produto em destaque */}
         <div className="max-w-3xl mb-16">
           <MaquininhaAfiliado

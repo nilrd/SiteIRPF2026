@@ -120,7 +120,7 @@ export default function MeiHubPage() {
             <Link
               key={s.num}
               href={s.href}
-              className="group flex flex-col md:flex-row md:items-center gap-4 md:gap-8 py-6 editorial-border cursor-pointer block"
+              className="group flex flex-col md:flex-row md:items-center gap-4 md:gap-8 py-6 editorial-border cursor-pointer"
             >
               <span className="font-serif italic text-3xl opacity-30 md:w-16 shrink-0">
                 {s.num}
@@ -199,6 +199,12 @@ export default function MeiHubPage() {
             className="text-sm underline underline-offset-4 hover:opacity-60 transition"
           >
             Blog IRPF & MEI →
+          </Link>
+          <Link
+            href="/mei/leitura-financeira-para-mei"
+            className="text-sm underline underline-offset-4 hover:opacity-60 transition"
+          >
+            Leituras para MEI →
           </Link>
         </div>
       </section>

@@ -164,6 +164,7 @@ export default function MeiEIrpfPage() {
                   <Link href="/mei/declaracao-anual" className="block hover:opacity-60 transition">→ DASN-SIMEI (MEI)</Link>
                   <Link href="/mei/dividas-parcelamento" className="block hover:opacity-60 transition">→ Dívidas DAS</Link>
                   <Link href="/mei" className="block hover:opacity-60 transition">→ Todos os serviços MEI</Link>
+                  <Link href="/mei/leitura-financeira-para-mei" className="block hover:opacity-60 transition">→ Leituras para MEI</Link>
                 </div>
               </div>
             </div>

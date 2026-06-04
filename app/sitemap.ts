@@ -8,6 +8,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const staticPages = [
     { url: baseUrl,                                        lastModified: now, changeFrequency: "weekly"  as const, priority: 1.0 },
+    { url: `${baseUrl}/mei`,                               lastModified: now, changeFrequency: "weekly"  as const, priority: 0.9 },
+    { url: `${baseUrl}/mei/ferramentas-para-mei`,          lastModified: now, changeFrequency: "monthly" as const, priority: 0.85 },
+    { url: `${baseUrl}/mei/receber-pagamentos`,            lastModified: now, changeFrequency: "monthly" as const, priority: 0.85 },
+    { url: `${baseUrl}/mei/leitura-financeira-para-mei`,   lastModified: now, changeFrequency: "monthly" as const, priority: 0.8 },
     { url: `${baseUrl}/servicos`,                          lastModified: now, changeFrequency: "monthly" as const, priority: 0.9 },
     { url: `${baseUrl}/como-funciona`,                     lastModified: now, changeFrequency: "monthly" as const, priority: 0.8 },
     { url: `${baseUrl}/ferramentas/calculadora-ir`,        lastModified: now, changeFrequency: "monthly" as const, priority: 0.9 },

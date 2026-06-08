@@ -75,6 +75,168 @@
 				"npm exec prisma validate && npm exec tsc --noEmit && npm run build"
 			],
 			"isBackground": false
+		},
+		{
+			"label": "motorista-status-check",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$headers = @{ Authorization = 'Bearer edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4' }; $body = @{ mode='status' } | ConvertTo-Json; Invoke-RestMethod -Uri 'https://irpf.qaplay.com.br/api/blog/generate-motorista' -Method Post -Headers $headers -ContentType 'application/json' -Body $body | ConvertTo-Json -Depth 4"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "motorista-batch-generate-17",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$headers = @{ Authorization = 'Bearer edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4' }; $uri = 'https://irpf.qaplay.com.br/api/blog/generate-motorista'; for ($i=1; $i -le 17; $i++) { $body = @{ mode='batch' } | ConvertTo-Json; try { $res = Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body $body; $slug = if ($res.saved -and $res.saved.slug) { $res.saved.slug } elseif ($res.slug) { $res.slug } else { 'n/a' }; $provider = if ($res.provider) { $res.provider } else { 'n/a' }; Write-Output ((\"{0:00}\" -f $i) + ' OK ' + $slug + ' | ' + $provider) } catch { Write-Output ((\"{0:00}\" -f $i) + ' ERRO ' + $_.Exception.Message); break } }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "motorista-status-check-2",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$headers = @{ Authorization = 'Bearer edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4' }; $body = @{ mode='status' } | ConvertTo-Json; $res = Invoke-RestMethod -Uri 'https://irpf.qaplay.com.br/api/blog/generate-motorista' -Method Post -Headers $headers -ContentType 'application/json' -Body $body; Write-Output ('generated=' + $res.generated + ';pending=' + $res.pending); if ($res.pending -gt 0) { $res.pendingSlugs | ForEach-Object { Write-Output ('PENDENTE ' + $_) } }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "motorista-batch-fill-15",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$headers = @{ Authorization = 'Bearer edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4' }; $uri = 'https://irpf.qaplay.com.br/api/blog/generate-motorista'; for ($i=1; $i -le 20; $i++) { try { $res = Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body (@{ mode='batch' } | ConvertTo-Json); $slug = if ($res.saved -and $res.saved.slug) { $res.saved.slug } elseif ($res.slug) { $res.slug } else { 'n/a' }; Write-Output ('ITER ' + $i + ' OK ' + $slug) } catch { Write-Output ('ITER ' + $i + ' ERRO ' + $_.Exception.Message) } }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "motorista-status-check-3",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$headers = @{ Authorization = 'Bearer edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4' }; $body = @{ mode='status' } | ConvertTo-Json; $res = Invoke-RestMethod -Uri 'https://irpf.qaplay.com.br/api/blog/generate-motorista' -Method Post -Headers $headers -ContentType 'application/json' -Body $body; Write-Output ('generated=' + $res.generated + ';pending=' + $res.pending)"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "motorista-batch-fill-round2",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$headers = @{ Authorization = 'Bearer edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4' }; $uri = 'https://irpf.qaplay.com.br/api/blog/generate-motorista'; for ($i=1; $i -le 10; $i++) { try { $res = Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body (@{ mode='batch' } | ConvertTo-Json); $slug = if ($res.saved -and $res.saved.slug) { $res.saved.slug } elseif ($res.slug) { $res.slug } else { 'n/a' }; Write-Output ('ITER ' + $i + ' OK ' + $slug) } catch { Write-Output ('ITER ' + $i + ' ERRO ' + $_.Exception.Message) } }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "motorista-status-check-4",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$headers = @{ Authorization = 'Bearer edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4' }; $body = @{ mode='status' } | ConvertTo-Json; $res = Invoke-RestMethod -Uri 'https://irpf.qaplay.com.br/api/blog/generate-motorista' -Method Post -Headers $headers -ContentType 'application/json' -Body $body; Write-Output ('generated=' + $res.generated + ';pending=' + $res.pending); $res.pendingSlugs | Select-Object -First 3 | ForEach-Object { Write-Output ('NEXT ' + $_) }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "motorista-batch-fill-final",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$headers = @{ Authorization = 'Bearer edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4' }; $uri = 'https://irpf.qaplay.com.br/api/blog/generate-motorista'; for ($i=1; $i -le 8; $i++) { try { $res = Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body (@{ mode='batch' } | ConvertTo-Json); $slug = if ($res.saved -and $res.saved.slug) { $res.saved.slug } elseif ($res.slug) { $res.slug } else { 'n/a' }; Write-Output ('ITER ' + $i + ' OK ' + $slug) } catch { Write-Output ('ITER ' + $i + ' ERRO ' + $_.Exception.Message) } }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "motorista-status-final",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$headers = @{ Authorization = 'Bearer edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4' }; $body = @{ mode='status' } | ConvertTo-Json; $res = Invoke-RestMethod -Uri 'https://irpf.qaplay.com.br/api/blog/generate-motorista' -Method Post -Headers $headers -ContentType 'application/json' -Body $body; Write-Output ('generated=' + $res.generated + ';pending=' + $res.pending); if ($res.pending -gt 0) { $res.pendingSlugs | ForEach-Object { Write-Output ('PENDENTE ' + $_) } }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "motorista-generate-last-3",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$headers = @{ Authorization = 'Bearer edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4' }; $uri = 'https://irpf.qaplay.com.br/api/blog/generate-motorista'; $slugs = @('uber-para-aposentados-motorista-pode','uber-motorista-40-anos-primeira-vez','link-indicacao-uber-motorista-o-que-e'); foreach ($slug in $slugs) { try { $body = @{ mode='single'; slug=$slug } | ConvertTo-Json; $res = Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body $body; $saved = if ($res.saved -and $res.saved.slug) { $res.saved.slug } else { 'n/a' }; Write-Output ('OK ' + $slug + ' -> ' + $saved) } catch { Write-Output ('ERRO ' + $slug + ' -> ' + $_.Exception.Message) } }"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "smoke-cookie-3-tests",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"scripts/smoke-cookie-test.cjs",
+				"eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..fD-ciTN6wVgB4pmO.zAynY1HKuvjdaCFi-aBx9DqMTOTBMnZeveb-U-nh4RhiCDrRn2-zGJ3fsSmW0CUDCxW6h5-14dAy2xfoB74Cc7TfFIYYUT7DXEuAm8RIBTo5q3_E6zuzVyeSJMqwK6T75E55MY62F3O07_b-8sJQ4AmmYQ2R2q9xo3huQ-qw4O26Qve27nNwHoKL68KFmb35y8bDiRJhd6Q_SpqYX_sS4qmwqEA.9UFgTFHYhYyHppoA3tROvQ"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "smoke-auth-3-tests",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$token = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..fD-ciTN6wVgB4pmO.zAynY1HKuvjdaCFi-aBx9DqMTOTBMnZeveb-U-nh4RhiCDrRn2-zGJ3fsSmW0CUDCxW6h5-14dAy2xfoB74Cc7TfFIYYUT7DXEuAm8RIBTo5q3_E6zuzVyeSJMqwK6T75E55MY62F3O07_b-8sJQ4AmmYQ2R2q9xo3huQ-qw4O26Qve27nNwHoKL68KFmb35y8bDiRJhd6Q_SpqYX_sS4qmwqEA.9UFgTFHYhYyHppoA3tROvQ'; $headers = @{ Authorization = ('Bearer ' + $token); Cookie = ('__Secure-next-auth.session-token=' + $token + '; next-auth.session-token=' + $token) }; $uri='https://irpf.qaplay.com.br/api/blog/generate'; $tests=@(@{name='no-theme'; body=@{}},@{name='null-theme'; body=@{theme=$null}},@{name='valid-theme'; body=@{theme='declaracao imposto de renda deducoes 2026'}}); foreach($t in $tests){ try{ $json=$t.body|ConvertTo-Json -Depth 10; $r=Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body $json -TimeoutSec 140; Write-Output ('TEST ' + $t.name + ' HTTP 200'); $r | ConvertTo-Json -Depth 10 | Write-Output } catch { if($_.Exception.Response -ne $null){ $st=$_.Exception.Response.StatusCode.Value__; $reader=New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream()); $txt=$reader.ReadToEnd(); Write-Output ('TEST ' + $t.name + ' HTTP ' + $st); Write-Output $txt } else { Write-Output ('TEST ' + $t.name + ' ERR ' + $_.Exception.Message) } } }"
+			]
+		},
+		{
+			"label": "smoke-local-auth-3-tests",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$token = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..fD-ciTN6wVgB4pmO.zAynY1HKuvjdaCFi-aBx9DqMTOTBMnZeveb-U-nh4RhiCDrRn2-zGJ3fsSmW0CUDCxW6h5-14dAy2xfoB74Cc7TfFIYYUT7DXEuAm8RIBTo5q3_E6zuzVyeSJMqwK6T75E55MY62F3O07_b-8sJQ4AmmYQ2R2q9xo3huQ-qw4O26Qve27nNwHoKL68KFmb35y8bDiRJhd6Q_SpqYX_sS4qmwqEA.9UFgTFHYhYyHppoA3tROvQ'; $headers = @{ Authorization = ('Bearer ' + $token); Cookie = ('__Secure-next-auth.session-token=' + $token + '; next-auth.session-token=' + $token) }; $uri='http://localhost:3000/api/blog/generate'; $tests=@(@{name='no-theme'; body=@{mode='smoke'}},@{name='null-theme'; body=@{mode='smoke';theme=$null}},@{name='valid-theme'; body=@{mode='smoke';theme='declaracao imposto de renda deducoes 2026'}}); foreach($t in $tests){ try{ $json=$t.body|ConvertTo-Json -Depth 10; $r=Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body $json -TimeoutSec 60; Write-Output ('TEST ' + $t.name + ' HTTP 200'); $r | ConvertTo-Json -Depth 10 | Write-Output } catch { if($_.Exception.Response -ne $null){ $st=$_.Exception.Response.StatusCode.Value__; $reader=New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream()); $txt=$reader.ReadToEnd(); Write-Output ('TEST ' + $t.name + ' HTTP ' + $st); Write-Output $txt } else { Write-Output ('TEST ' + $t.name + ' ERR ' + $_.Exception.Message) } } }"
+			]
+		},
+		{
+			"label": "smoke-prod-auth-3-tests-postdeploy",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$token = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..fD-ciTN6wVgB4pmO.zAynY1HKuvjdaCFi-aBx9DqMTOTBMnZeveb-U-nh4RhiCDrRn2-zGJ3fsSmW0CUDCxW6h5-14dAy2xfoB74Cc7TfFIYYUT7DXEuAm8RIBTo5q3_E6zuzVyeSJMqwK6T75E55MY62F3O07_b-8sJQ4AmmYQ2R2q9xo3huQ-qw4O26Qve27nNwHoKL68KFmb35y8bDiRJhd6Q_SpqYX_sS4qmwqEA.9UFgTFHYhYyHppoA3tROvQ'; $headers = @{ Authorization = ('Bearer ' + $token); Cookie = ('__Secure-next-auth.session-token=' + $token + '; next-auth.session-token=' + $token) }; $uri='https://irpf.qaplay.com.br/api/blog/generate'; $tests=@(@{name='no-theme'; body=@{mode='smoke'}},@{name='null-theme'; body=@{mode='smoke';theme=$null}},@{name='valid-theme'; body=@{mode='smoke';theme='declaracao imposto de renda deducoes 2026'}}); foreach($t in $tests){ try{ $json=$t.body|ConvertTo-Json -Depth 10; $r=Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body $json -TimeoutSec 80; Write-Output ('TEST ' + $t.name + ' HTTP 200'); $r | ConvertTo-Json -Depth 10 | Write-Output } catch { if($_.Exception.Response -ne $null){ $st=$_.Exception.Response.StatusCode.Value__; $reader=New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream()); $txt=$reader.ReadToEnd(); Write-Output ('TEST ' + $t.name + ' HTTP ' + $st); Write-Output $txt } else { Write-Output ('TEST ' + $t.name + ' ERR ' + $_.Exception.Message) } } }"
+			]
+		},
+		{
+			"label": "smoke-prod-auth-no-theme-retry",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$token = 'eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..fD-ciTN6wVgB4pmO.zAynY1HKuvjdaCFi-aBx9DqMTOTBMnZeveb-U-nh4RhiCDrRn2-zGJ3fsSmW0CUDCxW6h5-14dAy2xfoB74Cc7TfFIYYUT7DXEuAm8RIBTo5q3_E6zuzVyeSJMqwK6T75E55MY62F3O07_b-8sJQ4AmmYQ2R2q9xo3huQ-qw4O26Qve27nNwHoKL68KFmb35y8bDiRJhd6Q_SpqYX_sS4qmwqEA.9UFgTFHYhYyHppoA3tROvQ'; $headers = @{ Authorization = ('Bearer ' + $token); Cookie = ('__Secure-next-auth.session-token=' + $token + '; next-auth.session-token=' + $token) }; $uri='https://irpf.qaplay.com.br/api/blog/generate'; $body=@{mode='smoke'} | ConvertTo-Json -Depth 10; try { $r=Invoke-RestMethod -Uri $uri -Method Post -Headers $headers -ContentType 'application/json' -Body $body -TimeoutSec 120; Write-Output 'TEST no-theme HTTP 200'; $r | ConvertTo-Json -Depth 10 | Write-Output } catch { if($_.Exception.Response -ne $null){ $st=$_.Exception.Response.StatusCode.Value__; $reader=New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream()); $txt=$reader.ReadToEnd(); Write-Output ('TEST no-theme HTTP ' + $st); Write-Output $txt } else { Write-Output ('TEST no-theme ERR ' + $_.Exception.Message) } }"
+			]
 		}
 	]
 }

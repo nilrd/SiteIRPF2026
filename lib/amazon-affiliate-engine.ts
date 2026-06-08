@@ -222,11 +222,21 @@ function buildAmazonEditorialContent(
 
 ${imageBlock}
 
-<div style="border:2px solid #0A0A0A;padding:16px;margin:18px 0 26px;background:#F5F5F2;">
-  <p><strong>Produto analisado:</strong> ${escapeHtml(post.productTitle)} · ${escapeHtml(post.author)}</p>
-  <p><strong>Formato:</strong> ${labelFormato}. Conteúdo alinhado com a página real do produto na Amazon.</p>
+<div style="border:3px solid #0A0A0A;padding:18px;margin:18px 0 26px;background:#C6FF00;color:#0A0A0A;box-shadow:8px 8px 0 #0A0A0A;">
+  <p style="font-size:11px;letter-spacing:0.12em;font-weight:800;text-transform:uppercase;margin:0 0 10px;">Oferta em destaque na Amazon</p>
+  <p style="margin:0 0 8px;"><strong>Produto analisado:</strong> ${escapeHtml(post.productTitle)} · ${escapeHtml(post.author)}</p>
+  <p style="margin:0 0 8px;"><strong>Formato:</strong> ${labelFormato}. Conteúdo alinhado com a página real do produto na Amazon.</p>
   ${ratingBlock}
-  <p><a href="${post.amazonShortUrl}" target="_blank" rel="sponsored noopener noreferrer"><strong>Ver produto na Amazon</strong></a></p>
+  <ul style="margin:10px 0 14px;padding-left:18px;line-height:1.6;">
+    <li>Abra a página oficial e confirme edição, preço e condições atualizadas.</li>
+    <li>Decida com base no seu momento financeiro atual, sem impulso.</li>
+  </ul>
+  <p style="margin:0;">
+    <a href="${post.amazonShortUrl}" target="_blank" rel="sponsored noopener noreferrer" style="display:inline-block;background:#0A0A0A;color:#C6FF00;padding:14px 18px;font-weight:900;text-transform:uppercase;letter-spacing:0.08em;text-decoration:none;border:2px solid #0A0A0A;">
+      Conferir preço agora na Amazon →
+    </a>
+  </p>
+  <p style="font-size:12px;opacity:.85;margin:10px 0 0;">O valor pode mudar a qualquer momento. Verifique no link oficial.</p>
 </div>
 
 ${descriptionBlock}
@@ -275,9 +285,15 @@ ${detailsBlock}
 <p>Se você quer decisões financeiras melhores no mundo real, este título entrega mais que teoria. Funciona especialmente para quem vive de renda variável, presta serviço e precisa de clareza financeira.</p>
 <p>Se a prioridade agora é sair da desorganização e reduzir riscos na declaração, é uma leitura bem direcionada.</p>
 
-<div style="border:2px solid #0A0A0A;padding:16px;margin:24px 0;background:#F5F5F2;">
-  <p><strong>Decisão recomendada:</strong> abra o produto oficial na Amazon, confira edição e preço atual e veja se encaixa na sua fase financeira.</p>
-  <p><a href="${post.amazonShortUrl}" target="_blank" rel="sponsored noopener noreferrer"><strong>Conferir na Amazon com segurança</strong></a></p>
+<div style="border:3px solid #0A0A0A;padding:18px;margin:24px 0;background:#0A0A0A;color:#F5F5F2;">
+  <p style="font-size:11px;letter-spacing:0.12em;font-weight:800;text-transform:uppercase;color:#C6FF00;margin:0 0 10px;">Decisão rápida</p>
+  <p style="margin:0 0 12px;"><strong>Se o conteúdo fez sentido para sua fase:</strong> abra o produto oficial na Amazon e valide preço, edição e entrega antes de fechar.</p>
+  <p style="margin:0 0 10px;">
+    <a href="${post.amazonShortUrl}" target="_blank" rel="sponsored noopener noreferrer" style="display:inline-block;background:#C6FF00;color:#0A0A0A;padding:14px 18px;font-weight:900;text-transform:uppercase;letter-spacing:0.08em;text-decoration:none;border:2px solid #C6FF00;">
+      Quero ver a oferta oficial →
+    </a>
+  </p>
+  <p style="font-size:12px;opacity:.8;margin:0;">Link de afiliado. Você não paga nada a mais por isso.</p>
 </div>
 
 <h2>Perguntas rápidas (FAQ)</h2>

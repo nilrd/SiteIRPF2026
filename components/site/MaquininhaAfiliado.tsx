@@ -116,11 +116,16 @@ export default function MaquininhaAfiliado({
   const p = PRODUCTS[product];
 
   return (
-    <div className="border border-[#0A0A0A]/15 p-6 my-10 bg-[#F5F5F2]">
+    <div className="border-2 border-[#0A0A0A] p-6 md:p-7 my-10 bg-[#F5F5F2] shadow-[8px_8px_0_#0A0A0A]">
       {/* Label */}
-      <p className="text-[10px] uppercase tracking-widest text-[#0A0A0A]/50 mb-3">
-        Solução mencionada neste guia
-      </p>
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <p className="text-[10px] uppercase tracking-widest text-[#0A0A0A]/60">
+          Solução mencionada neste guia
+        </p>
+        <span className="inline-block bg-[#C6FF00] text-[#0A0A0A] text-[10px] font-black uppercase tracking-[0.1em] px-2 py-1 border border-[#0A0A0A]">
+          Alta procura MEI
+        </span>
+      </div>
 
       {/* Nome + tagline */}
       <h3 className="font-serif text-xl mb-1">{p.name}</h3>
@@ -142,23 +147,40 @@ export default function MaquininhaAfiliado({
       </div>
 
       {/* Descrição */}
-      <p className="text-sm text-[#0A0A0A]/70 leading-relaxed mb-3">{p.desc}</p>
+      <p className="text-sm text-[#0A0A0A]/80 leading-relaxed mb-3">{p.desc}</p>
 
       {/* Ideal para */}
-      <p className="text-xs text-[#0A0A0A]/50 mb-5">
+      <p className="text-xs text-[#0A0A0A]/60 mb-5">
         <strong>Indicada para:</strong> {p.ideal}
       </p>
 
       {/* CTA */}
-      <a
-        href={p.href}
-        target="_blank"
-        rel="sponsored noopener noreferrer"
-        onClick={() => trackAffiliateClick(product, p.cta, p.href)}
-        className="inline-block bg-[#0A0A0A] text-[#C6FF00] px-6 py-3 uppercase text-[11px] tracking-[0.14em] font-bold hover:bg-[#1a1a1a] transition"
-      >
-        {p.cta} →
-      </a>
+      <div className="grid gap-2">
+        <a
+          href={p.href}
+          target="_blank"
+          rel="sponsored noopener noreferrer"
+          onClick={() => trackAffiliateClick(product, `${p.cta} principal`, p.href)}
+          className="block w-full text-center bg-[#0A0A0A] text-[#C6FF00] px-6 py-4 uppercase text-[12px] tracking-[0.14em] font-black border-2 border-[#0A0A0A] hover:bg-[#C6FF00] hover:text-[#0A0A0A] transition"
+          data-cta="mp-affiliate-primary"
+        >
+          {p.cta} agora →
+        </a>
+        <a
+          href={p.href}
+          target="_blank"
+          rel="sponsored noopener noreferrer"
+          onClick={() => trackAffiliateClick(product, "comparar-taxas-e-condicoes", p.href)}
+          className="block w-full text-center bg-transparent text-[#0A0A0A] px-6 py-3 uppercase text-[11px] tracking-[0.12em] font-bold border-2 border-[#0A0A0A]/80 hover:border-[#0A0A0A] hover:bg-white transition"
+          data-cta="mp-affiliate-secondary"
+        >
+          Comparar taxas e condições
+        </a>
+      </div>
+
+      <p className="text-[11px] text-[#0A0A0A]/70 mt-3">
+        Clique para abrir a página oficial e validar preço, taxas e prazo atualizados.
+      </p>
 
       {/* Disclosure obrigatório */}
       {!hideDisclosure && (

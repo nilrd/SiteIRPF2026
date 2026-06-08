@@ -25,6 +25,19 @@ const MAX_CRON_MS = 150_000; // 150s de segurança
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
+function isAuthorizedCronRequest(request: Request): boolean {
+  const { searchParams } = new URL(request.url);
+  const secret = searchParams.get("secret");
+  const ua = request.headers.get("user-agent")?.toLowerCase() ?? "";
+  const xVercelCron = request.headers.get("x-vercel-cron");
+  const envSecret = process.env.CRON_SECRET;
+
+  const fromVercelCron = xVercelCron === "1" || ua.includes("vercel-cron");
+  const hasValidSecret = !!envSecret && secret === envSecret;
+
+  return fromVercelCron || hasValidSecret;
+}
+
 // Seleção aleatória ponderada: 50% MEI, 50% Desenrola — sem memória (funciona em cold start)
 function pickClusterIdx(now: Date = new Date()): number {
   const phase = getMeiEditorialPhase(now);
@@ -55,9 +68,7 @@ export async function GET(request: Request) {
   let runId: string | null = null;
 
   try {
-    const { searchParams } = new URL(request.url);
-    const secret = searchParams.get("secret");
-    if (secret !== process.env.CRON_SECRET) {
+    if (!isAuthorizedCronRequest(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -121,7 +121,7 @@ git push -u origin main
 | `NEXT_PUBLIC_SITE_URL` | https://irpf.qaplay.com.br |
 | `NEXT_PUBLIC_WA_NUMBER` | 5511940825120 |
 | `NEXT_PUBLIC_WA_MESSAGE` | Ola! Vim pelo site e quero saber sobre declaracao. |
-| `CRON_SECRET` | edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4 |
+| `CRON_SECRET` | valor aleatório forte gerado por você (mín. 32 chars) |
 | `NEXT_PUBLIC_SUPABASE_URL` | https://[ref].supabase.co |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | eyJ... |
 
@@ -164,9 +164,9 @@ Após o deploy, teste:
 Para ativar a geração automática de posts, configure o cron na Vercel:
 
 1. Vercel Dashboard → Settings → Cron Jobs
-2. URL: `/api/cron/blog`
+2. URL: `/api/cron/blog-auto`
 3. Schedule: `0 8 * * 1,3,5` (segunda, quarta, sexta às 8h)
-4. Certifique-se que `CRON_SECRET=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4` está nas env vars
+4. Certifique-se que `CRON_SECRET=<seu_valor_secreto>` está nas env vars
 
 ---
 
@@ -178,7 +178,7 @@ Para ativar a geração automática de posts, configure o cron na Vercel:
 | Username | `nilson` |
 | Password | *a que você definiu no ADMIN_PASSWORD_HASH* |
 | WhatsApp do site | +55 11 94082-5120 |
-| CRON_SECRET | `edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4` |
+| CRON_SECRET | `definido no ambiente (não versionar)` |
 
 ---
 

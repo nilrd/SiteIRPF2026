@@ -57,14 +57,25 @@ function inferCategory(keyword: string): TrendCategory {
   return "FINANCAS";
 }
 
+function isAuthorizedCronRequest(request: Request): boolean {
+  const { searchParams } = new URL(request.url);
+  const secret = searchParams.get("secret");
+  const ua = request.headers.get("user-agent")?.toLowerCase() ?? "";
+  const xVercelCron = request.headers.get("x-vercel-cron");
+  const envSecret = process.env.CRON_SECRET;
+
+  const fromVercelCron = xVercelCron === "1" || ua.includes("vercel-cron");
+  const hasValidSecret = !!envSecret && secret === envSecret;
+
+  return fromVercelCron || hasValidSecret;
+}
+
 export async function GET(request: Request) {
   const service = new TrendResearchService();
   let runId: string | null = null;
 
   try {
-    const { searchParams } = new URL(request.url);
-    const secret = searchParams.get("secret");
-    if (secret !== process.env.CRON_SECRET) {
+    if (!isAuthorizedCronRequest(request)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -1,15 +1,15 @@
 {
   "crons": [
-    { "path": "/api/cron/blog-auto?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4", "schedule": "0 9 * * *" },
-    { "path": "/api/cron/blog-auto?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4", "schedule": "0 10 * * *" },
-    { "path": "/api/cron/blog-auto?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4", "schedule": "40 13 * * *" },
-    { "path": "/api/cron/blog-auto?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4", "schedule": "0 15 * * *" },
-    { "path": "/api/cron/blog-auto?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4", "schedule": "0 17 * * *" },
-    { "path": "/api/cron/blog-auto?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4", "schedule": "0 19 * * *" },
-    { "path": "/api/cron/blog-auto?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4", "schedule": "0 21 * * *" },
-    { "path": "/api/cron/blog-auto?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4", "schedule": "0 22 * * *" },
-    { "path": "/api/cron/blog-mei?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4", "schedule": "0 12 * * *" },
-    { "path": "/api/cron/blog-mei?secret=edcWf63bpF6iCDrWd4N2g-0F9aPDwVyq4ZU3ZhtPys4", "schedule": "0 18 * * *" }
+    { "path": "/api/cron/blog-auto", "schedule": "0 9 * * *" },
+    { "path": "/api/cron/blog-auto", "schedule": "0 10 * * *" },
+    { "path": "/api/cron/blog-auto", "schedule": "40 13 * * *" },
+    { "path": "/api/cron/blog-auto", "schedule": "0 15 * * *" },
+    { "path": "/api/cron/blog-auto", "schedule": "0 17 * * *" },
+    { "path": "/api/cron/blog-auto", "schedule": "0 19 * * *" },
+    { "path": "/api/cron/blog-auto", "schedule": "0 21 * * *" },
+    { "path": "/api/cron/blog-auto", "schedule": "0 22 * * *" },
+    { "path": "/api/cron/blog-mei", "schedule": "0 12 * * *" },
+    { "path": "/api/cron/blog-mei", "schedule": "0 18 * * *" }
   ],
   "functions": {
     "app/api/cron/blog-auto/route.ts": {

@@ -11,8 +11,17 @@ E:\npmtemp
 prisma/admin_seed.sql
 prisma/reset_admin_pass.sql
 .agent/
+.vscode/tasks.json
 # Scripts de teste local (nunca commitar — podem conter chaves)
 scripts/
 # Arquivos acidentais de terminal
 body
 console.log(*
+
+# Artefatos temporários gerados por sessões de terminal
+(entry.name
+(link.href
+p.createdAt
+build_out.txt
+build_output.txt
+{

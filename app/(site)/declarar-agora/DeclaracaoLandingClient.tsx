@@ -1,26 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const WA_LINK = `https://wa.me/5511940825120?text=${encodeURIComponent(
-  "Olá Nilson! Vi o site e quero declarar meu IRPF 2026. Pode me ajudar com um orçamento?",
+  "Olá Nilson! O prazo do IRPF 2026 já passou e preciso declarar em atraso. Pode me ajudar?",
 )}`;
-const PRAZO = new Date("2026-05-29T23:59:59-03:00");
-
-function useCountdown(target: Date) {
-  const calc = () => Math.max(0, target.getTime() - Date.now());
-  const [ms, setMs] = useState(calc);
-  useEffect(() => {
-    const t = setInterval(() => setMs(calc()), 1000);
-    return () => clearInterval(t);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  return {
-    days: Math.floor(ms / 86400000),
-    hours: Math.floor((ms % 86400000) / 3600000),
-    minutes: Math.floor((ms % 3600000) / 60000),
-    seconds: Math.floor((ms % 60000) / 1000),
-  };
-}
 
 const beneficios = [
   {
@@ -101,7 +85,7 @@ const faqs = [
   },
   {
     q: "Qual o prazo oficial do IRPF 2026?",
-    a: "O prazo vai de 17 de março a 29 de maio de 2026. Declarações entregues fora do prazo geram multa mínima de R$ 165,74 ou 1% ao mês sobre o imposto devido (o que for maior), limitado a 20%.",
+    a: "O prazo oficial encerrou em 29 de maio de 2026. Declarações em atraso ainda são aceitas pela Receita Federal, com multa mínima de R$ 165,74 ou 1% ao mês sobre o imposto devido (o que for maior), limitado a 20%.",
   },
   {
     q: "Como funciona o atendimento 100% online?",
@@ -118,7 +102,6 @@ const faqs = [
 ];
 
 export default function DeclaracaoLandingClient() {
-  const cd = useCountdown(PRAZO);
   const [form, setForm] = useState({
     nome: "",
     email: "",
@@ -150,8 +133,7 @@ export default function DeclaracaoLandingClient() {
       {/* URGENCY BAR */}
       <div className="bg-[#C6FF00] text-black text-center py-3 px-4">
         <p className="text-[11px] uppercase tracking-widest font-bold">
-          ⚠️ Prazo IRPF 2026: 29 de Maio de 2026 — Multa mínima R$ 165,74 por
-          entrega em atraso
+          Prazo IRPF 2026 encerrou em 29/05 — Declaração atrasada ou na malha fina? Resolvemos.
         </p>
       </div>
 
@@ -194,50 +176,35 @@ export default function DeclaracaoLandingClient() {
               </div>
             </div>
 
-            {/* Right: countdown */}
+            {/* Right: situação pós-prazo */}
             <div className="border border-white/10 p-8">
-              <p className="text-[10px] uppercase tracking-widest text-white/40 mb-6 text-center">
-                Tempo restante para o prazo IRPF 2026
+              <p className="text-[10px] uppercase tracking-widest text-[#C6FF00] mb-6 text-center">
+                Prazo IRPF 2026 encerrado
               </p>
-              <div className="grid grid-cols-4 gap-3 text-center mb-6">
-                {[
-                  { v: cd.days, l: "Dias" },
-                  { v: cd.hours, l: "Horas" },
-                  { v: cd.minutes, l: "Min" },
-                  { v: cd.seconds, l: "Seg" },
-                ].map(({ v, l }) => (
-                  <div key={l} className="bg-white/5 py-4">
-                    <div className="text-4xl md:text-5xl font-black text-[#C6FF00] font-mono tabular-nums leading-none">
-                      {String(v).padStart(2, "0")}
-                    </div>
-                    <div className="text-[9px] uppercase tracking-widest text-white/30 mt-2">
-                      {l}
-                    </div>
-                  </div>
-                ))}
+              <div className="text-center mb-6">
+                <div className="text-5xl md:text-6xl font-black text-[#C6FF00] font-mono leading-none mb-2">29/05</div>
+                <div className="text-sm text-white/50">Prazo oficial encerrado</div>
               </div>
               <div className="border-t border-white/10 pt-6 space-y-3">
                 <div className="flex justify-between text-xs">
-                  <span className="text-white/40">Prazo oficial</span>
-                  <span className="text-white font-bold">
-                    29 de Maio de 2026
-                  </span>
+                  <span className="text-white/40">Declaração atrasada</span>
+                  <span className="text-[#C6FF00] font-bold">Ainda aceita ✔</span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-white/40">Multa mínima</span>
                   <span className="text-red-400 font-bold">R$ 165,74</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-white/40">
-                    Multa máx. sobre imposto
-                  </span>
+                  <span className="text-white/40">Multa máx. sobre imposto</span>
                   <span className="text-red-400 font-bold">20% ao mês</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-white/40">CPF irregular</span>
-                  <span className="text-red-400">
-                    Após 30 dias sem declarar
-                  </span>
+                  <span className="text-white/40">Malha fina</span>
+                  <span className="text-[#C6FF00]">Resolvemos para você</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-white/40">Retificação</span>
+                  <span className="text-[#C6FF00]">Também resolvemos</span>
                 </div>
               </div>
             </div>
@@ -503,14 +470,14 @@ export default function DeclaracaoLandingClient() {
       <section className="py-24">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <p className="text-[11px] uppercase tracking-widest text-[#C6FF00] mb-4">
-            ⏳ Restam apenas {cd.days} dias para o prazo
+            O prazo encerrou — mas ainda dá tempo de regularizar
           </p>
           <h2 className="text-5xl md:text-6xl font-black uppercase leading-[0.9] mb-8">
-            Não arrisque
+            Esqueceu
             <br />
-            <span className="text-white/30">sua multa</span>
+            <span className="text-white/30">de declarar?</span>
             <br />
-            nem seu CPF.
+            Resolvemos.
           </h2>
           <p className="text-sm text-white/50 mb-10 max-w-lg mx-auto">
             Orçamento gratuito, sem compromisso. Resposta em até 1 hora pelo

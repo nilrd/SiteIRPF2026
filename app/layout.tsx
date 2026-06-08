@@ -24,11 +24,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://irpf.qaplay.com.br"),
   title: {
-    default: "Declaração IRPF 2026 | Nilson Brites — Prazo 29 de Maio",
+    default: "Declaração IRPF 2026 | Nilson Brites — Atrasado ou Malha Fina?",
     template: "%s | Nilson Brites IRPF 2026",
   },
   description:
-    "Declare seu IRPF 2026 com segurança. Especialista com 10+ anos de experiência, atendimento 100% online para todo o Brasil. Prazo: 29 de maio de 2026. Evite multa mínima de R$ 165,74.",
+    "Prazo IRPF 2026 encerrou. Declaração atrasada, malha fina ou retificação? Nilson Brites resolve em 24h, 100% online para todo o Brasil. 10+ anos de experiência.",
   keywords: [
     "IRPF 2026",
     "declaração imposto de renda 2026",
@@ -53,23 +53,23 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_BR",
     siteName: "Nilson Brites — Declaração IRPF 2026",
-    title: "Declaração IRPF 2026 | Nilson Brites — Prazo 29 de Maio",
+    title: "Declaração IRPF 2026 | Nilson Brites — Atrasado ou Malha Fina?",
     description:
-      "Declare seu IRPF 2026 com segurança. Especialista com 10+ anos, 100% online para todo o Brasil. Prazo: 29 de maio. Evite multass.",
+      "Prazo IRPF 2026 encerrou. Declaração atrasada, malha fina ou retificação? Nilson Brites resolve em 24h, 100% online para todo o Brasil.",
     images: [
       {
         url: "/og-image.svg",
         width: 1200,
         height: 630,
-        alt: "Nilson Brites — Declaração IRPF 2026 — Prazo 29 de Maio",
+        alt: "Nilson Brites — Declaração IRPF 2026 — Atrasado ou Malha Fina?",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Declaração IRPF 2026 | Nilson Brites — Prazo 29 de Maio",
+    title: "Declaração IRPF 2026 | Nilson Brites — Atrasado ou Malha Fina?",
     description:
-      "Declare seu IRPF 2026 com segurança. Especialista com 10+ anos, 100% online. Prazo: 29 de maio de 2026.",
+      "Prazo IRPF 2026 encerrou. Declaração atrasada, malha fina ou retificação? Nilson Brites resolve em 24h, 100% online para todo o Brasil.",
     images: ["/og-image.svg"],
   },
   alternates: {

@@ -81,7 +81,7 @@ const FAQS = [
   },
   {
     q: "Qual a multa por não declarar o IRPF 2026?",
-    a: "A multa mínima é de R$ 165,74. Se houver imposto a pagar, a multa é de 1% ao mês sobre o valor do imposto devido, limitada a 20% do total. Prazo: 23/03 a 29/05/2026.",
+    a: "A multa mínima é de R$ 165,74. Se houver imposto a pagar, a multa é de 1% ao mês sobre o valor do imposto devido, limitada a 20% do total. O prazo encerrou em 29/05/2026, mas declarações em atraso ainda são aceitas.",
   },
   {
     q: "Aposentado precisa declarar o IRPF 2026?",
@@ -127,7 +127,7 @@ export default function QuemDeveClient() {
           Marque os critérios que se aplicam a você. A resposta aparece instantaneamente — sem cadastro, sem espera.
         </p>
         <p className="text-sm opacity-50">
-          Critérios: Receita Federal / Instrução Normativa RFB 2.255/2025 · Prazo: <strong>23/03 a 29/05/2026</strong>
+          Critérios: Receita Federal / Instrução Normativa RFB 2.255/2025 · Prazo encerrado em <strong>29/05/2026</strong> — Ainda é possível declarar em atraso
         </p>
       </div>
 
@@ -221,10 +221,10 @@ export default function QuemDeveClient() {
                   {obrigadosMarcados.length === 1
                     ? "Você marcou 1 critério obrigatório."
                     : `Você marcou ${obrigadosMarcados.length} critérios obrigatórios.`}{" "}
-                  Prazo: <strong>29 de maio de 2026</strong>. Multa mínima por atraso: <strong>R$ 165,74</strong>.
+                  O prazo encerrou em 29/05/2026. Declarações em atraso ainda são aceitas — multa mínima: <strong>R$ 165,74</strong>.
                 </p>
                 <p className="text-sm opacity-60">
-                  Declare com tempo para evitar multa e garantir prioridade na restituição.
+                  Regularize sua situação. Declaração atrasada ou retificação resolvida com segurança.
                 </p>
               </>
             ) : (
@@ -264,9 +264,9 @@ export default function QuemDeveClient() {
         <h2 className="font-serif text-3xl mb-8">Prazos IRPF 2026</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
-            { data: "23 Mar 2026", evento: "Início do prazo de entrega", sub: "Programa da Receita Federal disponível" },
-            { data: "29 Mai 2026", evento: "Último dia para entregar", sub: "Após isso, multa mínima de R$ 165,74" },
-            { data: "30 Set 2026", evento: "5º lote de restituição", sub: "Quem entrega antes recebe antes" },
+            { data: "23 Mar 2026", evento: "Início do prazo de entrega", sub: "Programa da Receita Federal disponibilizado" },
+            { data: "29 Mai 2026", evento: "Prazo encerrado", sub: "Declarações em atraso aceitas com multa mínima de R$ 165,74" },
+            { data: "30 Set 2026", evento: "5º lote de restituição", sub: "Declarações entregues antes recebem antes" },
           ].map((p) => (
             <div key={p.data} className="border-2 border-preto p-6">
               <p className="font-mono text-sm text-ouro mb-2">{p.data}</p>

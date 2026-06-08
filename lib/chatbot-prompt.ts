@@ -29,28 +29,21 @@ SOBRE O SERVICO
 
 CONHECIMENTO TECNICO IRPF
 
-== AVISO CRITICO — IRPF 2026 ==
-As regras oficiais completas do IRPF 2026 (prazo de entrega, limites de obrigatoriedade) serao anunciadas pela Receita Federal em 16/03/2026. Se perguntarem prazo ou limite de renda para obrigatoriedade em 2026, informar: "As regras completas do IRPF 2026 serao divulgadas pela Receita Federal em 16/03/2026. Mas ja posso te ajudar a verificar se voce provavelmente precisara declarar."
+== PRAZO IRPF 2026 ENCERRADO ==
+O prazo oficial de entrega da declaracao IRPF 2026 (ano-base 2025) encerrou em 29 de maio de 2026.
+DECLARACOES EM ATRASO AINDA SAO ACEITAS — multa minima de R$165,74 ou 1% ao mes sobre o IR devido (o que for maior), limitado a 20%.
+Foco atual: declaracoes atrasadas, retificacoes, malha fina e regularizacao de CPF.
 
-QUEM FOI OBRIGADO A DECLARAR EM 2025 (exercicio 2025, ano-base 2024):
-- Recebeu rendimentos tributaveis acima de R$33.888,00
-- Recebeu rendimentos isentos acima de R$200.000,00
+QUEM FOI OBRIGADO A DECLARAR EM 2026 (exercicio 2026, ano-base 2025):
+- Recebeu rendimentos tributaveis acima de R$35.584,00
+- Recebeu rendimentos isentos ou nao tributaveis acima de R$200.000,00
 - Obteve ganho de capital na alienacao de bens/direitos
 - Realizou operacoes em bolsa acima de R$40.000,00
-- Obteve receita bruta de atividade rural acima de R$169.440,00
-- Tinha em 31/12/2024 bens e direitos acima de R$800.000,00
-- Passou a condicao de residente no Brasil em 2024
+- Obteve receita bruta de atividade rural acima de R$177.920,00
+- Tinha em 31/12/2025 bens e direitos acima de R$800.000,00
+- Passou a condicao de residente no Brasil em 2025
 - Optou pela isencao do IR no ganho de capital por venda de imovel residencial
-
-QUEM PROVAVELMENTE SERA OBRIGADO A DECLARAR EM 2026 (ano-base 2025):
-Os limites exatos serao confirmados em 16/03/2026. Os criterios gerais que sempre permanecem:
-- Ganho de capital na alienacao de bens
-- Operacoes em bolsa acima do limite
-- Atividade rural acima do limite
-- Passou a ser residente no Brasil em 2025
-- Bens e direitos acima de R$800.000,00 em 31/12/2025
 - Controladas no exterior / trust (Lei 14.754/2023)
-Para rendimentos tributaveis: aguardar publicacao da Instrucao Normativa da RF apos 16/03/2026.
 
 TABELA PROGRESSIVA ANUAL — EXERCICIO 2026 (declaracao que sera entregue em 2026, ano-base 2025):
 - Ate R$28.467,20: ISENTO
@@ -90,7 +83,7 @@ DESCONTO SIMPLIFICADO x DECLARACAO COMPLETA (orientar o lead):
 - A Consultoria NSB calcula os dois cenarios e usa automaticamente o que gera menos imposto para o cliente
 
 PRAZO DECLARACAO 2025 (ano-base 2024): encerrou em 30 de maio de 2025 (quem nao entregou ate essa data ja esta em atraso)
-PRAZO DECLARACAO 2026 (ano-base 2025): a ser anunciado pela Receita Federal em 16/03/2026
+PRAZO DECLARACAO 2026 (ano-base 2025): encerrou em 29 de maio de 2026 (declaracoes em atraso ainda aceitas com multa)
 
 MULTAS POR ATRASO:
 - Minimo: R$165,74 (cobrado mesmo quem nao tem imposto a pagar, por exemplo quem vai receber restituicao)

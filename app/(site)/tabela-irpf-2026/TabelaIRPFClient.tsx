@@ -274,17 +274,17 @@ export default function TabelaIRPFClient() {
         </div>
       </section>
 
-      {/* Prazos e multas */}
+      {/* Regularização e multas */}
       <section className="mb-16">
-        <h2 className="font-serif text-3xl mb-6">Prazos e Multas IRPF 2026</h2>
+        <h2 className="font-serif text-3xl mb-6">Regularização e Multas IRPF 2026</h2>
         <div className="grid md:grid-cols-3 gap-6">
           {[
-            { label: "Início das declarações", value: "23/03/2026" },
-            { label: "Prazo final", value: "29/05/2026" },
+            { label: "Status atual", value: "Prazo encerrado" },
+            { label: "Declaração em atraso", value: "Ainda aceita" },
             { label: "Multa mínima por atraso", value: "R$ 165,74" },
             { label: "Multa máxima", value: "20% do imposto" },
-            { label: "1º lote de restituição", value: "junho/2026" },
-            { label: "5º lote (último)", value: "30/09/2026" },
+            { label: "Retificação", value: "Pode ser feita" },
+            { label: "Atendimento", value: "100% online" },
           ].map((item) => (
             <div key={item.label} className="border border-gray-200 p-6">
               <p className="text-xs uppercase tracking-widest opacity-50 mb-2">{item.label}</p>
@@ -292,7 +292,7 @@ export default function TabelaIRPFClient() {
             </div>
           ))}
         </div>
-        <p className="text-xs opacity-40 mt-4">Fonte: Receita Federal / DOU 16/03/2026</p>
+        <p className="text-xs opacity-40 mt-4">Fonte: regras do exercício 2026 e orientações públicas da Receita Federal.</p>
       </section>
 
       {/* CTA */}

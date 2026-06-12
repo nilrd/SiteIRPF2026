@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 
-const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá! Quero declarar meu IRPF.")}`;
+const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá! Quero regularizar meu IRPF em atraso ou entender minha obrigatoriedade de declaração.")}`;
 
 const tabelaIRPF = [
   { faixa: "Até R$ 2.428,80", aliquota: "Isento", deducao: "—" },
@@ -32,10 +32,10 @@ export default function DadosOficiaisSection() {
             Dados Oficiais — IRPF 2026 (renda de 2025)
           </span>
           <h2 className="font-serif text-4xl md:text-5xl mb-4">
-            Tabela Progressiva do IR
+            Tabela Progressiva e Regras Oficiais
           </h2>
           <p className="text-sm text-white/50 mb-12">
-            Declarações do IRPF 2026 (renda de 2025) abrem em 16/03/2026. Prazo e limite de obrigatoriedade serão confirmados pela Receita Federal.
+            O prazo oficial do IRPF 2026 foi encerrado, mas declarações em atraso continuam aceitas. Para o exercício 2026, a obrigatoriedade alcançou rendimentos tributáveis acima de R$ 35.584,00 e a multa mínima por atraso é de R$ 165,74.
           </p>
         </motion.div>
 
@@ -113,8 +113,9 @@ export default function DadosOficiaisSection() {
 
             <div className="bg-white/5 border border-white/10 p-6">
               <p className="text-sm opacity-70 mb-4">
-                Não deixe as multas acumularem. Regularize seu IRPF com
-                segurança e agilidade.
+                Se você perdeu o prazo ou caiu em pendência, ainda dá para
+                regularizar com segurança, cálculo correto da multa e revisão
+                das deduções permitidas.
               </p>
               <a
                 href={WA_LINK}

@@ -3,13 +3,13 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá Nilson! Preciso declarar meu IRPF 2026. Pode me ajudar com um orçamento?")}`;
+const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá Nilson! Preciso regularizar meu IRPF em atraso ou retificar minha declaração. Pode me ajudar com um orçamento?")}`;
 
 const dataItems = [
   { label: "Experiência", value: "10+ anos" },
   { label: "Atendimento", value: "Todo Brasil" },
   { label: "Formato", value: "100% Online" },
-  { label: "IRPF 2026", value: "Prazo: 29/05" },
+  { label: "Foco Atual", value: "Atrasados, retificação e malha fina" },
 ];
 
 export default function HeroSection() {
@@ -53,9 +53,9 @@ export default function HeroSection() {
             transition={{ duration: 0.7, delay: 0.1 }}
           >
             <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[0.95] font-normal text-white">
-              Declaramos seu{" "}
+              Regularizamos e declaramos seu{" "}
               <span className="italic text-[#C9A84C]">Imposto de Renda</span>{" "}
-              com precisão e responsabilidade.
+              com estratégia, precisão e responsabilidade.
             </h1>
           </motion.div>
 
@@ -66,23 +66,24 @@ export default function HeroSection() {
             transition={{ duration: 0.7, delay: 0.3 }}
           >
             <p className="text-base leading-relaxed text-white/75 mb-6 border-l-2 border-[#C9A84C] pl-6">
-              Declarações novas, atrasadas e retificações para todo o Brasil,
-              100% online. Garantimos que nenhuma dedução legal seja perdida.
+              Declarações novas, atrasadas, retificações e apoio em malha fina
+              para todo o Brasil, 100% online. Você escolhe o serviço certo e
+              fala direto com um especialista, sem cair em atendimento genérico.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
+              <a
+                href="/servicos"
+                className="btn-premium px-8 py-4 inline-block uppercase text-xs tracking-widest font-bold text-center"
+              >
+                Escolher Serviço →
+              </a>
               <a
                 href={WA_LINK}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-premium px-8 py-4 inline-block uppercase text-xs tracking-widest font-bold"
-              >
-                Declarar Antes de 29/05 →
-              </a>
-              <a
-                href="/declarar-agora"
                 className="px-8 py-4 inline-block uppercase text-xs tracking-widest font-bold border border-white/30 text-white hover:border-white transition text-center"
               >
-                Orçamento Gratuito
+                Falar com Especialista
               </a>
             </div>
           </motion.div>

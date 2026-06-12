@@ -31,6 +31,8 @@ async function getRelated(tags: string[], excludeId: string) {
     const posts = await prisma.blogPost.findMany({
       where: {
         published: true,
+        hiddenFromBlogList: false,
+        needsReview: false,
         id: { not: excludeId },
         tags: { hasSome: tags },
       },
@@ -47,6 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPost(params.slug);
   if (!post) return { title: "Artigo nao encontrado" };
   const url = `https://irpf.qaplay.com.br/blog/${post.slug}`;
+  const shouldNoIndex = Boolean(post.hiddenFromBlogList || post.needsReview);
   const ogImages = post.coverImage
     ? [{ url: post.coverImage, width: 1200, height: 630, alt: post.title }]
     : [{ url: "https://irpf.qaplay.com.br/og-image.svg", width: 1200, height: 630, alt: post.title }];
@@ -55,6 +58,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: post.summary || post.title,
     keywords: post.keywords || [],
     alternates: { canonical: url },
+    robots: shouldNoIndex
+      ? { index: false, follow: true, googleBot: { index: false, follow: true } }
+      : undefined,
     openGraph: {
       title: post.title,
       description: post.summary || post.title,

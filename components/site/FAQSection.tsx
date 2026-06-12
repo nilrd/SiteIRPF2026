@@ -8,11 +8,11 @@ import { JsonLdFAQ } from "@/components/seo/JsonLd";
 const faqs = [
   {
     q: "Quem é obrigado a declarar o IRPF em 2026?",
-    a: "As regras completas (prazo e limite de renda) serão anunciadas pela Receita Federal em 16/03/2026. Os critérios gerais que sempre se aplicam: ganho de capital na alienação de bens, operações em bolsa, atividade rural acima do limite, ter passado a ser residente no Brasil em 2025, ou ter bens acima de R$ 800.000 em 31/12/2025. Para saber se você está obrigado, fale conosco pelo WhatsApp.",
+    a: "No exercício de 2026, ficou obrigado a declarar quem recebeu rendimentos tributáveis acima de R$ 35.584,00, rendimentos isentos ou não tributáveis acima de R$ 200.000,00, fez operações em bolsa acima de R$ 40.000,00, teve atividade rural acima de R$ 177.920,00, possuía bens acima de R$ 800.000,00 em 31/12/2025 ou se enquadrou nas demais hipóteses legais da Receita Federal.",
   },
   {
     q: "Qual o prazo para entregar a declaração IRPF 2026?",
-    a: "As declarações do IRPF 2026 (renda de 2025) abrem em 16/03/2026. O prazo de encerramento será confirmado pela Receita Federal nessa data. Acompanhe aqui ou fale conosco no WhatsApp para ser avisado assim que o prazo for divulgado. Declarações de anos anteriores já atrasados podem ser entregues a qualquer momento.",
+    a: "O prazo do IRPF 2026 já foi encerrado. Mesmo assim, a declaração em atraso continua podendo ser entregue a qualquer momento, com multa mínima de R$ 165,74 ou 1% ao mês sobre o imposto devido, limitada a 20%.",
   },
   {
     q: "Como funciona o serviço 100% online?",
@@ -28,7 +28,7 @@ const faqs = [
   },
   {
     q: "O que acontece se eu não declarar?",
-    a: "A falta de declaração gera multa de 1% ao mês sobre o imposto devido (mínimo R$ 165,74, máximo 20% do imposto devido), além de CPF irregular que impede empréstimos, financiamentos, concursos públicos e viagens ao exterior. O risco aumenta a cada mês de atraso.",
+    a: "A falta de declaração gera multa de 1% ao mês sobre o imposto devido, com mínimo de R$ 165,74 e limite de 20%. Além disso, a omissão pode gerar pendências no CPF, dificuldade para obter crédito, financiar bens e comprovar regularidade fiscal.",
   },
   {
     q: "Posso retificar uma declaração já enviada?",

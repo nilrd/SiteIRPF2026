@@ -179,11 +179,11 @@ export default function DeclaracaoLandingClient() {
             {/* Right: situação pós-prazo */}
             <div className="border border-white/10 p-8">
               <p className="text-[10px] uppercase tracking-widest text-[#C6FF00] mb-6 text-center">
-                Prazo IRPF 2026 encerrado
+                Regularização pós-prazo
               </p>
               <div className="text-center mb-6">
-                <div className="text-5xl md:text-6xl font-black text-[#C6FF00] font-mono leading-none mb-2">29/05</div>
-                <div className="text-sm text-white/50">Prazo oficial encerrado</div>
+                <div className="text-4xl md:text-5xl font-black text-[#C6FF00] leading-none mb-2">Ainda dá tempo</div>
+                <div className="text-sm text-white/50">Entregamos declarações em atraso e retificações</div>
               </div>
               <div className="border-t border-white/10 pt-6 space-y-3">
                 <div className="flex justify-between text-xs">
@@ -196,7 +196,7 @@ export default function DeclaracaoLandingClient() {
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-white/40">Multa máx. sobre imposto</span>
-                  <span className="text-red-400 font-bold">20% ao mês</span>
+                  <span className="text-red-400 font-bold">20% do imposto</span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span className="text-white/40">Malha fina</span>

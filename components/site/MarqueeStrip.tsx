@@ -1,7 +1,7 @@
 "use client";
 
 const items = [
-  "IRPF 2025",
+  "IRPF 2026",
   "Declaração Completa",
   "Deduções Aplicadas",
   "IRPF Atrasado",

@@ -5,7 +5,7 @@ import ContatoSection from "@/components/site/ContatoSection";
 export const metadata: Metadata = {
   title: "Quem Deve Declarar o IRPF 2026? Descubra em 2 Minutos",
   description:
-    "Descubra se você é obrigado a declarar o Imposto de Renda 2026 (IRPF). Checklist interativo com os 8 critérios oficiais da Receita Federal. Prazo: 23/03 a 29/05/2026.",
+    "Descubra se você foi obrigado a declarar o Imposto de Renda 2026 (IRPF). Checklist interativo com os critérios oficiais da Receita Federal e orientação para declaração em atraso.",
   keywords: [
     "quem deve declarar irpf 2026",
     "quem é obrigado a declarar imposto de renda 2026",
@@ -75,7 +75,7 @@ const jsonLdFaq = {
       name: "Qual a multa por não declarar o IRPF 2026?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "A multa mínima por não entregar a declaração no prazo é de R$ 165,74. Se houver imposto a pagar, a multa é de 1% ao mês sobre o valor do imposto devido, limitada a 20% do total. Prazo de entrega: 23/03 a 29/05/2026.",
+        text: "A multa mínima por não entregar a declaração no prazo é de R$ 165,74. Se houver imposto a pagar, a multa é de 1% ao mês sobre o valor do imposto devido, limitada a 20% do total. Mesmo após o encerramento do prazo, a declaração em atraso ainda pode ser entregue.",
       },
     },
     {

@@ -59,7 +59,7 @@ const jsonLdFaq = {
       name: "Qual é o prazo de entrega do IRPF 2026?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "O prazo de entrega da declaração IRPF 2026 (ano-base 2025) é de 23 de março a 29 de maio de 2026. A multa mínima por atraso é de R$ 165,74.",
+        text: "O prazo de entrega da declaração IRPF 2026 já foi encerrado. A declaração em atraso ainda pode ser enviada, com multa mínima de R$ 165,74 e limite de 20% do imposto devido.",
       },
     },
     {

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 
 const WA_CONTATO =
-  "https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Preciso%20de%20ajuda%20com%20minha%20declara%C3%A7%C3%A3o%20de%20IRPF%202026.";
+  "https://wa.me/5511940825120?text=Ol%C3%A1%20Nilson!%20Preciso%20de%20ajuda%20para%20regularizar%20meu%20IRPF%20ou%20resolver%20uma%20pend%C3%AAncia%20com%20a%20Receita.";
 
 const diferenciais = [
   { num: "10+", label: "Anos de experiência" },
@@ -75,10 +75,10 @@ export default function ContatoSection() {
           {/* Overlay escuro bottom-up */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/30 to-transparent" />
 
-          {/* Badge de urgência */}
+          {/* Badge de contexto */}
           <div className="absolute top-6 left-6 bg-[#C6FF00] text-[#0A0A0A] px-4 py-2">
             <span className="text-[10px] uppercase tracking-widest font-bold">
-              Prazo: 29 de maio de 2026
+              Atendimento para atraso, retificação e malha fina
             </span>
           </div>
 

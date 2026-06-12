@@ -4,7 +4,11 @@ import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
-const WA_LINK = `https://wa.me/${process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120"}?text=${encodeURIComponent("Olá! Quero declarar meu IRPF.")}`;
+function getServiceWhatsAppLink(service: string) {
+  const base = process.env.NEXT_PUBLIC_WA_NUMBER || "5511940825120";
+  const text = `Olá, Nilson! Quero atendimento para ${service}. Pode me orientar sobre documentos, prazo e orçamento?`;
+  return `https://wa.me/${base}?text=${encodeURIComponent(text)}`;
+}
 
 const servicos = [
   {
@@ -12,7 +16,7 @@ const servicos = [
     title: "Declaração Completa",
     desc: "Organizamos e entregamos sua declaração com todos os rendimentos, bens e deduções legais aplicáveis — sem erros, sem pendências.",
     tag: "Mais popular",
-    href: WA_LINK,
+    href: getServiceWhatsAppLink("declaração completa de IRPF"),
     external: true,
   },
   {
@@ -20,7 +24,7 @@ const servicos = [
     title: "IRPF Atrasado",
     desc: "Regularizamos declarações de anos anteriores com cálculo preciso das multas e orientação completa para quitar sua situação com a Receita.",
     tag: "Urgente",
-    href: WA_LINK,
+    href: getServiceWhatsAppLink("IRPF em atraso"),
     external: true,
   },
   {
@@ -28,7 +32,7 @@ const servicos = [
     title: "Retificação",
     desc: "Corrigimos declarações já entregues com erros, omissões ou inconsistências antes que virem problema na Receita Federal.",
     tag: "Correcao",
-    href: WA_LINK,
+    href: getServiceWhatsAppLink("retificação de declaração"),
     external: true,
   },
   {
@@ -36,7 +40,7 @@ const servicos = [
     title: "Malha Fina",
     desc: "Resolvemos notificações e pendências com a Receita Federal, identificando a causa e regularizando sua situação fiscal.",
     tag: "Especialidade",
-    href: WA_LINK,
+    href: getServiceWhatsAppLink("malha fina"),
     external: true,
   },
   {
@@ -53,11 +57,22 @@ export default function ServicosSection() {
   return (
     <section id="servicos" className="max-w-7xl mx-auto px-6 py-14">
       <div className="flex justify-between items-end mb-10">
-        <h2 className="font-serif text-4xl md:text-5xl">Serviços</h2>
+        <div>
+          <span className="block text-[10px] uppercase tracking-widest opacity-40 mb-3">
+            Escolha direta
+          </span>
+          <h2 className="font-serif text-4xl md:text-5xl">Serviços</h2>
+        </div>
         <span className="text-[10px] uppercase tracking-widest opacity-40">
           Especialidades
         </span>
       </div>
+
+      <p className="text-sm opacity-60 leading-relaxed max-w-3xl mb-10">
+        Cada serviço abaixo leva para um contato já contextualizado. Isso evita
+        triagem genérica e deixa mais claro o que está sendo contratado desde o
+        primeiro clique.
+      </p>
 
       <div className="space-y-0">
         {servicos.map((s, i) => {

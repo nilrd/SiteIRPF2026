@@ -516,7 +516,7 @@ function BlogAdminContent() {
                       {post.duplicateInfo && (
                         <div className="mt-1">
                           <span className="inline-block bg-red-500/20 text-red-300 text-[10px] px-1.5 py-0.5 border border-red-500/30 rounded font-medium">
-                            ⚠️ Duplicado ({Math.round(post.duplicateInfo.similarity * 100)}% de "{post.duplicateInfo.duplicateOfTitle}")
+                            ⚠️ Duplicado ({Math.round(post.duplicateInfo.similarity * 100)}% de &ldquo;{post.duplicateInfo.duplicateOfTitle}&rdquo;)
                           </span>
                         </div>
                       )}

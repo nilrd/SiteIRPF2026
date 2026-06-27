@@ -1,4 +1,3 @@
-import Link from "next/link";
 
 export default function InstitutionalHome() {
   const personJsonLd = {
@@ -99,7 +98,7 @@ export default function InstitutionalHome() {
                 <p className="text-xs uppercase tracking-widest text-[#C9A84C] font-bold">Consultor e Gestor Tributário</p>
                 <div className="w-12 h-0.5 bg-[#C9A84C] mx-auto my-3" />
                 <p className="text-sm text-black/60 italic px-4">
-                  "Minha missão é guiar contribuintes e microempreendedores por caminhos seguros, evitando a malha fina e otimizando a carga de impostos de forma totalmente legal."
+                  &ldquo;Minha missão é guiar contribuintes e microempreendedores por caminhos seguros, evitando a malha fina e otimizando a carga de impostos de forma totalmente legal.&rdquo;
                 </p>
               </div>
             </div>

@@ -4,6 +4,7 @@ import {
   saveBlogPost,
   ALL_CLUSTERS,
   getAllowedIrpfClusterIndexes,
+  extractCoreTopic,
 } from "@/lib/blog-engine";
 import {
   finishAutomationRun,
@@ -111,7 +112,8 @@ export async function GET(request: Request) {
         );
         const post = await generateBlogPost(idx);
         const saved = await saveBlogPost(post);
-        void markKeywordUsed(post.keyword, clusterName, saved.id);
+        const coreTopic = extractCoreTopic(post.keyword);
+        void markKeywordUsed(post.keyword, clusterName, saved.id, coreTopic);
         results.push({
           id: saved.id,
           title: saved.title,

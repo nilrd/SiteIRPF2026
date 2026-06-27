@@ -1,6 +1,8 @@
 import { getToken } from "next-auth/jwt";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
 export const dynamic = "force-dynamic";
 
@@ -239,8 +241,29 @@ export async function GET(request: NextRequest) {
       currentUntrackedAiPosts.length - stalledLinkedPosts.length,
     );
 
+    let duplicatesList: Array<{ id: string; duplicateOf?: { title: string }; similarity: number }> = [];
+    try {
+      const dupPath = path.join(process.cwd(), "scripts", "output", "duplicates.json");
+      if (fs.existsSync(dupPath)) {
+        const rawData = fs.readFileSync(dupPath, "utf-8");
+        duplicatesList = JSON.parse(rawData);
+      }
+    } catch (err) {
+      console.error("[admin/blog GET] Erro ao ler duplicates.json:", err);
+    }
+
+    const postsWithDups = posts.map((post) => {
+      const dup = duplicatesList.find((d) => d.id === post.id);
+      return {
+        ...post,
+        duplicateInfo: dup
+          ? { duplicateOfTitle: dup.duplicateOf?.title || "", similarity: dup.similarity }
+          : null,
+      };
+    });
+
     return NextResponse.json({
-      posts,
+      posts: postsWithDups,
       automationRuns: runsForDisplay,
       automationStats: {
         postsToday,

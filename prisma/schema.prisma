@@ -194,11 +194,12 @@ model KnowledgeBase {
 }
 
 model KeywordHistory {
-  id       String   @id @default(cuid())
-  keyword  String
-  cluster  String
-  postId   String?
-  usedAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  keyword   String
+  cluster   String
+  postId    String?
+  usedAt    DateTime @default(now())
+  coreTopic String?  @map("core_topic")
 
   @@index([usedAt])
   @@index([keyword])

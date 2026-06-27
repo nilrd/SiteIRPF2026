@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Anthropic from "@anthropic-ai/sdk";
 
 const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 const MISSING_GROQ_API_KEY = "missing-groq-api-key";
@@ -10,6 +11,16 @@ function createGroqClient(apiKey?: string): OpenAI {
     apiKey: apiKey ?? MISSING_GROQ_API_KEY,
   });
 }
+
+// Clientes Anthropic — key1 + key2 (Claude Sonnet 4.6)
+const anthropicClients: Array<{ client: Anthropic; label: string }> = [
+  ...(process.env.ANTHROPIC_API_KEY
+    ? [{ client: new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }), label: "key1" }]
+    : []),
+  ...(process.env.ANTHROPIC_API_KEY_2
+    ? [{ client: new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY_2 }), label: "key2" }]
+    : []),
+];
 
 // Clientes Groq — key1 + key2 + keyMei (3 cotas independentes no cascade geral)
 const groqClients: Array<{ client: OpenAI; label: string }> = [
@@ -80,6 +91,7 @@ const openaiDirectClient = OPENAI_FALLBACK_ENABLED && process.env.OPENAI_API_KEY
 
 export function getBlogLlmProviderStatus() {
   return {
+    claude: anthropicClients.length > 0,
     gemini: geminiClients.length > 0,
     groq: groqClients.length > 0,
     mistral: Boolean(mistralClient),
@@ -284,8 +296,67 @@ export async function callWithFallback(
 
   if (!hasAnyBlogLlmProviderConfigured()) {
     throw new Error(
-      "Nenhum provedor LLM configurado. Configure GEMINI_API_KEY, GROQ_API_KEY, OPENAI_API_KEY, MISTRAL_API_KEY ou GITHUB_MODELS_TOKEN.",
+      "Nenhum provedor LLM configurado. Configure ANTHROPIC_API_KEY, GEMINI_API_KEY, GROQ_API_KEY, OPENAI_API_KEY, MISTRAL_API_KEY ou GITHUB_MODELS_TOKEN.",
     );
+  }
+
+  // ── 0. CLAUDE SONNET 4.6 (Tier 0) ──────────────────────────────────────────
+  if (anthropicClients.length > 0) {
+    const model = "claude-sonnet-4-6";
+    for (const { client, label } of anthropicClients) {
+      const keyId = `claude:${model}:${label}`;
+      if (isRateLimited(keyId)) {
+        const remaining = Math.round(((rateLimitedKeys.get(keyId) ?? 0) - Date.now()) / 1000);
+        console.log(`[LLM] Pulando Claude ${model} [${label}] — cooldown por mais ${remaining}s`);
+        continue;
+      }
+      try {
+        console.log(`[LLM] Tentando Claude: ${model} [${label}]`);
+        const responsePromise = client.messages.create({
+          model,
+          max_tokens: maxTokens,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userPrompt }],
+          temperature: extraOptions?.temperature ?? 0.35,
+        });
+
+        const response = await Promise.race([
+          responsePromise,
+          new Promise<never>((_, reject) =>
+            setTimeout(
+              () => reject(new Error(`Claude timeout após 60s`)),
+              60000
+            )
+          ),
+        ]);
+
+        const raw = response.content
+          .filter((c) => c.type === "text")
+          .map((c) => (c as { text: string }).text)
+          .join("\n");
+
+        const validated = raw ? cleanAndValidateJson(raw, requireJson) : null;
+        if (validated) {
+          console.log(`[LLM] Sucesso: ${model} [${label}] (Claude)`);
+          return { text: validated, model };
+        } else if (raw) {
+          console.warn(`[LLM] Claude ${model} [${label}] retornou JSON inválido/truncado — continuando cascade`);
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        const errType = classifyError(err);
+        if (errType === "dead") {
+          deadModels.add(model);
+          console.warn(`[LLM] Claude ${model} MORTO (descontinuado): ${msg.slice(0, 100)}`);
+          break;
+        } else if (errType === "size_limit") {
+          markRateLimited(keyId, 1800000); // 30 mins cooldown
+          console.warn(`[LLM] Claude ${model} [${label}] rate limit: ${msg.slice(0, 100)}`);
+        } else {
+          console.warn(`[LLM] Claude ${model} [${label}] falhou [${errType}]: ${msg.slice(0, 100)}`);
+        }
+      }
+    }
   }
 
   // ── 1. GEMINI CASCADE (itera por modelo × chave) ───────────────────────────

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import dynamic from "next/dynamic";
 import Navbar from "@/components/site/Navbar";
 import Footer from "@/components/site/Footer";
@@ -56,6 +57,19 @@ export default function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const host = headers().get("host") || "";
+  const isQaplayRoot = host.includes("qaplay.com.br") && !host.startsWith("irpf.");
+
+  if (isQaplayRoot) {
+    return (
+      <>
+        <AnalyticsTracker />
+        <main>{children}</main>
+        <CookieConsent />
+      </>
+    );
+  }
+
   return (
     <>
       <JsonLdWebsite />

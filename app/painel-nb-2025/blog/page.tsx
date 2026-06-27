@@ -20,6 +20,10 @@ type Post = {
   coverImage: string | null;
   aiModel: string | null;
   categoria: string;
+  duplicateInfo?: {
+    duplicateOfTitle: string;
+    similarity: number;
+  } | null;
 };
 
 type AutomationStats = {
@@ -506,9 +510,16 @@ function BlogAdminContent() {
                   >
                     <td className="py-3 pr-4 max-w-xs">
                       <span className="block font-medium">{post.title}</span>
-                      <span className="block text-[10px] opacity-40 mt-0.5">
+                      <span className="block text-[10px] opacity-40 mt-0.5 font-mono">
                         {post.slug}
                       </span>
+                      {post.duplicateInfo && (
+                        <div className="mt-1">
+                          <span className="inline-block bg-red-500/20 text-red-300 text-[10px] px-1.5 py-0.5 border border-red-500/30 rounded font-medium">
+                            ⚠️ Duplicado ({Math.round(post.duplicateInfo.similarity * 100)}% de "{post.duplicateInfo.duplicateOfTitle}")
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 pr-4">
                       <span

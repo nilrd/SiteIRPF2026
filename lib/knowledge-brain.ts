@@ -284,11 +284,12 @@ export async function isKeywordRecent(
 export async function markKeywordUsed(
   keyword: string,
   cluster: string,
-  postId?: string
+  postId?: string,
+  coreTopic?: string
 ): Promise<void> {
   try {
     await prisma.keywordHistory.create({
-      data: { keyword, cluster, postId },
+      data: { keyword, cluster, postId, coreTopic },
     });
   } catch {
     // Não falhar geração de post por erro no histórico

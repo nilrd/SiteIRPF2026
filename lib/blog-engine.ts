@@ -409,6 +409,110 @@ function jaccardSimilarity(a: Set<string>, b: Set<string>): number {
   return union === 0 ? 0 : intersection / union;
 }
 
+export function extractCoreTopic(title: string): string {
+  if (!title) return "geral";
+  const norm = title
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (norm.includes("das") && norm.includes("mei") && (norm.includes("atraso") || norm.includes("atrasad") || norm.includes("pagar") || norm.includes("guia"))) {
+    return "mei-das-atraso";
+  }
+  if (norm.includes("parcela") && norm.includes("mei")) {
+    return "mei-parcelamento";
+  }
+  if ((norm.includes("dasn") || norm.includes("declaracao anual")) && norm.includes("mei")) {
+    return "mei-dasn";
+  }
+  if ((norm.includes("abrir") && norm.includes("mei")) || (norm.includes("formaliza") && norm.includes("mei")) || (norm.includes("cadastro") && norm.includes("mei"))) {
+    return "mei-abertura";
+  }
+  if ((norm.includes("limite") && norm.includes("mei")) || (norm.includes("faturamento") && norm.includes("mei")) || (norm.includes("teto") && norm.includes("mei"))) {
+    return "mei-faturamento-limite";
+  }
+  if (norm.includes("desenrola")) {
+    return "desenrola";
+  }
+  if (norm.includes("aluguel")) {
+    return "irpf-aluguel";
+  }
+  if (norm.includes("prazo") || norm.includes("calendario") || norm.includes("data limite") || norm.includes("ate quando")) {
+    return "irpf-prazos";
+  }
+  if (norm.includes("malha fina") || norm.includes("pendencia") || norm.includes("retido na malha")) {
+    return "irpf-malha-fina";
+  }
+  if (norm.includes("acao") || norm.includes("acoes") || norm.includes("bolsa") || norm.includes("dividendo") || norm.includes("trade") || norm.includes("fii") || norm.includes("b3")) {
+    return "irpf-investimentos-bolsa";
+  }
+  if (norm.includes("cripto") || norm.includes("bitcoin") || norm.includes("btc") || norm.includes("ethereum")) {
+    return "irpf-cripto";
+  }
+  if (norm.includes("dependente")) {
+    return "irpf-dependentes";
+  }
+  if (norm.includes("medico") || norm.includes("saude") || norm.includes("dentista") || norm.includes("hospital") || norm.includes("plano de saude")) {
+    return "irpf-deducoes-saude";
+  }
+  if (norm.includes("educacao") || norm.includes("escola") || norm.includes("faculdade") || norm.includes("curso")) {
+    return "irpf-deducoes-educacao";
+  }
+  if (norm.includes("imovel") || norm.includes("casa") || norm.includes("apartamento") || norm.includes("terreno") || norm.includes("venda de imovel")) {
+    return "irpf-imovel";
+  }
+  if (norm.includes("veiculo") || norm.includes("carro") || norm.includes("moto") || norm.includes("financiamento de veiculo")) {
+    return "irpf-veiculo";
+  }
+  if (norm.includes("isencao") || norm.includes("isento") || norm.includes("molestia") || norm.includes("doenca")) {
+    return "irpf-isencao";
+  }
+  if (norm.includes("restituicao") || norm.includes("lotes") || norm.includes("lote")) {
+    return "irpf-restituicao";
+  }
+  if (norm.includes("retifica") || norm.includes("corrigir declaracao")) {
+    return "irpf-retificacao";
+  }
+  if (norm.includes("ganho de capital") || norm.includes("gcap") || norm.includes("lucro na venda")) {
+    return "irpf-ganho-capital";
+  }
+  if (norm.includes("carne leao") || norm.includes("carne-leao")) {
+    return "irpf-carne-leao";
+  }
+  if (norm.includes("previdencia") || norm.includes("pgbl") || norm.includes("vgbl")) {
+    return "irpf-previdencia-privada";
+  }
+  if (norm.includes("declarar mei") && (norm.includes("pf") || norm.includes("pessoa fisica") || norm.includes("irpf"))) {
+    return "mei-declaracao-irpf";
+  }
+  if (norm.includes("autonomo") || norm.includes("liberal") || norm.includes("sem carteira")) {
+    return "irpf-autonomo";
+  }
+  if (norm.includes("poupanca") || norm.includes("renda fixa") || norm.includes("tesouro direto") || norm.includes("cdb")) {
+    return "irpf-investimentos-rendafixa";
+  }
+  if (norm.includes("multa") && (norm.includes("atraso") || norm.includes("fora do prazo") || norm.includes("perdeu"))) {
+    return "irpf-atraso-entrega";
+  }
+  if (norm.includes("heranca") || norm.includes("doacao") || norm.includes("bens recebidos") || norm.includes("inventario")) {
+    return "irpf-heranca-doacao";
+  }
+  if (norm.includes("pensao")) {
+    return "irpf-pensao-alimenticia";
+  }
+  if (norm.includes("saida definitiva") || norm.includes("viver no exterior")) {
+    return "irpf-saida-definitiva";
+  }
+  if (norm.includes("cpf") && (norm.includes("suspenso") || norm.includes("regulariza") || norm.includes("cancelado"))) {
+    return "cpf-regularizacao";
+  }
+
+  if (norm.includes("mei")) return "mei-geral";
+  if (norm.includes("imposto de renda") || norm.includes("irpf") || norm.includes("receita federal")) return "irpf-geral";
+
+  return "outros";
+}
+
 function isTitleTooSimilar(
   candidateTitle: string,
   existingTitles: string[],
@@ -1381,16 +1485,22 @@ function blogSystemPrompt(
 
   // --- MODO COMPACTO para modelos com contexto pequeno (8b) ---
   if (compactMode) {
-    return `Ghostwriter de Nilson Brites, consultor IRPF 10+ anos, atendimento 100% online.
+    return `Você é o ghostwriter do Nilson Brites, consultor IRPF há 10+ anos. Escreva obrigatoriamente na primeira pessoa ("eu", "minha experiência") usando expressões como "na minha experiência", "já vi casos onde", "quando atendo clientes".
 Tom: direto, humano, empático. Parágrafos curtos. Sem emojis.
 IDIOMA OBRIGATÓRIO: português do Brasil (pt-BR) em 100% do conteúdo, sem trechos em inglês.
 
 DADOS IRPF 2026: Prazo 23/03 a 29/05/2026. Obrigatório se rendimentos > R$ 35.584,00. Multa mínima R$ 165,74. Selic ${selicAtual}%.
 Tabela: até R$ 2.428,80 isento; até R$ 2.826,65: 7,5%; até R$ 3.751,05: 15%; até R$ 4.664,68: 22,5%; acima: 27,5%.
 
-REGRAS: Nunca invente dados. Cite fonte oficial. H2 como perguntas. 1 exemplo numérico. 1 tabela HTML.
-Lead: comece com dor/situação real, NUNCA "O IRPF é...". 6 FAQs obrigatórias.
-Formato título: ${mandatoryFormat}. Max 65 chars. Proibido "Tudo sobre X", "O que você precisa saber".
+REGRAS:
+- Nunca invente dados. Cite fontes. H2 como perguntas. 1 tabela HTML.
+- Inclua exatamente 1 "Caso Prático" detalhado com nomes fictícios, valores de renda/situação e solução passo a passo.
+- Cite ao menos 1 valor oficial com fonte: (Receita Federal, 2026) ou (IN RFB nº 2.255/2025).
+- A conclusão deve ser um convite à ação prático, nunca genérico ("espero ter ajudado" ou "boa sorte" são proibidos).
+- PROIBIDO iniciar parágrafos com: "Portanto", "Assim", "Dessa forma", "Sendo assim".
+- PROIBIDO usar: "E com razão", "Mas calma", "É importante ressaltar", "Vale lembrar", "Em suma", "Cabe destacar", "Por fim", "Não é o fim do mundo".
+- Lead: comece com dor/situação real, NUNCA "O IRPF é...". 6 FAQs obrigatórias.
+- Formato título: ${mandatoryFormat}. Max 65 chars. Proibido "Tudo sobre X", "O que você precisa saber".
 
 FASE FISCAL ATUAL: ${temporalContext.phase}. Dias restantes para o prazo do IRPF 2026: ${temporalContext.daysRemaining}.
 TEMAS PERMITIDOS AGORA:
@@ -1420,16 +1530,15 @@ SAÍDA: JSON estrito com campos: title, slug, summary, content (HTML min 2500 pa
 
   return `${IRPF_DATA_CONTEXT}
 
-Você é o ghostwriter do Nilson Brites — Analista Financeiro com mais de 10 anos de experiência em declaração de IRPF, atendendo brasileiros de todo o país 100% online.
+Você é o ghostwriter de Nilson Brites, consultor e analista financeiro com mais de 10 anos de experiência prática em Imposto de Renda. Seu atendimento é 100% online e humanizado.
 IDIOMA OBRIGATÓRIO: português do Brasil (pt-BR) em 100% do conteúdo, sem trechos em inglês.
 
-ESCREVA EXATAMENTE COMO ELE FALARIA: direto, humano, sem jargão acadêmico, com a autoridade de quem já resolveu milhares de casos reais.
+ESCREVA EM PRIMEIRA PESSOA ("eu", "minha experiência") encarnando a persona de Nilson Brites. Use naturalmente expressões como: "na minha experiência", "já vi casos onde", "quando atendo clientes", "no meu dia a dia de consultoria". Mostre autoridade consultiva prática.
 O blog existe para CONVERTER LEITORES EM CLIENTES — não apenas para informar.
 
-PERSONALIDADE DO BLOG:
-- Tom: especialista acessível, como um amigo contador que explica sem enrolar
-- Nilson fala em primeira pessoa ocasionalmente: "Na minha experiência...", "Já vi muitos casos de..."
-- Empatia + urgência: o leitor procurou esse artigo porque tem um problema real
+REGRAS DE PERSONA E ESCRITA:
+- Tom: especialista acessível e consultivo, com tom de conversa direta e confiável
+- NUNCA inicie parágrafos com palavras de transição proibidas: "Portanto", "Assim", "Dessa forma", "Sendo assim".
 - Parágrafos curtos (máximo 4 linhas), frase de impacto no início de cada seção
 - Zero emojis no texto corrido. Zero jargão tributário sem explicação imediata.
 
@@ -1495,6 +1604,8 @@ ESTRUTURA OBRIGATÓRIA DO ARTIGO
    - Parágrafos curtos (máximo 4 linhas) — quebre parágrafos longos
    - Pelo menos 1 exemplo numérico calculado passo a passo com os dados reais da tabela
    - Pelo menos 1 <table> HTML com dados oficiais (faixas, prazos ou deduções)
+   - Exatamente 1 **Caso Prático** destacado, usando nomes fictícios (ex: "Caso do Marcos", "Caso da Joana"), com rendimentos e despesas específicas, mostrando a solução do problema passo a passo.
+   - Pelo menos 1 valor monetário verificado e explícito citando fontes oficiais diretamente no texto (ex: "(Receita Federal, 2026)", "(Instrução Normativa RFB nº XXX)").
    - Use <strong> em: valores em R$, percentuais, datas, nomes de leis, prazos
    - Pelo menos 1 alerta de risco (malha fina, multa, prazo) destacado
 
@@ -1513,10 +1624,10 @@ ESTRUTURA OBRIGATÓRIA DO ARTIGO
 7. FAQs (exatamente 6 — OBRIGATÓRIO):
    Perguntas reais que o leitor digitaria no Google. Respostas diretas com dado numérico quando possível (50-100 palavras cada).
 
-8. CONCLUSÃO COM URGÊNCIA (não resumir — criar tensão e próximo passo):
-   Foco no custo de não agir: multa, malha fina, restituição perdida, juros.
-   Inclua dados concretos. Termine com chamada para ação urgente.
-   Nilson pode aparecer em primeira pessoa aqui: "Na minha experiência, quem deixa para a última semana..."
+8. CONCLUSÃO COM URGÊNCIA E PRÓXIMO PASSO (não resumir — criar tensão e ação imediata):
+   - Foco no custo de não agir hoje: multa, malha fina, restituição perdida, juros.
+   - Nilson aparece em primeira pessoa aqui: "Na minha experiência, quem deixa para a última semana..."
+   - Deve ser uma chamada para ação concreta hoje. NUNCA use conclusões genéricas ou assinaturas como "espero ter ajudado", "boa sorte" ou "não é o fim do mundo".
 
 9. CTA FINAL (OBRIGATÓRIO — use exatamente este HTML):
   ${cta.finalHtml}
@@ -1606,6 +1717,8 @@ PROIBIÇÕES ABSOLUTAS
 - NUNCA repita título ou ângulo de posts já publicados listados acima
 - NUNCA escreva parágrafo com mais de 5 linhas sem quebra
 - NUNCA inclua "Nilson Brites" ou "Consultoria IRPF NSB" no título do artigo (vai no CTA, não no título)
+- NUNCA use parágrafos iniciando com: "Portanto", "Assim", "Dessa forma", "Sendo assim".
+- NUNCA use as seguintes expressões e clichês de IA: "E com razão", "Mas calma", "É importante ressaltar", "Vale lembrar", "Em suma", "Cabe destacar", "Por fim", "Não é o fim do mundo", "Boa sorte", "Espero ter ajudado".
 
 ═══════════════════════════════════════════
 FORMATO DE SAÍDA (JSON estrito — TODOS os campos obrigatórios)
@@ -1806,27 +1919,94 @@ export async function generateBlogPost(
     }
   }
 
-  const trendKeyword = customKeyword ? null : await getTrendTopicFromInternet();
+  // --- DEDUPLICAÇÃO SEMÂNTICA DE 45 DIAS ---
+  let keyword = "";
+  if (customKeyword) {
+    keyword = customKeyword;
+    console.log(`[Deduplicacao] Keyword forcada pelo usuario: "${keyword}"`);
+  } else {
+    // 1. Busca posts publicados nos últimos 90 dias
+    const date90DaysAgo = new Date();
+    date90DaysAgo.setDate(date90DaysAgo.getDate() - 90);
+    const date45DaysAgo = new Date();
+    date45DaysAgo.setDate(date45DaysAgo.getDate() - 45);
 
-  // Quando não há tema forçado, garante que a keyword seja IRPF/MEI/tributação.
-  // Candidatos fora do escopo (futebol, política, etc.) são ignorados e o
-  // sistema cai em um tema evergreen aleatório — nunca gera post off-topic.
-  function pickScopedKeyword(candidates: (string | null | undefined)[]): string {
-    for (const c of candidates) {
-      if (c && TrendResearchService.isInIRPFScope(c)) return c;
+    const postsLast90Days = await prisma.blogPost.findMany({
+      where: {
+        published: true,
+        createdAt: { gte: date90DaysAgo },
+      },
+      select: {
+        title: true,
+        createdAt: true,
+      },
+    }).catch(() => []);
+
+    // 2. Extrai coreTopic dos posts dos últimos 45 dias
+    const coveredTopics = new Set<string>();
+    for (const post of postsLast90Days) {
+      if (post.createdAt >= date45DaysAgo) {
+        const topic = extractCoreTopic(post.title);
+        if (topic !== "outros" && topic !== "geral" && topic !== "irpf-geral" && topic !== "mei-geral") {
+          coveredTopics.add(topic);
+        }
+      }
     }
-    const pool = ALL_CLUSTERS;
-    return pool[Math.floor(Math.random() * pool.length)]?.primary ?? "IRPF 2026";
-  }
 
-  const keyword = customKeyword
-    ? customKeyword // tema manual: validado abaixo por isTopicOnScope
-    : pickScopedKeyword([
-        clusterIndex !== undefined ? (cluster?.primary ?? null) : null,
-        trendPick?.keyword ?? null,
-        trendKeyword,
-        cluster?.primary ?? null,
-      ]);
+    console.log(`[Deduplicacao] Topics cobertos nos ultimos 45 dias:`, Array.from(coveredTopics));
+
+    // 3. Monta fila de candidatas por prioridade
+    const candidates: string[] = [];
+
+    // Fila A: Keyword preferencial (do cluster ou trendResearch)
+    if (clusterIndex !== undefined && ALL_CLUSTERS[clusterIndex % ALL_CLUSTERS.length]?.primary) {
+      candidates.push(ALL_CLUSTERS[clusterIndex % ALL_CLUSTERS.length].primary);
+    }
+    if (trendPick?.keyword) {
+      candidates.push(trendPick.keyword);
+    }
+
+    // Fila B: Google trend topic
+    const trendKeyword = await getTrendTopicFromInternet().catch(() => null);
+    if (trendKeyword) {
+      candidates.push(trendKeyword);
+    }
+
+    // Fila C: Todos os outros clusters para evitar colisão
+    const startIdx = clusterIndex !== undefined ? clusterIndex : 0;
+    for (let i = 0; i < ALL_CLUSTERS.length; i++) {
+      const idx = (startIdx + i) % ALL_CLUSTERS.length;
+      const c = ALL_CLUSTERS[idx];
+      if (c?.primary && !candidates.includes(c.primary)) {
+        candidates.push(c.primary);
+      }
+    }
+
+    // 4. Seleciona a primeira candidata que não colida com coveredTopics
+    let selectedKeyword: string | null = null;
+    for (const cand of candidates) {
+      if (TrendResearchService.isInIRPFScope(cand)) {
+        const topic = extractCoreTopic(cand);
+        if (!coveredTopics.has(topic) || topic === "outros" || topic === "geral" || topic === "irpf-geral" || topic === "mei-geral") {
+          selectedKeyword = cand;
+          console.log(`[Deduplicacao] Keyword selecionada: "${cand}" (Topic: ${topic})`);
+          break;
+        } else {
+          console.log(`[Deduplicacao] Keyword pulada: "${cand}" colide com topic "${topic}" ja coberto`);
+        }
+      }
+    }
+
+    // 5. Fallback tradicional se tudo colidir
+    if (!selectedKeyword) {
+      selectedKeyword = clusterIndex !== undefined && ALL_CLUSTERS[clusterIndex % ALL_CLUSTERS.length]?.primary
+        ? ALL_CLUSTERS[clusterIndex % ALL_CLUSTERS.length].primary
+        : (trendPick?.keyword ?? "IRPF 2026");
+      console.warn(`[Deduplicacao] Colisao total. Fallback para: "${selectedKeyword}"`);
+    }
+
+    keyword = selectedKeyword;
+  }
   const clusterIntent = cluster?.postIntent ?? "Traffic Post";
   const postIntent = inferClusterIntent(keyword, clusterIntent);
   const secundarias = cluster?.secondary?.join(", ") || "";
